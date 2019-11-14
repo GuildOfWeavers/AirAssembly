@@ -8,7 +8,6 @@ import {
     Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent
 } from './lexer';
 import { Procedure } from "./procedures";
-import { FieldDeclaration } from "./declarations";
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
     GetVectorElement, SliceVector, LoadExpression, Dimensions
@@ -47,7 +46,7 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Prime);
         const modulus = this.CONSUME(Literal).image;
         this.CONSUME(RParen);
-        this.ACTION(() => schema.setField(new FieldDeclaration('prime', BigInt(modulus))));
+        this.ACTION(() => schema.setField('prime', BigInt(modulus)));
     });
 
     // GLOBAL CONSTANTS

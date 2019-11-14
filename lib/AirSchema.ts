@@ -1,15 +1,16 @@
 // IMPORTS
 // ================================================================================================
-import { StarkLimits, Dimensions } from "@guildofweavers/air-assembly";
+import { StarkLimits, Dimensions, FiniteField } from "@guildofweavers/air-assembly";
 import { LiteralValue } from "./expressions";
-import { FieldDeclaration, CyclicRegister, InputRegister } from "./declarations";
+import { CyclicRegister, InputRegister } from "./declarations";
 import { Procedure } from "./procedures";
+import { createPrimeField } from "@guildofweavers/galois";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class AirSchema {
 
-    private fieldDeclaration!       : FieldDeclaration;
+    private _field?                 : FiniteField;
 
     private _constants              : LiteralValue[];
     readonly staticRegisters        : any[];
@@ -26,9 +27,15 @@ export class AirSchema {
 
     // FIELD
     // --------------------------------------------------------------------------------------------
-    setField(field: FieldDeclaration): void {
-        if (this.fieldDeclaration) throw new Error('the field has already been set');
-        this.fieldDeclaration = field;
+    get field(): FiniteField {
+        if (!this._field) throw new Error(`fields has not been set yet`);
+        return this._field;
+    }
+
+    setField(type: 'prime', modulus: bigint): void {
+        if (this._field) throw new Error('field has already been set');
+        if (type !== 'prime') throw new Error(`field type '${type}' is not supported`);
+        this._field = createPrimeField(modulus);
     }
 
     // CONSTANTS
@@ -113,7 +120,7 @@ export class AirSchema {
     // --------------------------------------------------------------------------------------------
     toString() {
         // field, constants, static and input registers
-        let code = `\n  ${this.fieldDeclaration.toString()}`;
+        let code = `\n  (field prime ${(this.field as any).modulus})`;
         if (this.constants.length > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         if (this.staticRegisters.length > 0)

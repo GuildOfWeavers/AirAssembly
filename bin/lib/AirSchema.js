@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const declarations_1 = require("./declarations");
 const procedures_1 = require("./procedures");
+const galois_1 = require("@guildofweavers/galois");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
@@ -13,10 +14,17 @@ class AirSchema {
     }
     // FIELD
     // --------------------------------------------------------------------------------------------
-    setField(field) {
-        if (this.fieldDeclaration)
-            throw new Error('the field has already been set');
-        this.fieldDeclaration = field;
+    get field() {
+        if (!this._field)
+            throw new Error(`fields has not been set yet`);
+        return this._field;
+    }
+    setField(type, modulus) {
+        if (this._field)
+            throw new Error('field has already been set');
+        if (type !== 'prime')
+            throw new Error(`field type '${type}' is not supported`);
+        this._field = galois_1.createPrimeField(modulus);
     }
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
@@ -95,7 +103,7 @@ class AirSchema {
     // --------------------------------------------------------------------------------------------
     toString() {
         // field, constants, static and input registers
-        let code = `\n  ${this.fieldDeclaration.toString()}`;
+        let code = `\n  (field prime ${this.field.modulus})`;
         if (this.constants.length > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         if (this.staticRegisters.length > 0)

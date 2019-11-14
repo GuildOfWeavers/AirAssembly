@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const chevrotain_1 = require("chevrotain");
 const AirSchema_1 = require("./AirSchema");
 const lexer_1 = require("./lexer");
-const declarations_1 = require("./declarations");
 const expressions_1 = require("./expressions");
 const errors_1 = require("./errors");
 // PARSER DEFINITION
@@ -36,7 +35,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Prime);
             const modulus = this.CONSUME(lexer_1.Literal).image;
             this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => schema.setField(new declarations_1.FieldDeclaration('prime', BigInt(modulus))));
+            this.ACTION(() => schema.setField('prime', BigInt(modulus)));
         });
         // GLOBAL CONSTANTS
         // --------------------------------------------------------------------------------------------
