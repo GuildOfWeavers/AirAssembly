@@ -1,0 +1,33 @@
+{
+  "name": "@guildofweavers/air-assembly",
+  "version": "0.1.0",
+  "description": "A low-level language for encoding Algebraic Intermediate Representation of computations",
+  "main": "index.js",
+  "typings": "air-assembly.d.ts",
+  "license": "MIT",
+  "author": {
+    "name": "Bobbin Threadbare",
+    "email": "bobbinth@protonmail.com"
+  },
+  "keywords": [
+    "stark",
+    "zero-knowledge",
+    "cryptography"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GuildOfWeavers/AirAssembly.git"
+  },
+  "engines": {
+    "node": ">=12.7.x"
+  },
+  "devDependencies": {
+    "@types/node": "12.7.x",
+    "del": "5.1.x",
+    "gulp": "4.0.x"
+  },
+  "dependencies": {
+    "@guildofweavers/galois": "0.4.x",
+    "chevrotain": "6.5.x"
+  }
+}

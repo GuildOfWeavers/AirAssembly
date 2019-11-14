@@ -1,0 +1,12 @@
+export { Expression } from './Expression';
+export { LiteralValue } from './LiteralValue';
+export { BinaryOperation, OperationType as BinaryOperationType } from './BinaryOperation';
+export { UnaryOperation, OperationType as UnaryOperationType } from './UnaryOperation';
+export { MakeVector } from './MakeVector';
+export { GetVectorElement } from './GetVectorElement';
+export { SliceVector } from './SliceVector';
+export { MakeMatrix } from './MakeMatrix';
+export { LoadExpression } from './LoadExpression';
+export { StoreExpression } from './StoreExpression';
+export { TraceSegment } from './TraceSegment';
+export { ExpressionVisitor } from './ExpressionVisitor';
