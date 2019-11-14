@@ -1,14 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// IMPORTS
+// ================================================================================================
 const utils_1 = require("../expressions/utils");
 // CLASS DEFINITION
 // ================================================================================================
 class LocalVariable {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(degree) {
-        this.degree = degree;
-        this.dimensions = utils_1.degreeToDimensions(degree);
+    constructor(dimensions) {
+        this.dimensions = dimensions;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
@@ -21,8 +22,8 @@ class LocalVariable {
         return this.binding;
     }
     bind(value, index) {
-        if (!utils_1.Dimensions.areSameDimensions(this.dimensions, value.dimensions)) {
-            const vd = value.dimensions;
+        if (!utils_1.Dimensions.areSameDimensions(this.dimensions, value.expression.dimensions)) {
+            const vd = value.expression.dimensions;
             throw new Error(`cannot store ${vd[0]}x${vd[1]} value in local variable ${index}`);
         }
         this.binding = value;

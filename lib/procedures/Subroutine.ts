@@ -1,41 +1,44 @@
 // IMPORTS
 // ================================================================================================
-import { StoreTarget } from '@guildofweavers/air-assembly';
-import { Expression } from './Expression';
-import { getStoreTarget } from './utils';
+import { StoreTarget, Dimensions, ExpressionDegree } from "@guildofweavers/air-assembly";
+import { Expression } from "../expressions";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class StoreExpression extends Expression {
-
-    private _index  : number;
-    readonly target : StoreTarget;
-    readonly value  : Expression;
+export class Subroutine {
+    
+    readonly expression : Expression;
+    readonly localIndex : number;
 
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(operation: string, index: number, value: Expression) {
-        super(value.dimensions, value.degree);
-        this.target = getStoreTarget(operation);
-        this._index = index;
-        this.value = value;
+    constructor(expression: Expression, localIndex: number) {
+        this.expression = expression;
+        this.localIndex = localIndex;
     }
 
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get index(): number {
-        return this._index;
+    get dimensions(): Dimensions {
+        return this.expression.dimensions;
     }
 
-    // PUBLIC MEMBERS
+    get degree(): ExpressionDegree {
+        return this.expression.degree;
+    }
+
+    // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     updateAccessorIndex(target: StoreTarget, fromIdx: number, toIdx: number): void {
+        // TODO
+        /*
         if (this.target === target && this._index === fromIdx) {
             this._index = toIdx;
         }
+        */
     }
 
-    toString(): string {
-        return `(store.${this.target} ${this.index} ${this.value.toString()})`;
+    toString() {
+        return `(store.local ${this.localIndex} ${this.expression.toString()})`;
     }
 }

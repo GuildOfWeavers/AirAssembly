@@ -134,12 +134,9 @@ function initProof(inputs, extensionFactor) {
         const factor = register.secret ? extensionFactor : compositionFactor;
         const poly = interpolateRegisterValues(register.values, domain);
         let evaluations;
-        if (register.type === 3 /* cyclic */) {
+        if (register.type === 'cyclic') {
             const subdomain = buildSubdomain(domain, register.values.length * factor);
             evaluations = f.evalPolyAtRoots(poly, subdomain);
-        }
-        else if (register.type === 1 /* sparseInput */) {
-            evaluations = f.evalPolyAtRoots(poly, domain);
         }
         else {
             evaluations = f.evalPolyAtRoots(poly, domain);

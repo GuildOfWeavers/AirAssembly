@@ -6,6 +6,4 @@ var CyclicRegister_1 = require("./CyclicRegister");
 exports.CyclicRegister = CyclicRegister_1.CyclicRegister;
 var InputRegister_1 = require("./InputRegister");
 exports.InputRegister = InputRegister_1.InputRegister;
-var LocalVariable_1 = require("./LocalVariable");
-exports.LocalVariable = LocalVariable_1.LocalVariable;
 //# sourceMappingURL=index.js.map

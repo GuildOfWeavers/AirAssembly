@@ -108,10 +108,6 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                         return this.ACTION(() => Number.parseInt(index, 10));
                     } }
             ]);
-            const filling = this.OR3([
-                { ALT: () => this.CONSUME(lexer_1.Sparse).image },
-                { ALT: () => this.CONSUME(lexer_1.Filled).image }
-            ]);
             const steps = this.OPTION2(() => {
                 this.CONSUME3(lexer_1.LParen);
                 this.CONSUME(lexer_1.Steps);
@@ -120,7 +116,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 return this.ACTION(() => Number.parseInt(steps, 10));
             });
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => schema.addInputRegister(scope, binary, typeOrParent, filling, steps));
+            this.ACTION(() => schema.addInputRegister(scope, binary, typeOrParent, steps));
         });
         this.cyclicRegister = this.RULE('cyclicRegister', (schema) => {
             const values = [];
@@ -148,12 +144,12 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             // locals
             const locals = [];
             this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            this.ACTION(() => schema.setTransitionFunctionMeta(span, width, locals));
             // body
-            const storeExpressions = [];
-            this.MANY2(() => storeExpressions.push(this.SUBRULE(this.storeExpression, { ARGS: [schema] })));
-            const resultExpression = this.SUBRULE(this.expression, { ARGS: [schema] });
-            this.ACTION(() => schema.setTransitionFunctionBody(resultExpression, storeExpressions));
+            let procedure;
+            this.ACTION(() => procedure = schema.setTransitionFunction(span, width, locals));
+            this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
+            const resultExpression = this.SUBRULE(this.expression, { ARGS: [procedure] });
+            this.ACTION(() => schema.transitionFunction.result = resultExpression);
             this.CONSUME1(lexer_1.RParen);
         });
         this.transitionConstraints = this.RULE('transitionConstraints', (schema) => {
@@ -172,12 +168,12 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             // locals
             const locals = [];
             this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            this.ACTION(() => schema.setTransitionConstraintsMeta(span, width, locals));
             // body
-            const storeExpressions = [];
-            this.MANY2(() => storeExpressions.push(this.SUBRULE(this.storeExpression, { ARGS: [schema] })));
-            const resultExpression = this.SUBRULE(this.expression, { ARGS: [schema] });
-            this.ACTION(() => schema.setTransitionConstraintsBody(resultExpression, storeExpressions));
+            let procedure;
+            this.ACTION(() => procedure = schema.setConstraintEvaluator(span, width, locals));
+            this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
+            const resultExpression = this.SUBRULE(this.expression, { ARGS: [procedure] });
+            this.ACTION(() => schema.constraintEvaluator.result = resultExpression);
             this.CONSUME(lexer_1.RParen);
         });
         this.localDeclaration = this.RULE('localDeclaration', () => {
@@ -186,93 +182,96 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const result = this.OR([
                 { ALT: () => {
                         this.CONSUME(lexer_1.Scalar);
-                        return this.ACTION(() => new declarations_1.LocalVariable(0n));
+                        return this.ACTION(() => expressions_1.Dimensions.scalar());
                     } },
                 { ALT: () => {
                         this.CONSUME(lexer_1.Vector);
                         const length = this.SUBRULE1(this.integerLiteral);
-                        return this.ACTION(() => {
-                            return new declarations_1.LocalVariable(new Array(length).fill(0n));
-                        });
+                        return this.ACTION(() => expressions_1.Dimensions.vector(length));
                     } },
                 { ALT: () => {
                         this.CONSUME(lexer_1.Matrix);
                         const rowCount = this.SUBRULE2(this.integerLiteral);
                         const colCount = this.SUBRULE3(this.integerLiteral);
-                        return this.ACTION(() => {
-                            const rowDegree = new Array(colCount).fill(0n);
-                            return new declarations_1.LocalVariable(new Array(rowCount).fill(rowDegree));
-                        });
+                        return this.ACTION(() => expressions_1.Dimensions.matrix(rowCount, colCount));
                     } }
             ]);
             this.CONSUME(lexer_1.RParen);
             return result;
         });
+        this.procedureSubroutine = this.RULE('procedureSubroutine', (ctx) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.StoreOp);
+            const index = this.SUBRULE(this.integerLiteral);
+            const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => ctx.addSubroutine(value, index));
+        });
         // EXPRESSIONS
         // --------------------------------------------------------------------------------------------
-        this.expression = this.RULE('expression', (schema) => {
+        this.expression = this.RULE('expression', (ctx) => {
             const result = this.OR([
-                { ALT: () => this.SUBRULE(this.binaryOperation, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.unaryOperation, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.makeVector, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.getVectorElement, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.sliceVector, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.makeMatrix, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.loadExpression, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.literalScalar, { ARGS: [schema] }) }
+                { ALT: () => this.SUBRULE(this.binaryOperation, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.unaryOperation, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.makeVector, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.getVectorElement, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.sliceVector, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.makeMatrix, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.loadExpression, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.literalScalar, { ARGS: [ctx] }) }
             ]);
             return result;
         });
-        this.binaryOperation = this.RULE('binaryOperation', (schema) => {
+        this.binaryOperation = this.RULE('binaryOperation', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             const op = this.CONSUME(lexer_1.BinaryOp).image;
-            const lhs = this.SUBRULE1(this.expression, { ARGS: [schema] });
-            const rhs = this.SUBRULE2(this.expression, { ARGS: [schema] });
+            const lhs = this.SUBRULE1(this.expression, { ARGS: [ctx] });
+            const rhs = this.SUBRULE2(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.BinaryOperation(op, lhs, rhs));
         });
-        this.unaryOperation = this.RULE('unaryOperation', (schema) => {
+        this.unaryOperation = this.RULE('unaryOperation', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             const op = this.CONSUME(lexer_1.UnaryOp).image;
-            const value = this.SUBRULE(this.expression, { ARGS: [schema] });
+            const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.UnaryOperation(op, value));
         });
         // VECTORS AND MATRIXES
         // --------------------------------------------------------------------------------------------
-        this.makeVector = this.RULE('makeVector', (schema) => {
+        this.makeVector = this.RULE('makeVector', (ctx) => {
             const elements = [];
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Vector);
-            this.AT_LEAST_ONE(() => elements.push(this.SUBRULE(this.expression, { ARGS: [schema] })));
+            this.AT_LEAST_ONE(() => elements.push(this.SUBRULE(this.expression, { ARGS: [ctx] })));
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.MakeVector(elements));
         });
-        this.getVectorElement = this.RULE('getVectorElement', (schema) => {
+        this.getVectorElement = this.RULE('getVectorElement', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Get);
-            const source = this.SUBRULE(this.expression, { ARGS: [schema] });
+            const source = this.SUBRULE(this.expression, { ARGS: [ctx] });
             const index = this.SUBRULE(this.integerLiteral);
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.GetVectorElement(source, index));
         });
-        this.sliceVector = this.RULE('sliceVector', (schema) => {
+        this.sliceVector = this.RULE('sliceVector', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Slice);
-            const source = this.SUBRULE(this.expression, { ARGS: [schema] });
+            const source = this.SUBRULE(this.expression, { ARGS: [ctx] });
             const startIdx = this.SUBRULE1(this.integerLiteral);
             const endIdx = this.SUBRULE2(this.integerLiteral);
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.SliceVector(source, startIdx, endIdx));
         });
-        this.makeMatrix = this.RULE('makeMatrix', (schema) => {
+        this.makeMatrix = this.RULE('makeMatrix', (ctx) => {
             const rows = [];
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Matrix);
             this.AT_LEAST_ONE1(() => {
                 const row = [];
                 this.CONSUME2(lexer_1.LParen);
-                this.AT_LEAST_ONE2(() => row.push(this.SUBRULE(this.expression, { ARGS: [schema] })));
+                this.AT_LEAST_ONE2(() => row.push(this.SUBRULE(this.expression, { ARGS: [ctx] })));
                 this.CONSUME2(lexer_1.RParen);
                 rows.push(row);
             });
@@ -281,20 +280,12 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         });
         // LOAD AND STORE OPERATIONS
         // --------------------------------------------------------------------------------------------
-        this.loadExpression = this.RULE('loadExpression', (schema) => {
+        this.loadExpression = this.RULE('loadExpression', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             const op = this.CONSUME(lexer_1.LoadOp).image;
             const index = this.SUBRULE(this.integerLiteral);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => schema.buildLoadExpression(op, index));
-        });
-        this.storeExpression = this.RULE('storeExpression', (schema) => {
-            this.CONSUME(lexer_1.LParen);
-            const op = this.CONSUME(lexer_1.StoreOp).image;
-            const index = this.SUBRULE(this.integerLiteral);
-            const value = this.SUBRULE(this.expression);
-            this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => schema.buildStoreExpression(op, index, value));
+            return this.ACTION(() => ctx.buildLoadExpression(op, index));
         });
         // LITERALS
         // --------------------------------------------------------------------------------------------

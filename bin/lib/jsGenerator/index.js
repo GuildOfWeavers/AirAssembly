@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const declarations_1 = require("../declarations");
 const inputs_1 = require("./inputs");
 const expressions = require("./expressions");
 const jsTemplate = require("./template");
@@ -53,6 +52,7 @@ exports.generateModule = generateModule;
 // HELPER FUNCTIONS
 // ================================================================================================
 function buildInputRegisters(schema) {
-    return schema.staticRegisters.filter(r => r instanceof declarations_1.InputRegister);
+    return []; // TODO
+    //return schema.staticRegisters.filter(r => r instanceof InputRegister);
 }
 //# sourceMappingURL=index.js.map

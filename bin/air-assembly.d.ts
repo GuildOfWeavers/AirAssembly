@@ -40,8 +40,9 @@ declare module '@guildofweavers/air-assembly' {
 
         readonly field                  : FiniteField;
         readonly constants              : LiteralValue[];
-        readonly staticRegisters        : any[]; // TODO: StaticRegister[];
+        readonly staticRegisters        : StaticRegister[];
         readonly transitionFunction     : Procedure;
+        readonly transitionConstraints  : any[];
         readonly constraintEvaluator    : Procedure;
 
         setField(type: 'prime', modulus: bigint): void;
@@ -55,13 +56,15 @@ declare module '@guildofweavers/air-assembly' {
         setTransitionFunctionBody(result: Expression, assignments: StoreExpression[]): void ;
 
         setTransitionConstraintsMeta(span: number, width: number, locals: LocalVariable[]): void;
-        setTransitionConstraintsBody(result: Expression, statements: StoreExpression[]): void;
+        setTransitionConstraintsBody(result: Expression, assignments: StoreExpression[]): void;
 
         buildLoadExpression(operation: string, index: number): LoadExpression;
         buildStoreExpression(operation: string, index: number, value: Expression): StoreExpression;
     }
 
     export interface Procedure {
+        readonly span           : number;
+        readonly width          : number;
         readonly locals         : Dimensions[];
         readonly assignments    : StoreExpression[];
         readonly result         : Expression;
@@ -132,10 +135,6 @@ declare module '@guildofweavers/air-assembly' {
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    export const enum StaticRegisterType {
-        sparseInput = 1, filledInput = 2, cyclic = 3
-    }
-
     export interface StaticRegister {
         readonly type   : 'input' | 'cyclic';
         readonly index  : number;
@@ -156,7 +155,7 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export interface StaticRegisterDescriptor {
-        type    : StaticRegisterType;
+        type    : 'input' | 'cyclic';
         shape   : number[];
         values  : bigint[];
         secret  : boolean;

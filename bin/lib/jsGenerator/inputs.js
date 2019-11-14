@@ -7,15 +7,7 @@ class InputProcessor {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(registers) {
-        this.registers = registers.map(register => ({
-            index: register.index,
-            type: register.type,
-            rank: register.rank,
-            secret: register.isSecret,
-            binary: register.binary,
-            cycle: register.steps,
-            parent: register.parent ? register.parent.index : undefined
-        }));
+        this.registers = registers.slice(0);
         const maxRank = this.registers.reduce((p, c) => c.rank > p ? c.rank : p, 0);
         this.levels = [];
         for (let i = 0; i <= maxRank; i++) {
@@ -38,9 +30,9 @@ class InputProcessor {
             }
         }
         const leafRegisters = this.levels[this.levels.length - 1];
-        const traceLength = values[leafRegisters[0].index].length * leafRegisters[0].cycle;
+        const traceLength = values[leafRegisters[0].index].length * leafRegisters[0].steps;
         for (let i = 1; i < leafRegisters.length; i++) {
-            if (values[leafRegisters[i].index].length * leafRegisters[0].cycle !== traceLength) {
+            if (values[leafRegisters[i].index].length * leafRegisters[0].steps !== traceLength) {
                 throw new Error('TODO');
             }
         }

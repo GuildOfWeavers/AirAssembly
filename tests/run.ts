@@ -12,9 +12,9 @@ const m = parse(Buffer.from(`
     (const (vector 1 2 3 4))
     (const (matrix (1 2) (3 4)))
     (static
-        (input public vector filled)
-        (input public (parent 0) filled (steps 4))
-        (input secret (parent 0) filled (steps 4))
+        (input public vector)
+        (input public (parent 0) (steps 4))
+        (input secret (parent 0) (steps 4))
         (cycle 42 43 170 2209 16426 78087 279978 823517))
     (transition
         (span 1) (result vector 1)
@@ -34,6 +34,6 @@ const m = parse(Buffer.from(`
 
 console.log(m.toString());
 //console.log(generateModule(m));
-const iRegisters = m.staticRegisters.filter(r => r instanceof InputRegister);;
-template.setInputProcessor(new InputProcessor(iRegisters));
-template.initProof([[1n, 2n, 3n, 4n], [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]], [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]], 8);
+//const iRegisters = m.staticRegisters.filter(r => r instanceof InputRegister);;
+//template.setInputProcessor(new InputProcessor(iRegisters));
+//template.initProof([[1n, 2n, 3n, 4n], [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]], [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]], 8);

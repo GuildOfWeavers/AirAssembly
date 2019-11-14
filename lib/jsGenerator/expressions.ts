@@ -2,9 +2,10 @@
 // ================================================================================================
 import {
     ExpressionVisitor, Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
-    GetVectorElement, SliceVector, MakeMatrix, LoadExpression, StoreExpression, TraceSegment 
+    GetVectorElement, SliceVector, MakeMatrix, LoadExpression, TraceSegment 
 } from "../expressions";
 import { getBinaryFunction, getUnaryFunction } from "./utils";
+import { Subroutine } from "../procedures";
 
 // INTERFACES
 // ================================================================================================
@@ -85,7 +86,7 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
         if (e.binding instanceof LiteralValue) {
             code = `g[${e.index}]`;
         }
-        else if (e.binding instanceof StoreExpression) {
+        else if (e.binding instanceof Subroutine) {
             code = `v${e.index}`;
         }
         else if (e.binding instanceof TraceSegment) {
@@ -106,10 +107,6 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
             code = `${code}.toValues()`;
         }
         return code;
-    }
-
-    storeExpression(e: StoreExpression): string {
-        return `v${e.index} = ${this.visit(e.value)};\n`;
     }
 }
 

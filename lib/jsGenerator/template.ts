@@ -2,7 +2,7 @@
 // ================================================================================================
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator,
-    StaticRegisterType, StaticRegisterDescriptor,
+    StaticRegisterDescriptor,
 } from "@guildofweavers/air-assembly";
 import { createPrimeField } from "@guildofweavers/galois";
 import { InputProcessor } from "./inputs";
@@ -179,12 +179,9 @@ export function initProof(inputs: any[], extensionFactor: number): any {
         const poly = interpolateRegisterValues(register.values, domain);
         let evaluations: Vector;
 
-        if (register.type === StaticRegisterType.cyclic) {
+        if (register.type === 'cyclic') {
             const subdomain = buildSubdomain(domain, register.values.length * factor);
             evaluations = f.evalPolyAtRoots(poly, subdomain);
-        }
-        else if (register.type === StaticRegisterType.sparseInput) {
-            evaluations = f.evalPolyAtRoots(poly, domain);
         }
         else {
             evaluations = f.evalPolyAtRoots(poly, domain);

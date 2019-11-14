@@ -3,12 +3,12 @@
 import { LoadSource } from '@guildofweavers/air-assembly';
 import { Expression } from './Expression';
 import { LiteralValue } from './LiteralValue';
-import { StoreExpression } from './StoreExpression';
 import { TraceSegment } from './TraceSegment';
+import { Subroutine } from '../procedures';
 
 // INTERFACES
 // ================================================================================================
-type LoadBinding = TraceSegment | LiteralValue | StoreExpression;
+type LoadBinding = TraceSegment | LiteralValue | Subroutine;
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -33,7 +33,7 @@ export class LoadExpression extends Expression {
 
     get source(): LoadSource {
         if (this.binding instanceof LiteralValue) return 'const';
-        if (this.binding instanceof StoreExpression) return 'local';
+        if (this.binding instanceof Subroutine) return 'local';
         else if (this.binding instanceof TraceSegment) return this.binding.segment;
         else throw new Error(`invalid load binding: ${this.binding}`);
     }
@@ -41,11 +41,14 @@ export class LoadExpression extends Expression {
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     collectLoadOperations(source: LoadSource, result: Map<Expression, Expression[]>): void {
+        // TODO
+        /*
         if (this.source === source) {
             const bindings = result.get(this.binding) || [];
             bindings.push(this);
             result.set(this.binding, bindings);
         }
+        */
     }
 
     updateAccessorIndex(source: LoadSource, fromIdx: number, toIdx: number): void {

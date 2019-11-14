@@ -1,33 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Expression_1 = require("./Expression");
-const utils_1 = require("./utils");
 // CLASS DEFINITION
 // ================================================================================================
-class StoreExpression extends Expression_1.Expression {
+class Subroutine {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(operation, index, value) {
-        super(value.dimensions, value.degree);
-        this.target = utils_1.getStoreTarget(operation);
-        this._index = index;
-        this.value = value;
+    constructor(expression, localIndex) {
+        this.expression = expression;
+        this.localIndex = localIndex;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get index() {
-        return this._index;
+    get dimensions() {
+        return this.expression.dimensions;
     }
-    // PUBLIC MEMBERS
+    get degree() {
+        return this.expression.degree;
+    }
+    // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     updateAccessorIndex(target, fromIdx, toIdx) {
+        // TODO
+        /*
         if (this.target === target && this._index === fromIdx) {
             this._index = toIdx;
         }
+        */
     }
     toString() {
-        return `(store.${this.target} ${this.index} ${this.value.toString()})`;
+        return `(store.local ${this.localIndex} ${this.expression.toString()})`;
     }
 }
-exports.StoreExpression = StoreExpression;
-//# sourceMappingURL=StoreExpression.js.map
+exports.Subroutine = Subroutine;
+//# sourceMappingURL=Subroutine.js.map

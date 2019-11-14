@@ -1,21 +1,19 @@
 // IMPORTS
 // ================================================================================================
-import { StoreExpression } from "../expressions";
-import { Dimensions, ExpressionDegree, degreeToDimensions } from "../expressions/utils";
+import { Dimensions } from "../expressions/utils";
+import { Subroutine } from "./Subroutine";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class LocalVariable {
 
     readonly dimensions : Dimensions;
-    readonly degree     : ExpressionDegree;
-    private binding?    : StoreExpression;
+    private binding?    : Subroutine;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(degree: ExpressionDegree) {
-        this.degree = degree;
-        this.dimensions = degreeToDimensions(degree);
+    constructor(dimensions: Dimensions) {
+        this.dimensions = dimensions;
     }
 
     // ACCESSORS
@@ -24,14 +22,14 @@ export class LocalVariable {
         return this.binding !== undefined;
     }
 
-    getBinding(index: number): StoreExpression {
+    getBinding(index: number): Subroutine {
         if (!this.binding) throw new Error(`local variable ${index} has not yet been set`);
         return this.binding;
     }
 
-    bind(value: StoreExpression, index: number) {
-        if (!Dimensions.areSameDimensions(this.dimensions, value.dimensions)) {
-            const vd = value.dimensions;
+    bind(value: Subroutine, index: number) {
+        if (!Dimensions.areSameDimensions(this.dimensions, value.expression.dimensions)) {
+            const vd = value.expression.dimensions;
             throw new Error(`cannot store ${vd[0]}x${vd[1]} value in local variable ${index}`);
         }
         this.binding = value;

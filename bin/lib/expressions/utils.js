@@ -6,7 +6,6 @@ const sources = {
     'load.const': 'const',
     'load.trace': 'trace',
     'load.static': 'static',
-    'load.input': 'input',
     'load.local': 'local',
 };
 function getLoadSource(operation) {

@@ -22,8 +22,6 @@ export const Secret     = createToken({ name: "Secret",         pattern: /secret
 export const Public     = createToken({ name: "Public",         pattern: /public/           });
 export const Binary     = createToken({ name: "Binary",         pattern: /binary/           });
 export const Parent     = createToken({ name: "Parent",         pattern: /parent/           });
-export const Sparse     = createToken({ name: "Sparse",         pattern: /sparse/           });
-export const Filled     = createToken({ name: "Filled",         pattern: /filled/           });
 export const Steps      = createToken({ name: "Steps",          pattern: /steps/            });
 
 export const Cycle      = createToken({ name: "Cycle",          pattern: /cycle/            });
@@ -92,7 +90,7 @@ export const Comment    = createToken({ name: "Comment",    pattern : /#.+/,    
 export const allTokens = [
     WhiteSpace, Comment,
     
-    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Sparse, Filled, Steps,
+    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps,
     Cycle, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,

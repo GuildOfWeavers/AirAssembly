@@ -20,8 +20,6 @@ exports.Secret = chevrotain_1.createToken({ name: "Secret", pattern: /secret/ })
 exports.Public = chevrotain_1.createToken({ name: "Public", pattern: /public/ });
 exports.Binary = chevrotain_1.createToken({ name: "Binary", pattern: /binary/ });
 exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/ });
-exports.Sparse = chevrotain_1.createToken({ name: "Sparse", pattern: /sparse/ });
-exports.Filled = chevrotain_1.createToken({ name: "Filled", pattern: /filled/ });
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/ });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/ });
 exports.When = chevrotain_1.createToken({ name: "When", pattern: /when/ });
@@ -75,7 +73,7 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 // ================================================================================================
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
-    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Sparse, exports.Filled, exports.Steps,
+    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps,
     exports.Cycle, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv, exports.BooleanOp, exports.And, exports.Or, exports.Not,

@@ -63,5 +63,6 @@ export function generateModule(schema: AirSchema): AirModule {
 // HELPER FUNCTIONS
 // ================================================================================================
 function buildInputRegisters(schema: AirSchema): InputRegister[] {
-    return schema.staticRegisters.filter(r => r instanceof InputRegister);
+    return []; // TODO
+    //return schema.staticRegisters.filter(r => r instanceof InputRegister);
 }

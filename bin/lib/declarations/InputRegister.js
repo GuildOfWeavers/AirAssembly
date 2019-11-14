@@ -5,29 +5,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class InputRegister {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(index, scope, rank, binary, filling, parent, steps) {
+    constructor(index, scope, rank, binary, parent, steps) {
         if (scope !== 'public' && scope !== 'secret')
             throw new Error(`invalid input register scope '${scope}'`);
-        if (filling !== 'sparse' && filling !== 'filled')
-            throw new Error(`invalid input register filling '${filling}'`);
         this.index = index;
-        this.scope = scope;
+        this.secret = (scope === 'secret');
         this.rank = rank;
         this.binary = binary;
-        this.filling = filling;
-        this.parent = parent;
+        this.parent = parent ? parent.index : undefined;
         this.steps = steps;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get type() {
-        if (this.filling === 'sparse')
-            return 1 /* sparseInput */;
-        else
-            return 2 /* filledInput */;
-    }
-    get isSecret() {
-        return (this.scope === 'secret');
+        return 'input';
     }
     get isRoot() {
         return (this.parent === undefined);
@@ -38,10 +29,11 @@ class InputRegister {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
+        const scope = this.secret ? 'secret' : 'public';
         const type = getTypeExpression(this.rank, this.parent);
         const binary = this.binary ? ` binary` : ``;
-        const steps = (this.steps !== undefined) ? `(steps ${this.steps})` : '';
-        return `(input ${this.scope}${binary} ${type} ${this.filling}${steps})`;
+        const steps = (this.steps !== undefined) ? ` (steps ${this.steps})` : '';
+        return `(input ${scope}${binary} ${type}${steps})`;
     }
 }
 exports.InputRegister = InputRegister;
@@ -53,9 +45,9 @@ function getTypeExpression(rank, parent) {
     else if (rank === 1)
         return 'vector';
     else {
-        if (!parent)
+        if (parent === undefined)
             throw new Error(`TODO`);
-        return `(parent ${parent.index})`;
+        return `(parent ${parent})`;
     }
 }
 //# sourceMappingURL=InputRegister.js.map

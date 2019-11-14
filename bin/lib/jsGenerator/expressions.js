@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const expressions_1 = require("../expressions");
 const utils_1 = require("./utils");
+const procedures_1 = require("../procedures");
 // CODE GENERATOR CLASS
 // ================================================================================================
 class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
@@ -68,7 +69,7 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
         if (e.binding instanceof expressions_1.LiteralValue) {
             code = `g[${e.index}]`;
         }
-        else if (e.binding instanceof expressions_1.StoreExpression) {
+        else if (e.binding instanceof procedures_1.Subroutine) {
             code = `v${e.index}`;
         }
         else if (e.binding instanceof expressions_1.TraceSegment) {
@@ -88,9 +89,6 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
             code = `${code}.toValues()`;
         }
         return code;
-    }
-    storeExpression(e) {
-        return `v${e.index} = ${this.visit(e.value)};\n`;
     }
 }
 // PUBLIC FUNCTIONS
