@@ -42,7 +42,7 @@ class LiteralValue extends Expression_1.Expression {
     // --------------------------------------------------------------------------------------------
     toString() {
         if (this.isScalar) {
-            return `${this.value}`;
+            return `(scalar ${this.value})`;
         }
         else if (this.isVector) {
             return `(vector ${this.value.join(' ')})`;

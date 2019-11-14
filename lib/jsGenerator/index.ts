@@ -18,7 +18,7 @@ export function generateModule(schema: AirSchema): AirModule {
     code += `\nfunction applyTransition(r, k) {\n`;
     if (tFunction.locals.length > 0) {
         code += 'let ' + tFunction.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
-        code += tFunction.assignments.map(a => `v${a.index} = ${expressions.toJsCode(a.value)};\n`);
+        code += tFunction.subroutines.map(a => `v${a.localIndex} = ${expressions.toJsCode(a.expression)};\n`);
     }
     code += expressions.toJsCode(tFunction.result);
     code += '\n}\n';
@@ -28,7 +28,7 @@ export function generateModule(schema: AirSchema): AirModule {
     code += `\nfunction evaluateConstraints(r, k, n) {\n`;
     if (cEvaluator.locals.length > 0) {
         code += 'let ' + cEvaluator.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
-        code += cEvaluator.assignments.map(a => `v${a.index} = ${expressions.toJsCode(a.value)};\n`);
+        code += cEvaluator.subroutines.map(a => `v${a.localIndex} = ${expressions.toJsCode(a.expression)};\n`);
     }
     code += expressions.toJsCode(cEvaluator.result);
     code += '\n}\n';

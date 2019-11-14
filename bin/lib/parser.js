@@ -20,7 +20,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Module);
             this.SUBRULE(this.fieldDeclaration, { ARGS: [schema] });
-            this.MANY(() => this.SUBRULE(this.constantDeclaration, { ARGS: [schema] }));
+            this.MANY(() => this.SUBRULE(this.constantDeclarations, { ARGS: [schema] }));
             this.OPTION(() => this.SUBRULE(this.staticRegisters, { ARGS: [schema] }));
             this.SUBRULE(this.transitionFunction, { ARGS: [schema] });
             this.SUBRULE(this.transitionConstraints, { ARGS: [schema] });
@@ -40,16 +40,20 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         });
         // GLOBAL CONSTANTS
         // --------------------------------------------------------------------------------------------
-        this.constantDeclaration = this.RULE('constantDeclaration', (schema) => {
+        this.constantDeclarations = this.RULE('constantDeclarations', (schema) => {
+            const values = [];
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Const);
-            const value = this.OR([
-                { ALT: () => this.SUBRULE(this.literalScalar) },
-                { ALT: () => this.SUBRULE(this.literalVector) },
-                { ALT: () => this.SUBRULE(this.literalMatrix) }
-            ]);
+            this.MANY(() => {
+                const value = this.OR([
+                    { ALT: () => this.SUBRULE(this.literalScalar) },
+                    { ALT: () => this.SUBRULE(this.literalVector) },
+                    { ALT: () => this.SUBRULE(this.literalMatrix) }
+                ]);
+                values.push(value);
+            });
             this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => schema.addConstant(value));
+            this.ACTION(() => schema.setConstants(values));
         });
         this.literalVector = this.RULE('literalVector', () => {
             const values = [];
@@ -74,7 +78,10 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             return this.ACTION(() => new expressions_1.LiteralValue(rows.map(r => r.map(v => BigInt(v)))));
         });
         this.literalScalar = this.RULE('literalScalar', () => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Scalar);
             const value = this.CONSUME(lexer_1.Literal).image;
+            this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.LiteralValue(BigInt(value)));
         });
         // STATIC REGISTERS

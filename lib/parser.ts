@@ -7,13 +7,13 @@ import {
     Binary, Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp,
     Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent
 } from './lexer';
+import { Procedure } from "./procedures";
 import { FieldDeclaration } from "./declarations";
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
     GetVectorElement, SliceVector, LoadExpression, Dimensions
 } from "./expressions";
 import { parserErrorMessageProvider } from "./errors";
-import { Procedure } from "./procedures";
 
 // PARSER DEFINITION
 // ================================================================================================
@@ -30,7 +30,7 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(LParen);
         this.CONSUME(Module);
         this.SUBRULE(this.fieldDeclaration,                     { ARGS: [schema] });
-        this.MANY(() => this.SUBRULE(this.constantDeclaration,  { ARGS: [schema] }));
+        this.MANY(() => this.SUBRULE(this.constantDeclarations, { ARGS: [schema] }));
         this.OPTION(() => this.SUBRULE(this.staticRegisters,    { ARGS: [schema] }));
         this.SUBRULE(this.transitionFunction,                   { ARGS: [schema] });
         this.SUBRULE(this.transitionConstraints,                { ARGS: [schema] });
@@ -52,16 +52,20 @@ class AirParser extends EmbeddedActionsParser {
 
     // GLOBAL CONSTANTS
     // --------------------------------------------------------------------------------------------
-    private constantDeclaration = this.RULE('constantDeclaration', (schema: AirSchema) => {
+    private constantDeclarations = this.RULE('constantDeclarations', (schema: AirSchema) => {
+        const values: LiteralValue[] = [];
         this.CONSUME(LParen);
         this.CONSUME(Const);
-        const value = this.OR([
-            { ALT: () => this.SUBRULE(this.literalScalar) },
-            { ALT: () => this.SUBRULE(this.literalVector) },
-            { ALT: () => this.SUBRULE(this.literalMatrix) }
-        ]);
+        this.MANY(() => {
+            const value = this.OR([
+                { ALT: () => this.SUBRULE(this.literalScalar) },
+                { ALT: () => this.SUBRULE(this.literalVector) },
+                { ALT: () => this.SUBRULE(this.literalMatrix) }
+            ]);
+            values.push(value);
+        });
         this.CONSUME(RParen);
-        this.ACTION(() => schema.addConstant(value));
+        this.ACTION(() => schema.setConstants(values));
     });
 
     private literalVector = this.RULE<LiteralValue>('literalVector', () => {
@@ -89,7 +93,10 @@ class AirParser extends EmbeddedActionsParser {
     });
     
     private literalScalar = this.RULE<LiteralValue>('literalScalar', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Scalar);
         const value = this.CONSUME(Literal).image;
+        this.CONSUME(RParen);
         return this.ACTION(() => new LiteralValue(BigInt(value)));
     });
 

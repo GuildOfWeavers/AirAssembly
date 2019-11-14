@@ -46,28 +46,29 @@ declare module '@guildofweavers/air-assembly' {
         readonly constraintEvaluator    : Procedure;
 
         setField(type: 'prime', modulus: bigint): void;
-
-        addConstant(value: bigint | bigint[] | bigint[][]): void;
+        setConstant(values: LiteralValue[]): void;
 
         addInputRegister(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
         addCyclicRegister(values: bigint[]): void;
 
-        setTransitionFunctionMeta(span: number, width: number, locals: LocalVariable[]): void;
-        setTransitionFunctionBody(result: Expression, assignments: StoreExpression[]): void ;
-
-        setTransitionConstraintsMeta(span: number, width: number, locals: LocalVariable[]): void;
-        setTransitionConstraintsBody(result: Expression, assignments: StoreExpression[]): void;
-
-        buildLoadExpression(operation: string, index: number): LoadExpression;
-        buildStoreExpression(operation: string, index: number, value: Expression): StoreExpression;
+        setTransitionFunction(span: number, width: number, locals: Dimensions): Procedure;
+        setConstraintEvaluator(span: number, width: number, locals: Dimensions): Procedure;
     }
 
     export interface Procedure {
         readonly span           : number;
-        readonly width          : number;
         readonly locals         : Dimensions[];
-        readonly assignments    : StoreExpression[];
+        readonly subroutines    : Subroutine[];
         readonly result         : Expression;
+        readonly resultWidth    : number;
+
+        addSubroutine(expression: Expression, localIndex: number): void;
+        setResult(expression: Expression): void;
+    }
+
+    export interface Subroutine {
+        readonly expression     : Expression;
+        readonly localIndex     : number;
     }
 
     // PUBLIC FUNCTIONS
@@ -115,20 +116,11 @@ declare module '@guildofweavers/air-assembly' {
         readonly index  : number;
     }
 
-    export class StoreExpression extends Expression {
-
-        readonly target : StoreTarget;
-        readonly index  : number;
-        readonly value  : Expression;
-
-        constructor(operation: string, index: number, value: Expression);
-    }
-
     export class LocalVariable {
 
         readonly dimensions : Dimensions;
         readonly degree     : ExpressionDegree;
-        readonly binding    : StoreExpression;
+        readonly binding    : any; // TODO
 
         constructor(degree: ExpressionDegree);
     }

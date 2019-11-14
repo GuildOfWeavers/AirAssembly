@@ -47,7 +47,7 @@ export class LiteralValue extends Expression {
     // --------------------------------------------------------------------------------------------
     toString(): string {
         if (this.isScalar) {
-            return `${this.value}`;
+            return `(scalar ${this.value})`;
         }
         else if (this.isVector) {
             return `(vector ${(this.value as bigint[]).join(' ')})`;

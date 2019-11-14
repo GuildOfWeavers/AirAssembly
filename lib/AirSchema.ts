@@ -1,19 +1,18 @@
 // IMPORTS
 // ================================================================================================
-import { StarkLimits } from "@guildofweavers/air-assembly";
+import { StarkLimits, Dimensions } from "@guildofweavers/air-assembly";
 import { LiteralValue } from "./expressions";
 import { FieldDeclaration, CyclicRegister, InputRegister } from "./declarations";
-import { Dimensions } from "./expressions/utils";
 import { Procedure } from "./procedures";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class AirSchema {
 
-    private fieldDeclaration!   : FieldDeclaration;
+    private fieldDeclaration!       : FieldDeclaration;
 
-    readonly constants          : LiteralValue[];
-    readonly staticRegisters    : any[];
+    private _constants              : LiteralValue[];
+    readonly staticRegisters        : any[];
 
     private _transitionFunction?    : Procedure;
     private _constraintEvaluator?   : Procedure;
@@ -21,7 +20,7 @@ export class AirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor() {
-        this.constants = [];
+        this._constants = [];
         this.staticRegisters = [];
     }
 
@@ -34,8 +33,13 @@ export class AirSchema {
 
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
-    addConstant(value: LiteralValue): void {
-        this.constants.push(value);
+    get constants(): LiteralValue[] {
+        return this._constants;
+    }
+
+    setConstants(values: LiteralValue[]): void {
+        if (this._constants.length > 0) throw new Error(`constants have already been set`);
+        this._constants = values;
     }
 
     // STATIC REGISTERS
@@ -111,10 +115,9 @@ export class AirSchema {
         // field, constants, static and input registers
         let code = `\n  ${this.fieldDeclaration.toString()}`;
         if (this.constants.length > 0)
-            code += '\n  ' + this.constants.map(c => `(const ${c.toString()})`).join(' ');
-        if (this.staticRegisters.length > 0) {
+            code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
+        if (this.staticRegisters.length > 0)
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
-        }
         
         // transition function
         code += this.transitionFunction.toString();

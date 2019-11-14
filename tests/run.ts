@@ -8,9 +8,10 @@ import { AirSchema } from '../lib/AirSchema';
 const m = parse(Buffer.from(`
 (module
     (field prime 340282366920938463463374607393113505793)
-    (const 3)
-    (const (vector 1 2 3 4))
-    (const (matrix (1 2) (3 4)))
+    (const 
+        (scalar 3)
+        (vector 1 2 3 4)
+        (matrix (1 2) (3 4)))
     (static
         (input public vector)
         (input public (parent 0) (steps 4))
@@ -19,9 +20,9 @@ const m = parse(Buffer.from(`
     (transition
         (span 1) (result vector 1)
         (local scalar)
-        (store.local 0 4)
+        (store.local 0 (scalar 4))
         (add
-            (exp (load.trace 0) 3)
+            (exp (load.trace 0) (scalar 3))
             (get (load.static 0) 1)))
     (evaluation
         (span 2) (result vector 1)

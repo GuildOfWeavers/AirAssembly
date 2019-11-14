@@ -8,7 +8,7 @@ class AirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor() {
-        this.constants = [];
+        this._constants = [];
         this.staticRegisters = [];
     }
     // FIELD
@@ -20,8 +20,13 @@ class AirSchema {
     }
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
-    addConstant(value) {
-        this.constants.push(value);
+    get constants() {
+        return this._constants;
+    }
+    setConstants(values) {
+        if (this._constants.length > 0)
+            throw new Error(`constants have already been set`);
+        this._constants = values;
     }
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
@@ -92,10 +97,9 @@ class AirSchema {
         // field, constants, static and input registers
         let code = `\n  ${this.fieldDeclaration.toString()}`;
         if (this.constants.length > 0)
-            code += '\n  ' + this.constants.map(c => `(const ${c.toString()})`).join(' ');
-        if (this.staticRegisters.length > 0) {
+            code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
+        if (this.staticRegisters.length > 0)
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
-        }
         // transition function
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
