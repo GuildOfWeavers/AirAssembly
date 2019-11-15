@@ -12,7 +12,7 @@ export class InputProcessor {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(registers: InputRegister[]) {
+    constructor(registers: ReadonlyArray<InputRegister>) {
         this.registers = registers.slice(0);
 
         const maxRank = this.registers.reduce((p, c) => c.rank > p ? c.rank : p, 0);
@@ -24,7 +24,7 @@ export class InputProcessor {
 
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
-    digest(inputs: any[]): { traceLength: number; registers: StaticRegisterDescriptor[]; } {
+    digest(inputs: any[]): { traceLength: number; inputRegisters: StaticRegisterDescriptor[]; } {
         const shapes = new Array<number[]>(this.registers.length);
         const values = new Array<bigint[]>(this.registers.length);
     
@@ -47,14 +47,14 @@ export class InputProcessor {
             }
         }
 
-        const registers = this.registers.map((register, i) => ({
+        const inputRegisters = this.registers.map((register, i) => ({
             type    : register.type,
             shape   : shapes[i],
             values  : values[i],
             secret  : register.secret
         }));
 
-        return { traceLength, registers };
+        return { traceLength, inputRegisters };
     }
 }
 

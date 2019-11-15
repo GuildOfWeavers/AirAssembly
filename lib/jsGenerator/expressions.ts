@@ -91,14 +91,14 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
         }
         else if (e.binding instanceof TraceSegment) {
             if (e.binding.segment === 'static') {
-                code = 'k'
+                code = 'f.newVectorFrom(k)';        // TODO
             }
             else if (e.binding.segment === 'trace') {
                 if (e.index === 0) {
-                    code = 'r'
+                    code = 'f.newVectorFrom(r)';    // TODO
                 }
                 else if (e.index === 1) {
-                    code = 'n';
+                    code = 'f.newVectorFrom(n)';    // TODO
                 }
             }
         }

@@ -1,16 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const galois_1 = require("@guildofweavers/galois");
 // MODULE VARIABLE PLACEHOLDERS
 // ================================================================================================
-const f = galois_1.createPrimeField(96769n, false);
+const f = undefined;
 const traceRegisterCount = 0;
-let inputProcessor = undefined;
+const inputProcessor = undefined;
+const cyclicRegisters = undefined;
 const compositionFactor = 4;
-function setInputProcessor(ip) {
-    inputProcessor = ip;
-}
-exports.setInputProcessor = setInputProcessor;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
 const applyTransition = function () { return []; };
@@ -19,7 +15,7 @@ const evaluateConstraints = function () { return []; };
 // ================================================================================================
 function initProof(inputs, extensionFactor) {
     // validate inputs
-    const { traceLength, registers } = inputProcessor.digest(inputs);
+    const { traceLength, inputRegisters } = inputProcessor.digest(inputs);
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -33,17 +29,8 @@ function initProof(inputs, extensionFactor) {
     // create a variable to hold secret register traces
     const secretRegisterTraces = [];
     // build static register evaluators
-    // TODO: add cyclic registers
-    const kRegisters = registers.map(r => buildStaticRegisterEvaluator(r));
-    const test1 = [];
-    const test2 = [];
-    const test3 = [];
-    for (let i = 0; i < compositionDomainSize; i++) {
-        test1.push(kRegisters[0](i));
-        test2.push(kRegisters[1](i));
-        test3.push(kRegisters[2](i));
-    }
-    console.log('done!');
+    const staticRegisters = [...inputRegisters, ...cyclicRegisters];
+    const kRegisters = staticRegisters.map(r => buildStaticRegisterEvaluator(r));
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace() {

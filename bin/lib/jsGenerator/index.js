@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const inputs_1 = require("./inputs");
 const expressions = require("./expressions");
 const jsTemplate = require("./template");
+const galois_1 = require("@guildofweavers/galois");
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
@@ -13,7 +14,8 @@ const procedureSignatures = {
 // ================================================================================================
 function generateModule(schema) {
     let code = `'use strict';\n\n`;
-    // code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
+    code += `const traceRegisterCount = ${schema.transitionFunction.resultLength};\n`;
+    code += `const compositionFactor = 4;\n`; // TODO
     // build transition function and constraint evaluator
     code += generateProcedureCode(schema.transitionFunction);
     code += generateProcedureCode(schema.constraintEvaluator);
@@ -32,28 +34,33 @@ function generateModule(schema) {
     code += `initProof,\n`;
     code += `initVerification\n`;
     code += '};';
-    const inputProcessor = new inputs_1.InputProcessor(buildInputRegisters(schema));
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'inputProcessor', code);
-    return buildModule(
-    // TODO
-    inputProcessor);
+    const buildModule = new Function('f', 'g', 'inputProcessor', 'cyclicRegisters', code);
+    return buildModule(buildField(schema), schema.constants.map(c => c.value), new inputs_1.InputProcessor(schema.staticRegisters.inputs), buildCyclicRegisters(schema));
 }
 exports.generateModule = generateModule;
 // HELPER FUNCTIONS
 // ================================================================================================
-function buildInputRegisters(schema) {
-    return []; // TODO
-    //return schema.staticRegisters.filter(r => r instanceof InputRegister);
-}
 function generateProcedureCode(procedure) {
     let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
     if (procedure.locals.length > 0) {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
         code += procedure.subroutines.map(a => `v${a.localVarIdx} = ${expressions.toJsCode(a.expression)};\n`);
     }
-    code += expressions.toJsCode(procedure.result);
+    code += `return ${expressions.toJsCode(procedure.result)}.toValues();`; // TODO
     code += '\n}\n';
     return code;
+}
+function buildField(schema) {
+    // TODO: check type
+    return galois_1.createPrimeField(schema.field.modulus);
+}
+function buildCyclicRegisters(schema) {
+    return schema.staticRegisters.cyclic.map(r => ({
+        type: 'cyclic',
+        shape: [1, r.values.length],
+        values: r.values,
+        secret: false,
+    }));
 }
 //# sourceMappingURL=index.js.map

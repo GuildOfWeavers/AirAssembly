@@ -149,6 +149,28 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export class BinaryOperation extends Expression {
+        readonly operation  : string;
+        readonly lhs        : Expression;
+        readonly rhs        : Expression;
+    }
+
+    export class UnaryOperation extends Expression {
+
+    }
+
+    export class MakeVector extends Expression {
+
+    }
+
+    export class GetVectorElement extends Expression {
+
+    }
+
+    export class SliceVector extends Expression {
+
+    }
+
+    export class MakeMatrix extends Expression {
 
     }
 
@@ -171,7 +193,7 @@ declare module '@guildofweavers/air-assembly' {
          * Creates proof object for the provided input values
          * @param inputs values for initializing input registers
          */
-        initProof(inputs: any[]): ProofObject;
+        initProof(inputs: any[], extensionFactor: number): ProofObject;
 
         /**
          * Creates verification object for the specified trace shape and public inputs
@@ -251,9 +273,9 @@ declare module '@guildofweavers/air-assembly' {
 
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
-    export function compile(path: string, limits?: StarkLimits): AirSchema;
-    export function compile(source: Buffer, limits?: StarkLimits): AirSchema;
+    export function compile(path: string, limits?: Partial<StarkLimits>): AirSchema;
+    export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
 
-    export function instantiate(path: string, options?: ModuleOptions): Promise<AirModule>;
-    export function instantiate(source: Buffer, options?: ModuleOptions): Promise<AirModule>;
+    export function instantiate(path: string, options?: Partial<ModuleOptions>): Promise<AirModule>;
+    export function instantiate(source: Buffer, options?: Partial<ModuleOptions>): Promise<AirModule>;
 }

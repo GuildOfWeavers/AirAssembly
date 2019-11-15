@@ -36,13 +36,13 @@ class InputProcessor {
                 throw new Error('TODO');
             }
         }
-        const registers = this.registers.map((register, i) => ({
+        const inputRegisters = this.registers.map((register, i) => ({
             type: register.type,
             shape: shapes[i],
             values: values[i],
             secret: register.secret
         }));
-        return { traceLength, registers };
+        return { traceLength, inputRegisters };
     }
 }
 exports.InputProcessor = InputProcessor;

@@ -1,10 +1,8 @@
 // INTERFACE IMPORTS
 // ================================================================================================
 import {
-    FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator,
-    StaticRegisterDescriptor,
+    FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, StaticRegisterDescriptor
 } from "@guildofweavers/air-assembly";
-import { createPrimeField } from "@guildofweavers/galois";
 import { InputProcessor } from "./inputs";
 
 // INTERFACES
@@ -13,15 +11,12 @@ export type StaticRegisterEvaluator<T extends bigint | number> = (x: T) => bigin
 
 // MODULE VARIABLE PLACEHOLDERS
 // ================================================================================================
-const f: FiniteField = createPrimeField(96769n, false);
+const f: FiniteField = undefined as any;
 const traceRegisterCount = 0;
 
-let inputProcessor: InputProcessor = undefined as any;
+const inputProcessor: InputProcessor = undefined as any;
+const cyclicRegisters: StaticRegisterDescriptor[] = undefined as any;
 const compositionFactor = 4;
-
-export function setInputProcessor(ip: InputProcessor) {
-    inputProcessor = ip;
-}
 
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -33,7 +28,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 export function initProof(inputs: any[], extensionFactor: number): any {
 
     // validate inputs
-    const { traceLength, registers } = inputProcessor.digest(inputs);
+    const { traceLength, inputRegisters } = inputProcessor.digest(inputs);
 
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
@@ -52,18 +47,8 @@ export function initProof(inputs: any[], extensionFactor: number): any {
     const secretRegisterTraces: Vector[] = [];
 
     // build static register evaluators
-    // TODO: add cyclic registers
-    const kRegisters = registers.map(r => buildStaticRegisterEvaluator(r));
-
-    const test1: bigint[] = [];
-    const test2: bigint[] = [];
-    const test3: bigint[] = [];
-    for (let i = 0; i < compositionDomainSize; i++) {
-        test1.push(kRegisters[0](i));
-        test2.push(kRegisters[1](i));
-        test3.push(kRegisters[2](i));
-    }
-    console.log('done!');
+    const staticRegisters = [...inputRegisters, ...cyclicRegisters];
+    const kRegisters = staticRegisters.map(r => buildStaticRegisterEvaluator(r));
 
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------

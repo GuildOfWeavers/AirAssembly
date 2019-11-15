@@ -1,10 +1,11 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema, AirModule, Procedure } from "@guildofweavers/air-assembly";
+import { AirSchema, AirModule, Procedure, StaticRegisterDescriptor } from "@guildofweavers/air-assembly";
 import { InputRegister } from "../registers";
 import { InputProcessor } from "./inputs";
 import * as expressions from "./expressions";
 import * as jsTemplate from './template';
+import { createPrimeField, FiniteField } from "@guildofweavers/galois";
 
 // MODULE VARIABLES
 // ================================================================================================
@@ -18,7 +19,8 @@ const procedureSignatures = {
 export function generateModule(schema: AirSchema): AirModule {
     let code = `'use strict';\n\n`;
 
-    // code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
+    code += `const traceRegisterCount = ${schema.transitionFunction.resultLength};\n`;
+    code += `const compositionFactor = 4;\n`; // TODO
 
     // build transition function and constraint evaluator
     code += generateProcedureCode(schema.transitionFunction);
@@ -41,30 +43,39 @@ export function generateModule(schema: AirSchema): AirModule {
      code += `initVerification\n`;
      code += '};';
 
-    const inputProcessor = new InputProcessor(buildInputRegisters(schema));
-
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'inputProcessor', code);
+    const buildModule = new Function('f', 'g', 'inputProcessor', 'cyclicRegisters', code);
     return buildModule(
-        // TODO
-        inputProcessor
+        buildField(schema),
+        schema.constants.map(c => c.value),
+        new InputProcessor(schema.staticRegisters.inputs),
+        buildCyclicRegisters(schema)
     );
 }
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function buildInputRegisters(schema: AirSchema): InputRegister[] {
-    return []; // TODO
-    //return schema.staticRegisters.filter(r => r instanceof InputRegister);
-}
-
 function generateProcedureCode(procedure: Procedure): string {
     let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
     if (procedure.locals.length > 0) {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
         code += procedure.subroutines.map(a => `v${a.localVarIdx} = ${expressions.toJsCode(a.expression)};\n`);
     }
-    code += expressions.toJsCode(procedure.result);
+    code += `return ${expressions.toJsCode(procedure.result)}.toValues();`; // TODO
     code += '\n}\n';
     return code;
+}
+
+function buildField(schema: AirSchema): FiniteField {
+    // TODO: check type
+    return createPrimeField(schema.field.modulus);
+}
+
+function buildCyclicRegisters(schema: AirSchema): StaticRegisterDescriptor[] {
+    return schema.staticRegisters.cyclic.map(r => ({
+        type    : 'cyclic',
+        shape   : [1, r.values.length], // TODO: remove?
+        values  : r.values,
+        secret  : false,
+    }));
 }
