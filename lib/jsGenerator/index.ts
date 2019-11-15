@@ -1,11 +1,11 @@
 // IMPORTS
 // ================================================================================================
 import { AirSchema, AirModule, Procedure, StaticRegisterDescriptor } from "@guildofweavers/air-assembly";
-import { InputRegister } from "../registers";
-import { InputProcessor } from "./inputs";
+import { createPrimeField, FiniteField } from "@guildofweavers/galois";
+import { StaticRegisters } from './registers';
 import * as expressions from "./expressions";
 import * as jsTemplate from './template';
-import { createPrimeField, FiniteField } from "@guildofweavers/galois";
+
 
 // MODULE VARIABLES
 // ================================================================================================
@@ -44,12 +44,11 @@ export function generateModule(schema: AirSchema): AirModule {
      code += '};';
 
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'inputProcessor', 'cyclicRegisters', code);
+    const buildModule = new Function('f', 'g', 'staticRegisters', code);
     return buildModule(
         buildField(schema),
         schema.constants.map(c => c.value),
-        new InputProcessor(schema.staticRegisters.inputs),
-        buildCyclicRegisters(schema)
+        new StaticRegisters(schema.staticRegisters)
     );
 }
 

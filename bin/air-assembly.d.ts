@@ -108,7 +108,7 @@ declare module '@guildofweavers/air-assembly' {
 
     export interface StaticRegisterDescriptor {
         readonly type   : StaticRegisterType;
-        readonly shape  : number[];
+        readonly shape? : number[];
         readonly values : bigint[];
         readonly secret : boolean;
     }
@@ -117,6 +117,8 @@ declare module '@guildofweavers/air-assembly' {
                
         readonly size   : number;
         readonly inputs : ReadonlyArray<InputRegister>;
+        readonly cyclic : ReadonlyArray<CyclicRegister>;
+        readonly masked : ReadonlyArray<MaskRegister>;
 
         addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
         addCyclic(values: bigint[]): void;

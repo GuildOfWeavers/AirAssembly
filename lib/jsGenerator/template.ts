@@ -3,7 +3,7 @@
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, StaticRegisterDescriptor
 } from "@guildofweavers/air-assembly";
-import { InputProcessor } from "./inputs";
+import { StaticRegisters } from "./registers";
 
 // INTERFACES
 // ================================================================================================
@@ -14,8 +14,7 @@ export type StaticRegisterEvaluator<T extends bigint | number> = (x: T) => bigin
 const f: FiniteField = undefined as any;
 const traceRegisterCount = 0;
 
-const inputProcessor: InputProcessor = undefined as any;
-const cyclicRegisters: StaticRegisterDescriptor[] = undefined as any;
+const staticRegisters: StaticRegisters = undefined as any;
 const compositionFactor = 4;
 
 // GENERATED FUNCTION PLACEHOLDERS
@@ -28,7 +27,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 export function initProof(inputs: any[], extensionFactor: number): any {
 
     // validate inputs
-    const { traceLength, inputRegisters } = inputProcessor.digest(inputs);
+    const { traceLength, registerSpecs } = staticRegisters.digestInputs(inputs);
 
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
@@ -47,8 +46,7 @@ export function initProof(inputs: any[], extensionFactor: number): any {
     const secretRegisterTraces: Vector[] = [];
 
     // build static register evaluators
-    const staticRegisters = [...inputRegisters, ...cyclicRegisters];
-    const kRegisters = staticRegisters.map(r => buildStaticRegisterEvaluator(r));
+    const kRegisters = registerSpecs.map(r => buildStaticRegisterEvaluator(r));
 
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
@@ -149,8 +147,7 @@ export function initProof(inputs: any[], extensionFactor: number): any {
             }
         }
 
-        // TODO:
-        return undefined as any;
+        return f.newMatrixFrom(evaluations);
     }
 
     // STATIC BUILDERS

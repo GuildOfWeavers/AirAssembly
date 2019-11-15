@@ -17,6 +17,12 @@ class StaticRegisterSet {
     get size() {
         return this.registers.length;
     }
+    get cyclic() {
+        return this.registers.filter(r => r instanceof CyclicRegister_1.CyclicRegister);
+    }
+    get masked() {
+        return this.registers.filter(r => r instanceof MaskRegister_1.MaskRegister);
+    }
     // COLLECTION METHODS
     // --------------------------------------------------------------------------------------------
     get(index) {
@@ -28,7 +34,7 @@ class StaticRegisterSet {
     forEach(callback) {
         this.registers.forEach(callback);
     }
-    // PUBLIC METHODS
+    // UPDATE METHODS
     // --------------------------------------------------------------------------------------------
     addInput(scope, binary, typeOrParent, steps) {
         if (this.size > this.inputs.length)
@@ -55,6 +61,8 @@ class StaticRegisterSet {
         const register = new MaskRegister_1.MaskRegister(this.size, source, value);
         this.registers.push(register);
     }
+    // OTHER PUBLIC METHODS
+    // --------------------------------------------------------------------------------------------
     toString() {
         if (this.size === 0)
             return '';

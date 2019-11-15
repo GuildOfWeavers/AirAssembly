@@ -4,8 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const f = undefined;
 const traceRegisterCount = 0;
-const inputProcessor = undefined;
-const cyclicRegisters = undefined;
+const staticRegisters = undefined;
 const compositionFactor = 4;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -15,7 +14,7 @@ const evaluateConstraints = function () { return []; };
 // ================================================================================================
 function initProof(inputs, extensionFactor) {
     // validate inputs
-    const { traceLength, inputRegisters } = inputProcessor.digest(inputs);
+    const { traceLength, registerSpecs } = staticRegisters.digestInputs(inputs);
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -29,8 +28,7 @@ function initProof(inputs, extensionFactor) {
     // create a variable to hold secret register traces
     const secretRegisterTraces = [];
     // build static register evaluators
-    const staticRegisters = [...inputRegisters, ...cyclicRegisters];
-    const kRegisters = staticRegisters.map(r => buildStaticRegisterEvaluator(r));
+    const kRegisters = registerSpecs.map(r => buildStaticRegisterEvaluator(r));
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace() {
@@ -110,8 +108,7 @@ function initProof(inputs, extensionFactor) {
                 }
             }
         }
-        // TODO:
-        return undefined;
+        return f.newMatrixFrom(evaluations);
     }
     // STATIC BUILDERS
     // --------------------------------------------------------------------------------------------

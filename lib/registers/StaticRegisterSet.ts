@@ -25,6 +25,14 @@ export class StaticRegisterSet {
         return this.registers.length;
     }
 
+    get cyclic(): CyclicRegister[] {
+        return this.registers.filter(r => r instanceof CyclicRegister) as CyclicRegister[];
+    }
+
+    get masked(): MaskRegister[] {
+        return this.registers.filter(r => r instanceof MaskRegister) as MaskRegister[];
+    }
+
     // COLLECTION METHODS
     // --------------------------------------------------------------------------------------------
     get(index: number): StaticRegister {
@@ -39,7 +47,7 @@ export class StaticRegisterSet {
         this.registers.forEach(callback);
     }
 
-    // PUBLIC METHODS
+    // UPDATE METHODS
     // --------------------------------------------------------------------------------------------
     addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void {
         if (this.size > this.inputs.length)
@@ -71,6 +79,8 @@ export class StaticRegisterSet {
         this.registers.push(register);
     }
 
+    // OTHER PUBLIC METHODS
+    // --------------------------------------------------------------------------------------------
     toString() {
         if (this.size === 0) return '';
         return `\n  (static\n    ${this.registers.map(r => r.toString()).join('\n    ')})`;

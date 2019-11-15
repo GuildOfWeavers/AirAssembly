@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const inputs_1 = require("./inputs");
+const galois_1 = require("@guildofweavers/galois");
+const registers_1 = require("./registers");
 const expressions = require("./expressions");
 const jsTemplate = require("./template");
-const galois_1 = require("@guildofweavers/galois");
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
@@ -35,8 +35,8 @@ function generateModule(schema) {
     code += `initVerification\n`;
     code += '};';
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'inputProcessor', 'cyclicRegisters', code);
-    return buildModule(buildField(schema), schema.constants.map(c => c.value), new inputs_1.InputProcessor(schema.staticRegisters.inputs), buildCyclicRegisters(schema));
+    const buildModule = new Function('f', 'g', 'staticRegisters', code);
+    return buildModule(buildField(schema), schema.constants.map(c => c.value), new registers_1.StaticRegisters(schema.staticRegisters));
 }
 exports.generateModule = generateModule;
 // HELPER FUNCTIONS
