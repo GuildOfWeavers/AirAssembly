@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const chevrotain_1 = require("chevrotain");
 const AirSchema_1 = require("./AirSchema");
+const registers_1 = require("./registers");
 const lexer_1 = require("./lexer");
 const expressions_1 = require("./expressions");
 const errors_1 = require("./errors");
@@ -88,14 +89,13 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.staticRegisters = this.RULE('staticRegisters', (schema) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Static);
-            this.MANY(() => this.OR([
-                { ALT: () => this.SUBRULE(this.inputRegister, { ARGS: [schema] }) },
-                { ALT: () => this.SUBRULE(this.cyclicRegister, { ARGS: [schema] }) }
-                // TODO: computed registers
-            ]));
+            const registers = new registers_1.StaticRegisterSet();
+            this.MANY1(() => this.SUBRULE(this.inputRegister, { ARGS: [registers] }));
+            this.MANY2(() => this.SUBRULE(this.cyclicRegister, { ARGS: [registers] }));
             this.CONSUME(lexer_1.RParen);
+            this.ACTION(() => schema.setStaticRegisters(registers));
         });
-        this.inputRegister = this.RULE('inputRegister', (schema) => {
+        this.inputRegister = this.RULE('inputRegister', (registers) => {
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Input);
             const scope = this.OR1([
@@ -122,15 +122,15 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 return this.ACTION(() => Number.parseInt(steps, 10));
             });
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => schema.addInputRegister(scope, binary, typeOrParent, steps));
+            this.ACTION(() => registers.addInput(scope, binary, typeOrParent, steps));
         });
-        this.cyclicRegister = this.RULE('cyclicRegister', (schema) => {
+        this.cyclicRegister = this.RULE('cyclicRegister', (registers) => {
             const values = [];
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Cycle);
             this.AT_LEAST_ONE(() => values.push(this.CONSUME(lexer_1.Literal).image));
             this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => schema.addCyclicRegister(values.map(v => BigInt(v))));
+            this.ACTION(() => registers.addCyclic(values.map(v => BigInt(v))));
         });
         // PROCEDURES
         // --------------------------------------------------------------------------------------------

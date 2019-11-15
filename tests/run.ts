@@ -1,7 +1,7 @@
 import { parse } from '../index';
 import { generateModule } from '../lib/jsGenerator';
 import * as template from '../lib/jsGenerator/template';
-import { InputRegister } from '../lib/declarations';
+import { InputRegister } from '../lib/registers';
 import { InputProcessor } from '../lib/jsGenerator/inputs';
 import { AirSchema } from '../lib/AirSchema';
 

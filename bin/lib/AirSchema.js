@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const declarations_1 = require("./declarations");
 const procedures_1 = require("./procedures");
 const galois_1 = require("@guildofweavers/galois");
+const registers_1 = require("./registers");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
@@ -10,7 +10,7 @@ class AirSchema {
     // --------------------------------------------------------------------------------------------
     constructor() {
         this._constants = [];
-        this.staticRegisters = [];
+        this._staticRegisters = new registers_1.StaticRegisterSet();
     }
     // FIELD
     // --------------------------------------------------------------------------------------------
@@ -24,44 +24,34 @@ class AirSchema {
             throw new Error('field has already been set');
         if (type !== 'prime')
             throw new Error(`field type '${type}' is not supported`);
-        this._field = galois_1.createPrimeField(modulus);
+        this._field = galois_1.createPrimeField(modulus); // TODO: wasm options
     }
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
+    get constantCount() {
+        return this._constants.length;
+    }
     get constants() {
         return this._constants;
     }
     setConstants(values) {
         if (this._constants.length > 0)
             throw new Error(`constants have already been set`);
-        this._constants = values;
+        this._constants = values.slice();
     }
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
     get staticRegisterCount() {
-        return this.staticRegisters.length;
+        return this._staticRegisters.size;
     }
-    addInputRegister(scope, binary, typeOrParent, steps) {
-        let rank = 0, parent;
-        if (typeof typeOrParent === 'number') {
-            parent = this.staticRegisters[typeOrParent];
-            if (!parent)
-                throw new Error(`TODO`);
-            // TODO: parent must be an input register
-            // TODO: parent must not be a leaf
-            rank = parent.rank + 1;
-        }
-        else if (typeOrParent === 'vector') {
-            rank = 1;
-        }
-        const index = this.staticRegisters.length;
-        const register = new declarations_1.InputRegister(index, scope, rank, binary, parent, steps);
-        this.staticRegisters.push(register);
+    get staticRegisters() {
+        return this._staticRegisters;
     }
-    addCyclicRegister(values) {
-        const index = this.staticRegisters.length;
-        const register = new declarations_1.CyclicRegister(index, values);
-        this.staticRegisters.push(register);
+    setStaticRegisters(registers) {
+        if (this._staticRegisters.size > 0)
+            throw new Error(`static registers have already been set`);
+        this._staticRegisters = registers;
+        // TODO: validate registers
     }
     // TRANSITION FUNCTION
     // --------------------------------------------------------------------------------------------
@@ -76,9 +66,10 @@ class AirSchema {
     setTransitionFunction(span, width, locals) {
         if (this._transitionFunction)
             throw new Error(`transition function has already been set`);
+        const constants = this._constants;
         const traceWidth = width;
         const staticWidth = this.staticRegisterCount;
-        this._transitionFunction = new procedures_1.Procedure('transition', span, width, this.constants, locals, traceWidth, staticWidth);
+        this._transitionFunction = new procedures_1.Procedure('transition', span, width, constants, locals, traceWidth, staticWidth);
         return this._transitionFunction;
     }
     // TRANSITION CONSTRAINTS
@@ -94,21 +85,19 @@ class AirSchema {
     setConstraintEvaluator(span, width, locals) {
         if (this._constraintEvaluator)
             throw new Error(`constraint evaluator has already been set`);
+        const constants = this._constants;
         const traceWidth = this.traceRegisterCount;
         const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new procedures_1.Procedure('evaluation', span, width, this.constants, locals, traceWidth, staticWidth);
+        this._constraintEvaluator = new procedures_1.Procedure('evaluation', span, width, constants, locals, traceWidth, staticWidth);
         return this._constraintEvaluator;
     }
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
-        // field, constants, static and input registers
         let code = `\n  (field prime ${this.field.modulus})`;
-        if (this.constants.length > 0)
+        if (this.constantCount > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
-        if (this.staticRegisters.length > 0)
-            code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
-        // transition function
+        code += this.staticRegisters.toString();
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
         return `(module${code}\n)`;

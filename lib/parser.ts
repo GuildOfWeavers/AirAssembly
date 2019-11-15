@@ -2,12 +2,13 @@
 // ================================================================================================
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
+import { StaticRegisterSet } from "./registers";
+import { Procedure } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input,
     Binary, Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp,
     Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent
 } from './lexer';
-import { Procedure } from "./procedures";
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
     GetVectorElement, SliceVector, LoadExpression, Dimensions
@@ -105,15 +106,14 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(LParen);
         this.CONSUME(Static);
         
-        this.MANY(() => this.OR([
-            { ALT: () => this.SUBRULE(this.inputRegister,   { ARGS: [schema]  })},
-            { ALT: () => this.SUBRULE(this.cyclicRegister,  { ARGS: [schema]  })}
-            // TODO: computed registers
-        ]));
+        const registers = new StaticRegisterSet();
+        this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
+        this.MANY2(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
         this.CONSUME(RParen);
+        this.ACTION(() => schema.setStaticRegisters(registers));
     });
 
-    private inputRegister = this.RULE('inputRegister', (schema: AirSchema) => {
+    private inputRegister = this.RULE('inputRegister', (registers: StaticRegisterSet) => {
         this.CONSUME1(LParen);
         this.CONSUME(Input);
 
@@ -145,16 +145,16 @@ class AirParser extends EmbeddedActionsParser {
         });
 
         this.CONSUME1(RParen);
-        this.ACTION(() => schema.addInputRegister(scope, binary, typeOrParent, steps));
+        this.ACTION(() => registers.addInput(scope, binary, typeOrParent, steps));
     });
 
-    private cyclicRegister = this.RULE('cyclicRegister', (schema: AirSchema) => {
+    private cyclicRegister = this.RULE('cyclicRegister', (registers: StaticRegisterSet) => {
         const values: string[] = [];
         this.CONSUME(LParen);
         this.CONSUME(Cycle);
         this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
         this.CONSUME(RParen);
-        this.ACTION(() => schema.addCyclicRegister(values.map(v => BigInt(v))));
+        this.ACTION(() => registers.addCyclic(values.map(v => BigInt(v))));
     });
 
     // PROCEDURES

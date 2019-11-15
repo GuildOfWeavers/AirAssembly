@@ -1,10 +1,17 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema, AirModule } from "@guildofweavers/air-assembly";
-import { InputRegister } from "../declarations";
+import { AirSchema, AirModule, Procedure } from "@guildofweavers/air-assembly";
+import { InputRegister } from "../registers";
 import { InputProcessor } from "./inputs";
 import * as expressions from "./expressions";
 import * as jsTemplate from './template';
+
+// MODULE VARIABLES
+// ================================================================================================
+const procedureSignatures = {
+    transition  : 'applyTransition(r, k)',
+    evaluation  : 'evaluateConstraints(r, k, n)'
+}
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
@@ -13,25 +20,9 @@ export function generateModule(schema: AirSchema): AirModule {
 
     // code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
 
-    // build transition function
-    const tFunction = schema.transitionFunction;
-    code += `\nfunction applyTransition(r, k) {\n`;
-    if (tFunction.locals.length > 0) {
-        code += 'let ' + tFunction.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
-        code += tFunction.subroutines.map(a => `v${a.localIndex} = ${expressions.toJsCode(a.expression)};\n`);
-    }
-    code += expressions.toJsCode(tFunction.result);
-    code += '\n}\n';
-
-    // build constraint evaluator
-    const cEvaluator = schema.constraintEvaluator;
-    code += `\nfunction evaluateConstraints(r, k, n) {\n`;
-    if (cEvaluator.locals.length > 0) {
-        code += 'let ' + cEvaluator.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
-        code += cEvaluator.subroutines.map(a => `v${a.localIndex} = ${expressions.toJsCode(a.expression)};\n`);
-    }
-    code += expressions.toJsCode(cEvaluator.result);
-    code += '\n}\n';
+    // build transition function and constraint evaluator
+    code += generateProcedureCode(schema.transitionFunction);
+    code += generateProcedureCode(schema.constraintEvaluator);
 
     // add functions from the template
     for (let prop in jsTemplate) {
@@ -65,4 +56,15 @@ export function generateModule(schema: AirSchema): AirModule {
 function buildInputRegisters(schema: AirSchema): InputRegister[] {
     return []; // TODO
     //return schema.staticRegisters.filter(r => r instanceof InputRegister);
+}
+
+function generateProcedureCode(procedure: Procedure): string {
+    let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
+    if (procedure.locals.length > 0) {
+        code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
+        code += procedure.subroutines.map(a => `v${a.localVarIdx} = ${expressions.toJsCode(a.expression)};\n`);
+    }
+    code += expressions.toJsCode(procedure.result);
+    code += '\n}\n';
+    return code;
 }

@@ -15,7 +15,7 @@ export class InputRegister implements IInputRegister {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(index: number, scope: string, rank: number, binary: boolean, parent?: InputRegister, steps?: number) {
+    constructor(index: number, scope: string, rank: number, binary: boolean, parent?: number, steps?: number) {
         if (scope !== 'public' && scope !== 'secret')
             throw new Error(`invalid input register scope '${scope}'`);
         
@@ -23,7 +23,7 @@ export class InputRegister implements IInputRegister {
         this.secret = (scope === 'secret');
         this.rank = rank;
         this.binary = binary;
-        this.parent = parent? parent.index : undefined;
+        this.parent = parent;
         this.steps = steps;
     }
 
@@ -38,7 +38,7 @@ export class InputRegister implements IInputRegister {
     }
 
     get isLeaf(): boolean {
-        return (this.steps === undefined);
+        return (this.steps !== undefined);
     }
 
     // PUBLIC METHODS

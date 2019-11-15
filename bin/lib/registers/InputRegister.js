@@ -12,7 +12,7 @@ class InputRegister {
         this.secret = (scope === 'secret');
         this.rank = rank;
         this.binary = binary;
-        this.parent = parent ? parent.index : undefined;
+        this.parent = parent;
         this.steps = steps;
     }
     // ACCESSORS
@@ -24,7 +24,7 @@ class InputRegister {
         return (this.parent === undefined);
     }
     get isLeaf() {
-        return (this.steps === undefined);
+        return (this.steps !== undefined);
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

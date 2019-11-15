@@ -39,36 +39,42 @@ declare module '@guildofweavers/air-assembly' {
     export class AirSchema {
 
         readonly field                  : FiniteField;
-        readonly constants              : LiteralValue[];
-        readonly staticRegisters        : StaticRegister[];
+        readonly constants              : ReadonlyArray<LiteralValue>;
+        readonly staticRegisters        : StaticRegisterSet;
         readonly transitionFunction     : Procedure;
         readonly transitionConstraints  : any[];
         readonly constraintEvaluator    : Procedure;
 
         setField(type: 'prime', modulus: bigint): void;
         setConstant(values: LiteralValue[]): void;
-
-        addInputRegister(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
-        addCyclicRegister(values: bigint[]): void;
-
+        setStaticRegisters(registers: StaticRegisterSet): void;
         setTransitionFunction(span: number, width: number, locals: Dimensions): Procedure;
         setConstraintEvaluator(span: number, width: number, locals: Dimensions): Procedure;
     }
 
     export interface Procedure {
+        readonly name           : 'transition' | 'evaluation';
         readonly span           : number;
-        readonly locals         : Dimensions[];
-        readonly subroutines    : Subroutine[];
+        readonly locals         : ReadonlyArray<Dimensions>;
+        readonly subroutines    : ReadonlyArray<Subroutine>;
         readonly result         : Expression;
         readonly resultWidth    : number;
 
-        addSubroutine(expression: Expression, localIndex: number): void;
+        addSubroutine(expression: Expression, localVarIdx: number): void;
         setResult(expression: Expression): void;
     }
 
     export interface Subroutine {
         readonly expression     : Expression;
-        readonly localIndex     : number;
+        readonly localVarIdx    : number;
+    }
+
+    export interface StaticRegisterSet {
+        readonly inputs     : ReadonlyArray<InputRegister>;
+        readonly cyclic     : ReadonlyArray<CyclicRegister>;
+
+        addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
+        addCyclic(values: bigint[]): void;
     }
 
     // PUBLIC FUNCTIONS
@@ -81,7 +87,7 @@ declare module '@guildofweavers/air-assembly' {
     export type Dimensions = [number, number];
     export type ExpressionDegree = bigint | bigint[] | bigint[][];
     export type StoreTarget = 'local';
-    export type LoadSource = 'const' | 'trace' | 'static' | 'input' | 'local';
+    export type LoadSource = 'const' | 'trace' | 'static' | 'local';
 
     export abstract class Expression {
         readonly dimensions : Dimensions;
@@ -114,15 +120,6 @@ declare module '@guildofweavers/air-assembly' {
     export class LoadExpression extends Expression {
         readonly source : LoadSource;
         readonly index  : number;
-    }
-
-    export class LocalVariable {
-
-        readonly dimensions : Dimensions;
-        readonly degree     : ExpressionDegree;
-        readonly binding    : any; // TODO
-
-        constructor(degree: ExpressionDegree);
     }
 
     // STATIC REGISTERS
