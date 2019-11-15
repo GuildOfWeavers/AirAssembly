@@ -1,16 +1,15 @@
 // IMPORTS
 // ================================================================================================
-import { StarkLimits, Dimensions, FiniteField } from "@guildofweavers/air-assembly";
+import { StarkLimits, Dimensions, FieldDescriptor, AirSchema as IAirSchema } from "@guildofweavers/air-assembly";
 import { LiteralValue } from "./expressions";
 import { Procedure } from "./procedures";
-import { createPrimeField } from "@guildofweavers/galois";
 import { StaticRegisterSet } from "./registers";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class AirSchema {
+export class AirSchema implements IAirSchema {
 
-    private _field?                 : FiniteField;
+    private _field?                 : FieldDescriptor;
 
     private _constants              : LiteralValue[];
     private _staticRegisters        : StaticRegisterSet;
@@ -27,7 +26,7 @@ export class AirSchema {
 
     // FIELD
     // --------------------------------------------------------------------------------------------
-    get field(): FiniteField {
+    get field(): FieldDescriptor {
         if (!this._field) throw new Error(`fields has not been set yet`);
         return this._field;
     }
@@ -35,7 +34,7 @@ export class AirSchema {
     setField(type: 'prime', modulus: bigint): void {
         if (this._field) throw new Error('field has already been set');
         if (type !== 'prime') throw new Error(`field type '${type}' is not supported`);
-        this._field = createPrimeField(modulus);    // TODO: wasm options
+        this._field = { type, modulus };
     }
 
     // CONSTANTS
@@ -112,7 +111,7 @@ export class AirSchema {
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n  (field prime ${(this.field as any).modulus})`;
+        let code = `\n  (field ${this.field.type} ${this.field.modulus})`;
         if (this.constantCount > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         code += this.staticRegisters.toString();
@@ -120,6 +119,18 @@ export class AirSchema {
         code += this.constraintEvaluator.toString();
 
         return `(module${code}\n)`;
+    }
+
+    // VALIDATION
+    // --------------------------------------------------------------------------------------------
+    validateLimits(limits: StarkLimits): void {
+        if (this.traceRegisterCount > limits.maxTraceRegisters)
+            throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
+        else if (this.staticRegisterCount > limits.maxStaticRegisters)
+            throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
+        else if (this.constraintCount > limits.maxConstraintCount)
+            throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
+        // TODO: check constraint degree
     }
 }
 

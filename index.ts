@@ -1,16 +1,15 @@
 // IMPORTS
 // ================================================================================================
-import { AirModule, StarkLimits, ModuleOptions, WasmOptions } from '@guildofweavers/air-assembly';
+import { AirSchema, AirModule, StarkLimits, ModuleOptions, WasmOptions } from '@guildofweavers/air-assembly';
 import { lexer } from './lib/lexer';
 import { parser } from './lib/parser';
-import { AirScriptError } from './lib/errors';
+import { AssemblyError } from './lib/errors';
 
 // MODULE VARIABLES
 // ================================================================================================
 const DEFAULT_LIMITS: StarkLimits = {
     maxTraceLength      : 2**20,
-    maxInputRegisters   : 32,
-    maxStateRegisters   : 64,
+    maxTraceRegisters   : 64,
     maxStaticRegisters  : 64,
     maxConstraintCount  : 1024,
     maxConstraintDegree : 16
@@ -18,20 +17,28 @@ const DEFAULT_LIMITS: StarkLimits = {
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
-export function parse(source: Buffer): any {
+export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema {
 
     // tokenize input
     const lexResult = lexer.tokenize(source.toString('utf8'));
     if(lexResult.errors.length > 0) {
-        throw new AirScriptError(lexResult.errors);
+        throw new AssemblyError(lexResult.errors);
     }
 
-    // apply grammar rules
+    // parse the tokens
     parser.input = lexResult.tokens;
-    const cst = parser.module();
+    const schema = parser.module();
     if (parser.errors.length > 0) {
-        throw new AirScriptError(parser.errors);
+        throw new AssemblyError(parser.errors);
     }
 
-    return cst;
+    // validate limits
+    try {
+        schema.validateLimits({ ...DEFAULT_LIMITS, ...limits });
+    }
+    catch (error) {
+        throw new AssemblyError(error);
+    }
+
+    return schema;
 }

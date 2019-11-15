@@ -27,7 +27,7 @@ exports.parserErrorMessageProvider = {
 };
 // SCRIPT ERROR
 // ================================================================================================
-class AirScriptError extends Error {
+class AssemblyError extends Error {
     constructor(errors) {
         let message = `Failed to parse AIR script`;
         let prefix = '';
@@ -45,5 +45,5 @@ class AirScriptError extends Error {
         this.errors = errors;
     }
 }
-exports.AirScriptError = AirScriptError;
+exports.AssemblyError = AssemblyError;
 //# sourceMappingURL=errors.js.map

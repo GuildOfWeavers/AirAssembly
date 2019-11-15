@@ -155,7 +155,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.ACTION(() => procedure = schema.setTransitionFunction(span, width, locals));
             this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
             const resultExpression = this.SUBRULE(this.expression, { ARGS: [procedure] });
-            this.ACTION(() => schema.transitionFunction.result = resultExpression);
+            this.ACTION(() => schema.transitionFunction.setResult(resultExpression));
             this.CONSUME1(lexer_1.RParen);
         });
         this.transitionConstraints = this.RULE('transitionConstraints', (schema) => {
@@ -179,7 +179,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.ACTION(() => procedure = schema.setConstraintEvaluator(span, width, locals));
             this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
             const resultExpression = this.SUBRULE(this.expression, { ARGS: [procedure] });
-            this.ACTION(() => schema.constraintEvaluator.result = resultExpression);
+            this.ACTION(() => schema.constraintEvaluator.setResult(resultExpression));
             this.CONSUME(lexer_1.RParen);
         });
         this.localDeclaration = this.RULE('localDeclaration', () => {

@@ -1,11 +1,11 @@
-import { parse } from '../index';
+import { compile } from '../index';
 import { generateModule } from '../lib/jsGenerator';
 import * as template from '../lib/jsGenerator/template';
 import { InputRegister } from '../lib/registers';
 import { InputProcessor } from '../lib/jsGenerator/inputs';
 import { AirSchema } from '../lib/AirSchema';
 
-const m = parse(Buffer.from(`
+const m = compile(Buffer.from(`
 (module
     (field prime 340282366920938463463374607393113505793)
     (const 

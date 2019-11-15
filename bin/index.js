@@ -7,27 +7,33 @@ const errors_1 = require("./lib/errors");
 // ================================================================================================
 const DEFAULT_LIMITS = {
     maxTraceLength: 2 ** 20,
-    maxInputRegisters: 32,
-    maxStateRegisters: 64,
+    maxTraceRegisters: 64,
     maxStaticRegisters: 64,
     maxConstraintCount: 1024,
     maxConstraintDegree: 16
 };
 // PUBLIC FUNCTIONS
 // ================================================================================================
-function parse(source) {
+function compile(source, limits) {
     // tokenize input
     const lexResult = lexer_1.lexer.tokenize(source.toString('utf8'));
     if (lexResult.errors.length > 0) {
-        throw new errors_1.AirScriptError(lexResult.errors);
+        throw new errors_1.AssemblyError(lexResult.errors);
     }
-    // apply grammar rules
+    // parse the tokens
     parser_1.parser.input = lexResult.tokens;
-    const cst = parser_1.parser.module();
+    const schema = parser_1.parser.module();
     if (parser_1.parser.errors.length > 0) {
-        throw new errors_1.AirScriptError(parser_1.parser.errors);
+        throw new errors_1.AssemblyError(parser_1.parser.errors);
     }
-    return cst;
+    // validate limits
+    try {
+        schema.validateLimits({ ...DEFAULT_LIMITS, ...limits });
+    }
+    catch (error) {
+        throw new errors_1.AssemblyError(error);
+    }
+    return schema;
 }
-exports.parse = parse;
+exports.compile = compile;
 //# sourceMappingURL=index.js.map

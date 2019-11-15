@@ -25,7 +25,7 @@ class AirParser extends EmbeddedActionsParser {
 
     // MODULE
     // --------------------------------------------------------------------------------------------
-    public module = this.RULE('module', () => {
+    public module = this.RULE<AirSchema>('module', () => {
         const schema = new AirSchema();
         this.CONSUME(LParen);
         this.CONSUME(Module);
@@ -183,7 +183,7 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => procedure = schema.setTransitionFunction(span, width, locals));
         this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
         const resultExpression = this.SUBRULE(this.expression,  { ARGS: [procedure] });
-        this.ACTION(() => schema.transitionFunction.result = resultExpression);
+        this.ACTION(() => schema.transitionFunction.setResult(resultExpression));
 
         this.CONSUME1(RParen);
     });
@@ -212,7 +212,7 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => procedure = schema.setConstraintEvaluator(span, width, locals));
         this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
         const resultExpression = this.SUBRULE(this.expression,  { ARGS: [procedure] });
-        this.ACTION(() => schema.constraintEvaluator.result = resultExpression);
+        this.ACTION(() => schema.constraintEvaluator.setResult(resultExpression));
 
         this.CONSUME(RParen);
     });

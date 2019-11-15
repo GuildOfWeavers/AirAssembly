@@ -31,7 +31,7 @@ export const parserErrorMessageProvider: IParserErrorMessageProvider = {
 
 // SCRIPT ERROR
 // ================================================================================================
-export class AirScriptError extends Error {
+export class AssemblyError extends Error {
 
     readonly errors: any[];
 

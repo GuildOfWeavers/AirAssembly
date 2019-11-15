@@ -1,22 +1,19 @@
 // IMPORTS
 // ================================================================================================
+import { Procedure as IProcedure, ProcedureName } from '@guildofweavers/air-assembly';
 import { Expression, LoadExpression, LiteralValue, TraceSegment } from "../expressions";
 import { Dimensions, getLoadSource } from "../expressions/utils";
 import { Subroutine } from "./Subroutine";
 import { LocalVariable } from "./LocalVariable";
 
-// INTERFACES
-// ================================================================================================
-export type ProcedureName = 'transition' | 'evaluation';
-
 // CLASS DEFINITION
 // ================================================================================================
-export class Procedure {
+export class Procedure implements IProcedure {
 
     readonly name               : ProcedureName;
     readonly span               : number;
     readonly constants          : LiteralValue[];
-    readonly locals             : LocalVariable[];
+    readonly localVariables     : LocalVariable[];
     readonly traceRegisters     : TraceSegment;
     readonly staticRegisters    : TraceSegment;
     readonly resultLength       : number;
@@ -30,7 +27,7 @@ export class Procedure {
         this.name = name;
         this.span = validateSpan(name, span);
         this.constants = constants;
-        this.locals = locals.map(d => new LocalVariable(d));
+        this.localVariables = locals.map(d => new LocalVariable(d));
         this.traceRegisters = new TraceSegment(traceWidth, false);
         this.staticRegisters = new TraceSegment(staticWidth, true);
         this.resultLength = width;
@@ -45,15 +42,18 @@ export class Procedure {
         return this._result;
     }
 
-    set result(value: Expression) {
+    setResult(value: Expression): void {
         if (this._result) throw new Error(`${this.name} procedure result hasn't been set yet`);
         if (!value.isVector || value.dimensions[0] !== this.resultLength)
             throw new Error(`${this.name} procedure must resolve to a vector of ${this.resultLength} elements`);
-
         this._result = value;
     }
 
-    get expressions(): Expression[] {
+    get locals(): ReadonlyArray<Dimensions> {
+        return this.localVariables.map(v => v.dimensions);
+    }
+
+    get expressions(): ReadonlyArray<Expression> {
         const expressions = this.subroutines.map(s => s.expression);
         expressions.push(this.result);
         return expressions;
@@ -96,8 +96,8 @@ export class Procedure {
 
     toString() {
         let code = `\n    (span ${this.span}) (result vector ${this.resultLength})`;
-        if (this.locals.length > 0)
-            code += `\n    ${this.locals.map(v => v.toString()).join(' ')}`;
+        if (this.localVariables.length > 0)
+            code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.subroutines.length > 0)
             code += `\n    ${this.subroutines.map(s => s.toString()).join('\n    ')}`;
         code += `\n    ${this.result.toString()}`
@@ -107,9 +107,9 @@ export class Procedure {
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------
     private getLocalVariable(index: number): LocalVariable {
-        if (index >= this.locals.length)
+        if (index >= this.localVariables.length)
             throw new Error(`local variable ${index} has not been defined`);
-        return this.locals[index];
+        return this.localVariables[index];
     }
 }
 

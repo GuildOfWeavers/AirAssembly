@@ -18,11 +18,8 @@ declare module '@guildofweavers/air-assembly' {
         /** Maximum number of steps in an execution trace; defaults to 2^20 */
         maxTraceLength: number;
 
-        /** Maximum number of input registers; defaults to 32 */
-        maxInputRegisters: number;
-
         /** Maximum number of state registers; defaults to 64 */
-        maxStateRegisters: number;
+        maxTraceRegisters: number;
 
         /** Maximum number of all static registers; defaults to 64 */
         maxStaticRegisters: number;
@@ -38,49 +35,87 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
     export class AirSchema {
 
-        readonly field                  : FiniteField;
+        readonly field                  : FieldDescriptor;
         readonly constants              : ReadonlyArray<LiteralValue>;
         readonly staticRegisters        : StaticRegisterSet;
         readonly transitionFunction     : Procedure;
-        readonly transitionConstraints  : any[];
         readonly constraintEvaluator    : Procedure;
 
         setField(type: 'prime', modulus: bigint): void;
-        setConstant(values: LiteralValue[]): void;
+        setConstants(values: LiteralValue[]): void;
         setStaticRegisters(registers: StaticRegisterSet): void;
-        setTransitionFunction(span: number, width: number, locals: Dimensions): Procedure;
-        setConstraintEvaluator(span: number, width: number, locals: Dimensions): Procedure;
+        setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure;
+        setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure;
+
+        validateLimits(limits: StarkLimits): void;
     }
 
+    export interface FieldDescriptor {
+        readonly type       : 'prime';
+        readonly modulus    : bigint;
+    }
+
+    export type ProcedureName = 'transition' | 'evaluation';
     export interface Procedure {
-        readonly name           : 'transition' | 'evaluation';
+        readonly name           : ProcedureName;
         readonly span           : number;
         readonly locals         : ReadonlyArray<Dimensions>;
         readonly subroutines    : ReadonlyArray<Subroutine>;
+        readonly expressions    : ReadonlyArray<Expression>;
         readonly result         : Expression;
-        readonly resultWidth    : number;
+        readonly resultLength   : number;
 
-        addSubroutine(expression: Expression, localVarIdx: number): void;
         setResult(expression: Expression): void;
+        addSubroutine(expression: Expression, localVarIdx: number): void;
+        buildLoadExpression(operation: string, index: number): LoadExpression;
     }
 
     export interface Subroutine {
         readonly expression     : Expression;
         readonly localVarIdx    : number;
+        readonly dimensions     : Dimensions;
+        readonly degree         : ExpressionDegree;
     }
 
+    // STATIC REGISTERS
+    // --------------------------------------------------------------------------------------------
     export interface StaticRegisterSet {
-        readonly inputs     : ReadonlyArray<InputRegister>;
-        readonly cyclic     : ReadonlyArray<CyclicRegister>;
+        readonly inputs : ReadonlyArray<InputRegister>;
+        readonly cyclic : ReadonlyArray<CyclicRegister>;
+
+        readonly size   : number;
 
         addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
         addCyclic(values: bigint[]): void;
+
+        get(index: number): StaticRegister;
     }
 
-    // PUBLIC FUNCTIONS
-    // --------------------------------------------------------------------------------------------
-    export function instantiate(path: string, options?: ModuleOptions): Promise<AirModule>;
-    export function instantiate(source: Buffer, options?: ModuleOptions): Promise<AirModule>;
+    export interface StaticRegister {
+        readonly type   : 'input' | 'cyclic';
+        readonly index  : number;
+        readonly secret : boolean;
+    }
+
+    export interface InputRegister extends StaticRegister {
+        readonly type   : 'input';
+        readonly rank   : number;
+        readonly binary : boolean;
+        readonly parent?: number;
+        readonly steps? : number;
+    }
+
+    export interface CyclicRegister extends StaticRegister {
+        readonly type   : 'cyclic';
+        readonly values : bigint[];        
+    }
+
+    export interface StaticRegisterDescriptor {
+        readonly type   : 'input' | 'cyclic';
+        readonly shape  : number[];
+        readonly values : bigint[];
+        readonly secret : boolean;
+    }
 
     // EXPRESSIONS
     // --------------------------------------------------------------------------------------------
@@ -120,34 +155,6 @@ declare module '@guildofweavers/air-assembly' {
     export class LoadExpression extends Expression {
         readonly source : LoadSource;
         readonly index  : number;
-    }
-
-    // STATIC REGISTERS
-    // --------------------------------------------------------------------------------------------
-    export interface StaticRegister {
-        readonly type   : 'input' | 'cyclic';
-        readonly index  : number;
-        readonly secret : boolean;
-    }
-
-    export interface InputRegister extends StaticRegister {
-        readonly type   : 'input';
-        readonly rank   : number;
-        readonly binary : boolean;
-        readonly parent?: number;
-        readonly steps? : number;
-    }
-
-    export interface CyclicRegister extends StaticRegister {
-        readonly type   : 'cyclic';
-        readonly values : bigint[];        
-    }
-
-    export interface StaticRegisterDescriptor {
-        type    : 'input' | 'cyclic';
-        shape   : number[];
-        values  : bigint[];
-        secret  : boolean;
     }
 
     // AIR MODULE
@@ -241,4 +248,12 @@ declare module '@guildofweavers/air-assembly' {
          */
         (r: bigint[], n: bigint[], k: bigint[]): bigint[];
     }
+
+    // PUBLIC FUNCTIONS
+    // --------------------------------------------------------------------------------------------
+    export function compile(path: string, limits?: StarkLimits): AirSchema;
+    export function compile(source: Buffer, limits?: StarkLimits): AirSchema;
+
+    export function instantiate(path: string, options?: ModuleOptions): Promise<AirModule>;
+    export function instantiate(source: Buffer, options?: ModuleOptions): Promise<AirModule>;
 }

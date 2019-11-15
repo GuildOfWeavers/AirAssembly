@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class Subroutine {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(expression, localIndex) {
+    constructor(expression, localVarIdx) {
         this.expression = expression;
-        this.localIndex = localIndex;
+        this.localVarIdx = localVarIdx;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ class Subroutine {
         */
     }
     toString() {
-        return `(store.local ${this.localIndex} ${this.expression.toString()})`;
+        return `(store.local ${this.localVarIdx} ${this.expression.toString()})`;
     }
 }
 exports.Subroutine = Subroutine;

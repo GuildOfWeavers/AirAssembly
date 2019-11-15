@@ -1,7 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// IMPORTS
-// ================================================================================================
 const expressions_1 = require("../expressions");
 const utils_1 = require("../expressions/utils");
 const Subroutine_1 = require("./Subroutine");
@@ -15,7 +13,7 @@ class Procedure {
         this.name = name;
         this.span = validateSpan(name, span);
         this.constants = constants;
-        this.locals = locals.map(d => new LocalVariable_1.LocalVariable(d));
+        this.localVariables = locals.map(d => new LocalVariable_1.LocalVariable(d));
         this.traceRegisters = new expressions_1.TraceSegment(traceWidth, false);
         this.staticRegisters = new expressions_1.TraceSegment(staticWidth, true);
         this.resultLength = width;
@@ -28,12 +26,15 @@ class Procedure {
             throw new Error(`${this.name} procedure result hasn't been set yet`);
         return this._result;
     }
-    set result(value) {
+    setResult(value) {
         if (this._result)
             throw new Error(`${this.name} procedure result hasn't been set yet`);
         if (!value.isVector || value.dimensions[0] !== this.resultLength)
             throw new Error(`${this.name} procedure must resolve to a vector of ${this.resultLength} elements`);
         this._result = value;
+    }
+    get locals() {
+        return this.localVariables.map(v => v.dimensions);
     }
     get expressions() {
         const expressions = this.subroutines.map(s => s.expression);
@@ -76,8 +77,8 @@ class Procedure {
     }
     toString() {
         let code = `\n    (span ${this.span}) (result vector ${this.resultLength})`;
-        if (this.locals.length > 0)
-            code += `\n    ${this.locals.map(v => v.toString()).join(' ')}`;
+        if (this.localVariables.length > 0)
+            code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.subroutines.length > 0)
             code += `\n    ${this.subroutines.map(s => s.toString()).join('\n    ')}`;
         code += `\n    ${this.result.toString()}`;
@@ -86,9 +87,9 @@ class Procedure {
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------
     getLocalVariable(index) {
-        if (index >= this.locals.length)
+        if (index >= this.localVariables.length)
             throw new Error(`local variable ${index} has not been defined`);
-        return this.locals[index];
+        return this.localVariables[index];
     }
 }
 exports.Procedure = Procedure;

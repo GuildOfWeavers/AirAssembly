@@ -1,20 +1,22 @@
 // IMPORTS
 // ================================================================================================
-import { StoreTarget, Dimensions, ExpressionDegree } from "@guildofweavers/air-assembly";
-import { Expression } from "../expressions";
+import {
+    Expression, Dimensions, ExpressionDegree, StoreTarget, Subroutine as ISubroutine
+} from "@guildofweavers/air-assembly";
+
 
 // CLASS DEFINITION
 // ================================================================================================
-export class Subroutine {
+export class Subroutine implements ISubroutine {
     
-    readonly expression : Expression;
-    readonly localIndex : number;
+    readonly expression     : Expression;
+    readonly localVarIdx    : number;
 
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(expression: Expression, localIndex: number) {
+    constructor(expression: Expression, localVarIdx: number) {
         this.expression = expression;
-        this.localIndex = localIndex;
+        this.localVarIdx = localVarIdx;
     }
 
     // ACCESSORS
@@ -39,6 +41,6 @@ export class Subroutine {
     }
 
     toString() {
-        return `(store.local ${this.localIndex} ${this.expression.toString()})`;
+        return `(store.local ${this.localVarIdx} ${this.expression.toString()})`;
     }
 }

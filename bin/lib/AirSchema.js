@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const procedures_1 = require("./procedures");
-const galois_1 = require("@guildofweavers/galois");
 const registers_1 = require("./registers");
 // CLASS DEFINITION
 // ================================================================================================
@@ -24,7 +23,7 @@ class AirSchema {
             throw new Error('field has already been set');
         if (type !== 'prime')
             throw new Error(`field type '${type}' is not supported`);
-        this._field = galois_1.createPrimeField(modulus); // TODO: wasm options
+        this._field = { type, modulus };
     }
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
@@ -94,13 +93,24 @@ class AirSchema {
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n  (field prime ${this.field.modulus})`;
+        let code = `\n  (field ${this.field.type} ${this.field.modulus})`;
         if (this.constantCount > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         code += this.staticRegisters.toString();
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
         return `(module${code}\n)`;
+    }
+    // VALIDATION
+    // --------------------------------------------------------------------------------------------
+    validateLimits(limits) {
+        if (this.traceRegisterCount > limits.maxTraceRegisters)
+            throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
+        else if (this.staticRegisterCount > limits.maxStaticRegisters)
+            throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
+        else if (this.constraintCount > limits.maxConstraintCount)
+            throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
+        // TODO: check constraint degree
     }
 }
 exports.AirSchema = AirSchema;
