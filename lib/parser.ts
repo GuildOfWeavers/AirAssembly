@@ -7,7 +7,7 @@ import { Procedure } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input,
     Binary, Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp,
-    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent
+    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent, Mask, Value
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -109,6 +109,7 @@ class AirParser extends EmbeddedActionsParser {
         const registers = new StaticRegisterSet();
         this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
         this.MANY2(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
+        this.MANY3(() => this.SUBRULE(this.maskRegister,    { ARGS: [registers] }));
         this.CONSUME(RParen);
         this.ACTION(() => schema.setStaticRegisters(registers));
     });
@@ -130,18 +131,18 @@ class AirParser extends EmbeddedActionsParser {
             { ALT: () => {
                 this.CONSUME2(LParen);
                 this.CONSUME(Parent);
-                const index = this.CONSUME1(Literal).image;
+                const index = this.SUBRULE1(this.integerLiteral);
                 this.CONSUME2(RParen);
-                return this.ACTION(() => Number.parseInt(index, 10));
+                return index;
             }}
         ]);
 
         const steps = this.OPTION2(() => {
             this.CONSUME3(LParen);
             this.CONSUME(Steps);
-            const steps = this.CONSUME2(Literal).image;
+            const steps = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(RParen);
-            return this.ACTION(() => Number.parseInt(steps, 10));
+            return steps;
         });
 
         this.CONSUME1(RParen);
@@ -155,6 +156,21 @@ class AirParser extends EmbeddedActionsParser {
         this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
         this.CONSUME(RParen);
         this.ACTION(() => registers.addCyclic(values.map(v => BigInt(v))));
+    });
+
+    private maskRegister = this.RULE('maskRegister', (registers: StaticRegisterSet) => {
+        this.CONSUME1(LParen);
+        this.CONSUME(Mask);
+        this.CONSUME2(LParen);
+        this.CONSUME(Input);
+        const source = this.SUBRULE(this.integerLiteral);
+        this.CONSUME2(RParen);
+        this.CONSUME3(LParen);
+        this.CONSUME(Value);
+        const value = this.CONSUME2(Literal).image;
+        this.CONSUME3(RParen);
+        this.CONSUME1(RParen);
+        this.ACTION(() => registers.addMask(source, BigInt(value)));
     });
 
     // PROCEDURES

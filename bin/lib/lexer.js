@@ -22,7 +22,8 @@ exports.Binary = chevrotain_1.createToken({ name: "Binary", pattern: /binary/ })
 exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/ });
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/ });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/ });
-exports.When = chevrotain_1.createToken({ name: "When", pattern: /when/ });
+exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/ });
+exports.Value = chevrotain_1.createToken({ name: "Value", pattern: /value/ });
 exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/ });
 exports.Evaluation = chevrotain_1.createToken({ name: "Evaluation", pattern: /evaluation/ });
 exports.Span = chevrotain_1.createToken({ name: "Span", pattern: /span/ });
@@ -51,10 +52,6 @@ exports.Prod = chevrotain_1.createToken({ name: "Prod", pattern: /prod/, categor
 exports.UnaryOp = chevrotain_1.createToken({ name: "UnaryOp", pattern: chevrotain_1.Lexer.NA });
 exports.Neg = chevrotain_1.createToken({ name: "Neg", pattern: /neg/, categories: exports.UnaryOp });
 exports.Inv = chevrotain_1.createToken({ name: "Inv", pattern: /inv/, categories: exports.UnaryOp });
-exports.BooleanOp = chevrotain_1.createToken({ name: "BooleanOp", pattern: chevrotain_1.Lexer.NA });
-exports.And = chevrotain_1.createToken({ name: "And", pattern: /and/, categories: exports.BooleanOp });
-exports.Or = chevrotain_1.createToken({ name: "Or", pattern: /or/, categories: exports.BooleanOp });
-exports.Not = chevrotain_1.createToken({ name: "Not", pattern: /not/, categories: exports.BooleanOp });
 exports.LoadOp = chevrotain_1.createToken({ name: "LoadOp", pattern: chevrotain_1.Lexer.NA });
 exports.LoadConst = chevrotain_1.createToken({ name: "LoadConst", pattern: /load.const/, categories: exports.LoadOp });
 exports.LoadTrace = chevrotain_1.createToken({ name: "LoadTrace", pattern: /load.trace/, categories: exports.LoadOp });
@@ -74,9 +71,9 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
     exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps,
-    exports.Cycle, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
+    exports.Cycle, exports.Mask, exports.Value, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
-    exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv, exports.BooleanOp, exports.And, exports.Or, exports.Not,
+    exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
     exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadLocal, exports.StoreOp,
     exports.LParen, exports.RParen,
     exports.Literal, exports.Identifier

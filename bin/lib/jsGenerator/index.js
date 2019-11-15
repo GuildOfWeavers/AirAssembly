@@ -56,11 +56,14 @@ function buildField(schema) {
     return galois_1.createPrimeField(schema.field.modulus);
 }
 function buildCyclicRegisters(schema) {
+    return [];
+    /*
     return schema.staticRegisters.cyclic.map(r => ({
-        type: 'cyclic',
-        shape: [1, r.values.length],
-        values: r.values,
-        secret: false,
+        type    : 'cyclic',
+        shape   : [1, r.values.length], // TODO: remove?
+        values  : r.values,
+        secret  : false,
     }));
+    */
 }
 //# sourceMappingURL=index.js.map

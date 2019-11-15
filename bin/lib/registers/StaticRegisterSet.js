@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const InputRegister_1 = require("./InputRegister");
 const CyclicRegister_1 = require("./CyclicRegister");
+const MaskRegister_1 = require("./MaskRegister");
 // CLASS DEFINITION
 // ================================================================================================
 class StaticRegisterSet {
@@ -9,18 +10,23 @@ class StaticRegisterSet {
     // --------------------------------------------------------------------------------------------
     constructor() {
         this.inputs = [];
-        this.cyclic = [];
+        this.registers = [];
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get size() {
-        return this.inputs.length + this.cyclic.length;
+        return this.registers.length;
     }
+    // COLLECTION METHODS
+    // --------------------------------------------------------------------------------------------
     get(index) {
-        if (index < this.inputs.length)
-            return this.inputs[index];
-        index -= this.inputs.length;
-        return this.cyclic[index];
+        return this.registers[index];
+    }
+    map(callback) {
+        return this.registers.map(callback);
+    }
+    forEach(callback) {
+        this.registers.forEach(callback);
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
@@ -38,16 +44,21 @@ class StaticRegisterSet {
         }
         const register = new InputRegister_1.InputRegister(this.size, scope, rank, binary, parentIdx, steps);
         this.inputs.push(register);
+        this.registers.push(register);
     }
     addCyclic(values) {
         const register = new CyclicRegister_1.CyclicRegister(this.size, values);
-        this.cyclic.push(register);
+        this.registers.push(register);
+    }
+    addMask(source, value) {
+        this.validateMaskSource(source);
+        const register = new MaskRegister_1.MaskRegister(this.size, source, value);
+        this.registers.push(register);
     }
     toString() {
         if (this.size === 0)
             return '';
-        const registers = [...this.inputs, ...this.cyclic];
-        return `\n  (static\n    ${registers.map(r => r.toString()).join('\n    ')})`;
+        return `\n  (static\n    ${this.registers.map(r => r.toString()).join('\n    ')})`;
     }
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------
@@ -60,6 +71,13 @@ class StaticRegisterSet {
         if (parent.isLeaf)
             throw new Error(`register at index ${index} is a leaf register`);
         return parent;
+    }
+    validateMaskSource(index) {
+        const source = this.inputs[index];
+        if (!source)
+            throw new Error(`invalid source register index: ${index}`);
+        if (!(source instanceof InputRegister_1.InputRegister))
+            throw new Error(`register at index ${index} is not an input register`);
     }
 }
 exports.StaticRegisterSet = StaticRegisterSet;

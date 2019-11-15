@@ -79,20 +79,10 @@ declare module '@guildofweavers/air-assembly' {
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    export interface StaticRegisterSet {
-        readonly inputs : ReadonlyArray<InputRegister>;
-        readonly cyclic : ReadonlyArray<CyclicRegister>;
-
-        readonly size   : number;
-
-        addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
-        addCyclic(values: bigint[]): void;
-
-        get(index: number): StaticRegister;
-    }
+    export type StaticRegisterType = 'input' | 'cyclic' | 'mask';
 
     export interface StaticRegister {
-        readonly type   : 'input' | 'cyclic';
+        readonly type   : StaticRegisterType;
         readonly index  : number;
         readonly secret : boolean;
     }
@@ -110,11 +100,31 @@ declare module '@guildofweavers/air-assembly' {
         readonly values : bigint[];        
     }
 
+    export interface MaskRegister extends StaticRegister {
+        readonly type   : 'mask';
+        readonly source : number;
+        readonly value  : bigint;
+    }
+
     export interface StaticRegisterDescriptor {
-        readonly type   : 'input' | 'cyclic';
+        readonly type   : StaticRegisterType;
         readonly shape  : number[];
         readonly values : bigint[];
         readonly secret : boolean;
+    }
+
+    export interface StaticRegisterSet {
+               
+        readonly size   : number;
+        readonly inputs : ReadonlyArray<InputRegister>;
+
+        addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
+        addCyclic(values: bigint[]): void;
+        addMask(source: number, value: bigint): void;
+
+        get(index: number): StaticRegister;
+        map<T>(callback: (register: StaticRegister, index: number) => T): T[];
+        forEach(callback: (register: StaticRegister, index: number) => void): void;
     }
 
     // EXPRESSIONS

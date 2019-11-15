@@ -25,7 +25,8 @@ export const Parent     = createToken({ name: "Parent",         pattern: /parent
 export const Steps      = createToken({ name: "Steps",          pattern: /steps/            });
 
 export const Cycle      = createToken({ name: "Cycle",          pattern: /cycle/            });
-export const When       = createToken({ name: "When",           pattern: /when/             });
+export const Mask       = createToken({ name: "Mask",           pattern: /mask/             });
+export const Value      = createToken({ name: "Value",          pattern: /value/            });
 
 export const Transition = createToken({ name: "Transition",     pattern: /transition/       });
 export const Evaluation = createToken({ name: "Evaluation",     pattern: /evaluation/       });
@@ -62,11 +63,6 @@ export const UnaryOp    = createToken({ name: "UnaryOp",    pattern: Lexer.NA   
 export const Neg        = createToken({ name: "Neg",        pattern: /neg/,         categories: UnaryOp  });
 export const Inv        = createToken({ name: "Inv",        pattern: /inv/,         categories: UnaryOp  });
 
-export const BooleanOp  = createToken({ name: "BooleanOp",  pattern: Lexer.NA   });
-export const And        = createToken({ name: "And",        pattern: /and/,         categories: BooleanOp  });
-export const Or         = createToken({ name: "Or",         pattern: /or/,          categories: BooleanOp  });
-export const Not        = createToken({ name: "Not",        pattern: /not/,         categories: BooleanOp  });
-
 export const LoadOp     = createToken({ name: "LoadOp",     pattern: Lexer.NA   });
 export const LoadConst  = createToken({ name: "LoadConst",  pattern: /load.const/,  categories: LoadOp   });
 export const LoadTrace  = createToken({ name: "LoadTrace",  pattern: /load.trace/,  categories: LoadOp   });
@@ -91,11 +87,11 @@ export const allTokens = [
     WhiteSpace, Comment,
     
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps,
-    Cycle, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
+    Cycle, Mask, Value, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,
 
-    Get, Slice, BinaryOp, Add, Sub, Mul, Div, Exp, Prod, UnaryOp, Neg, Inv, BooleanOp, And, Or, Not,
+    Get, Slice, BinaryOp, Add, Sub, Mul, Div, Exp, Prod, UnaryOp, Neg, Inv,
     LoadOp, LoadConst, LoadTrace, LoadStatic, LoadLocal, StoreOp,
 
     LParen, RParen,

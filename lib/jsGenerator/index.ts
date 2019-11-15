@@ -72,10 +72,13 @@ function buildField(schema: AirSchema): FiniteField {
 }
 
 function buildCyclicRegisters(schema: AirSchema): StaticRegisterDescriptor[] {
+    return [];
+    /*
     return schema.staticRegisters.cyclic.map(r => ({
         type    : 'cyclic',
         shape   : [1, r.values.length], // TODO: remove?
         values  : r.values,
         secret  : false,
     }));
+    */
 }

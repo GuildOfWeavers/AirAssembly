@@ -3,31 +3,40 @@
 import { StaticRegister } from "@guildofweavers/air-assembly";
 import { InputRegister } from "./InputRegister";
 import { CyclicRegister } from "./CyclicRegister";
+import { MaskRegister } from "./MaskRegister";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class StaticRegisterSet {
 
-    readonly inputs : InputRegister[];
-    readonly cyclic : CyclicRegister[];
+    readonly inputs     : InputRegister[];
+    readonly registers  : StaticRegister[];
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor () {
         this.inputs = [];
-        this.cyclic = [];
+        this.registers = [];
     }
 
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get size(): number {
-        return this.inputs.length + this.cyclic.length;
+        return this.registers.length;
     }
 
+    // COLLECTION METHODS
+    // --------------------------------------------------------------------------------------------
     get(index: number): StaticRegister {
-        if (index < this.inputs.length) return this.inputs[index];
-        index -= this.inputs.length;
-        return this.cyclic[index];
+        return this.registers[index];
+    }
+
+    map<T>(callback: (register: StaticRegister, index: number) => T): T[] {
+        return this.registers.map(callback);
+    }
+
+    forEach(callback: (register: StaticRegister, index: number) => void): void {
+        this.registers.forEach(callback);
     }
 
     // PUBLIC METHODS
@@ -48,17 +57,23 @@ export class StaticRegisterSet {
     
         const register = new InputRegister(this.size, scope, rank, binary, parentIdx, steps);
         this.inputs.push(register);
+        this.registers.push(register);
     }
 
     addCyclic(values: bigint[]): void {
         const register = new CyclicRegister(this.size, values);
-        this.cyclic.push(register);
+        this.registers.push(register);
+    }
+
+    addMask(source: number, value: bigint): void {
+        this.validateMaskSource(source);
+        const register = new MaskRegister(this.size, source, value);
+        this.registers.push(register);
     }
 
     toString() {
         if (this.size === 0) return '';
-        const registers = [...this.inputs, ...this.cyclic];
-        return `\n  (static\n    ${registers.map(r => r.toString()).join('\n    ')})`;
+        return `\n  (static\n    ${this.registers.map(r => r.toString()).join('\n    ')})`;
     }
 
     // PRIVATE METHODS
@@ -71,5 +86,12 @@ export class StaticRegisterSet {
         if (parent.isLeaf)
             throw new Error(`register at index ${index} is a leaf register`);
         return parent;
+    }
+
+    private validateMaskSource(index: number): void {
+        const source = this.inputs[index];
+        if (!source) throw new Error(`invalid source register index: ${index}`);
+        if (!(source instanceof InputRegister))
+            throw new Error(`register at index ${index} is not an input register`);
     }
 }

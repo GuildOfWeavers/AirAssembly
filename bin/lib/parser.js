@@ -92,6 +92,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const registers = new registers_1.StaticRegisterSet();
             this.MANY1(() => this.SUBRULE(this.inputRegister, { ARGS: [registers] }));
             this.MANY2(() => this.SUBRULE(this.cyclicRegister, { ARGS: [registers] }));
+            this.MANY3(() => this.SUBRULE(this.maskRegister, { ARGS: [registers] }));
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => schema.setStaticRegisters(registers));
         });
@@ -109,17 +110,17 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 { ALT: () => {
                         this.CONSUME2(lexer_1.LParen);
                         this.CONSUME(lexer_1.Parent);
-                        const index = this.CONSUME1(lexer_1.Literal).image;
+                        const index = this.SUBRULE1(this.integerLiteral);
                         this.CONSUME2(lexer_1.RParen);
-                        return this.ACTION(() => Number.parseInt(index, 10));
+                        return index;
                     } }
             ]);
             const steps = this.OPTION2(() => {
                 this.CONSUME3(lexer_1.LParen);
                 this.CONSUME(lexer_1.Steps);
-                const steps = this.CONSUME2(lexer_1.Literal).image;
+                const steps = this.SUBRULE2(this.integerLiteral);
                 this.CONSUME3(lexer_1.RParen);
-                return this.ACTION(() => Number.parseInt(steps, 10));
+                return steps;
             });
             this.CONSUME1(lexer_1.RParen);
             this.ACTION(() => registers.addInput(scope, binary, typeOrParent, steps));
@@ -131,6 +132,20 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.AT_LEAST_ONE(() => values.push(this.CONSUME(lexer_1.Literal).image));
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => registers.addCyclic(values.map(v => BigInt(v))));
+        });
+        this.maskRegister = this.RULE('maskRegister', (registers) => {
+            this.CONSUME1(lexer_1.LParen);
+            this.CONSUME(lexer_1.Mask);
+            this.CONSUME2(lexer_1.LParen);
+            this.CONSUME(lexer_1.Input);
+            const source = this.SUBRULE(this.integerLiteral);
+            this.CONSUME2(lexer_1.RParen);
+            this.CONSUME3(lexer_1.LParen);
+            this.CONSUME(lexer_1.Value);
+            const value = this.CONSUME2(lexer_1.Literal).image;
+            this.CONSUME3(lexer_1.RParen);
+            this.CONSUME1(lexer_1.RParen);
+            this.ACTION(() => registers.addMask(source, BigInt(value)));
         });
         // PROCEDURES
         // --------------------------------------------------------------------------------------------
