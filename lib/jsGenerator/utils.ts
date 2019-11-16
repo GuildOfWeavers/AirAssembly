@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { Expression, BinaryOperationType, UnaryOperationType } from "../expressions";
+import { Expression, BinaryOperationType, UnaryOperationType } from "@guildofweavers/air-assembly";
 
 // PUBLIC FUNCTIONS
 // ================================================================================================

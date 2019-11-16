@@ -74,7 +74,6 @@ declare module '@guildofweavers/air-assembly' {
         readonly expression     : Expression;
         readonly localVarIdx    : number;
         readonly dimensions     : Dimensions;
-        readonly degree         : ExpressionDegree;
     }
 
     // STATIC REGISTERS
@@ -136,23 +135,20 @@ declare module '@guildofweavers/air-assembly' {
     export type StoreTarget = 'local';
     export type LoadSource = 'const' | 'trace' | 'static' | 'local';
 
+    export type BinaryOperationType = 'add' | 'sub' | 'mul' | 'div' | 'exp' | 'prod';
+    export type UnaryOperationType = 'neg' | 'inv';
+
     export abstract class Expression {
         readonly dimensions : Dimensions;
-        readonly degree     : ExpressionDegree;
         readonly children   : Expression[];
 
-        constructor(dimensions: Dimensions, degree: ExpressionDegree, children?: Expression[]);
+        constructor(dimensions: Dimensions, children?: Expression[]);
 
         readonly isScalar   : boolean;
         readonly isVector   : boolean;
         readonly isMatrix   : boolean;
 
         isSameDimensions(e: Expression): boolean;
-
-        compress(): void;
-        collectLoadOperations(source: LoadSource, result: Map<Expression, Expression[]>): void;
-        replace(oldExpression: Expression, newExpression: Expression): void;
-        updateAccessorIndex(source: LoadSource, fromIdx: number, toIdx: number): void
     }
 
     export class LiteralValue extends Expression {

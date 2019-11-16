@@ -25,7 +25,7 @@ export class SliceVector extends Expression {
         }
 
         const length = end - start + 1;
-        super([length, 0], (source.degree as bigint[]).slice(start, end + 1), [source]);
+        super([length, 0], [source]);
         this.start = start;
         this.end = end;
     }

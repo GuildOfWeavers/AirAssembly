@@ -10,7 +10,7 @@ class LoadExpression extends Expression_1.Expression {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
     constructor(binding, index) {
-        super(binding.dimensions, binding.degree);
+        super(binding.dimensions);
         this._index = index;
         this.binding = binding;
     }
@@ -31,21 +31,6 @@ class LoadExpression extends Expression_1.Expression {
     }
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
-    collectLoadOperations(source, result) {
-        // TODO
-        /*
-        if (this.source === source) {
-            const bindings = result.get(this.binding) || [];
-            bindings.push(this);
-            result.set(this.binding, bindings);
-        }
-        */
-    }
-    updateAccessorIndex(source, fromIdx, toIdx) {
-        if (this.source === source && this._index === fromIdx) {
-            this._index = toIdx;
-        }
-    }
     toString() {
         return `(load.${this.source} ${this.index})`;
     }

@@ -1,26 +1,19 @@
 // IMPORTS
 // ================================================================================================
+import { UnaryOperationType } from "@guildofweavers/air-assembly";
 import { Expression } from "./Expression";
-
-// INTERFACES
-// ================================================================================================
-export type OperationType = 'neg' | 'inv';
 
 // CLASS DEFINITION
 // ================================================================================================
 export class UnaryOperation extends Expression {
 
-    readonly operation  : OperationType;
+    readonly operation  : UnaryOperationType;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(operation: string, operand: Expression) {
-        if (operation === 'neg') {
-            super(operand.dimensions, operand.degree, [operand]);
-        }
-        else if (operation === 'inv') {
-            const degree = operand.degree; // TODO: incorrect
-            super(operand.dimensions, degree, [operand]);
+        if (operation === 'neg' || operation === 'inv') {
+            super(operand.dimensions, [operand]);
         }
         else {
             throw new Error(`unary operation '${operation}' is not valid`);

@@ -14,9 +14,6 @@ class Subroutine {
     get dimensions() {
         return this.expression.dimensions;
     }
-    get degree() {
-        return this.expression.degree;
-    }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     updateAccessorIndex(target, fromIdx, toIdx) {

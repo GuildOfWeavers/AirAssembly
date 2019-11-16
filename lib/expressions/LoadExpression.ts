@@ -20,7 +20,7 @@ export class LoadExpression extends Expression {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
     constructor(binding: LoadBinding, index: number) {
-        super(binding.dimensions, binding.degree);
+        super(binding.dimensions);
         this._index = index;
         this.binding = binding;
     }
@@ -40,23 +40,6 @@ export class LoadExpression extends Expression {
 
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
-    collectLoadOperations(source: LoadSource, result: Map<Expression, Expression[]>): void {
-        // TODO
-        /*
-        if (this.source === source) {
-            const bindings = result.get(this.binding) || [];
-            bindings.push(this);
-            result.set(this.binding, bindings);
-        }
-        */
-    }
-
-    updateAccessorIndex(source: LoadSource, fromIdx: number, toIdx: number): void {
-        if (this.source === source && this._index === fromIdx) {
-            this._index = toIdx;
-        }
-    }
-
     toString(): string {
         return `(load.${this.source} ${this.index})`;
     }

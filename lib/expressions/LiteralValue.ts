@@ -14,7 +14,7 @@ export class LiteralValue extends Expression {
     constructor(value: bigint | bigint[] | bigint[][]) {
         if (typeof value === 'bigint') {
             // value is a scalar
-            super(Dimensions.scalar(), 0n);
+            super(Dimensions.scalar());
         }
         else if (Array.isArray(value)) {
             // value is a vector or a matrix
@@ -22,13 +22,12 @@ export class LiteralValue extends Expression {
 
             if (typeof value[0] === 'bigint') {
                 // value is a vector
-                super(Dimensions.vector(rowCount), new Array(rowCount).fill(0n));
+                super(Dimensions.vector(rowCount));
             }
             else {
                 // value is a matrix
                 const colCount = (value[0] as bigint[]).length;
-                const colDegrees = new Array(colCount).fill(0n);
-                super(Dimensions.matrix(rowCount, colCount), new Array(rowCount).fill(colDegrees));
+                super(Dimensions.matrix(rowCount, colCount));
                 for (let row of value as bigint[][]) {
                     if (row.length !== colCount) {
                         throw new Error(`all matrix rows must have the same number of columns`);

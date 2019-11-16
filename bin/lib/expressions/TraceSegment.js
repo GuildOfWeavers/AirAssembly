@@ -10,7 +10,7 @@ class TraceSegment extends Expression_1.Expression {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(width, isStatic) {
-        super(utils_1.Dimensions.vector(width), new Array(width).fill(1n));
+        super(utils_1.Dimensions.vector(width));
         this.isStatic = isStatic;
     }
     // ACCESSORS

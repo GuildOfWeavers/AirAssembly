@@ -12,24 +12,20 @@ class MakeMatrix extends Expression_1.Expression {
         const rowCount = elements.length;
         const colCount = elements[0].length;
         const children = [];
-        let degree = [];
         for (let row of elements) {
-            let rowDegree = [];
+            let rowLength = 0;
             for (let element of row) {
-                if (element.isScalar) {
-                    rowDegree.push(element.degree);
-                }
-                else {
+                if (!element.isScalar) {
                     throw new Error('matrix elements must be scalars');
                 }
                 children.push(element);
+                rowLength++;
             }
-            if (rowDegree.length !== colCount) {
+            if (rowLength !== colCount) {
                 throw new Error('all matrix rows must have the same number of columns');
             }
-            degree.push(rowDegree);
         }
-        super([rowCount, colCount], degree, children);
+        super([rowCount, colCount], children);
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------

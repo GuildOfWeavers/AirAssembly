@@ -14,27 +14,22 @@ export class MakeMatrix extends Expression {
         const colCount = elements[0].length;
         const children: Expression[] = [];
 
-        let degree: bigint[][] = [];
         for (let row of elements) {
-            let rowDegree: bigint[] = [];
+            let rowLength = 0;
             for (let element of row) {
-                if (element.isScalar) {
-                    rowDegree.push(element.degree as bigint);
-                }
-                else {
+                if (!element.isScalar) {
                     throw new Error('matrix elements must be scalars');
                 }
                 children.push(element);
+                rowLength++;
             }
 
-            if (rowDegree.length !== colCount) {
+            if (rowLength !== colCount) {
                 throw new Error('all matrix rows must have the same number of columns');
             }
-
-            degree.push(rowDegree);
         }
 
-        super([rowCount, colCount], degree, children);
+        super([rowCount, colCount], children);
     }
 
     // ACCESSORS

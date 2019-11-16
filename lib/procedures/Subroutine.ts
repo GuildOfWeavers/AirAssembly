@@ -25,10 +25,6 @@ export class Subroutine implements ISubroutine {
         return this.expression.dimensions;
     }
 
-    get degree(): ExpressionDegree {
-        return this.expression.degree;
-    }
-
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     updateAccessorIndex(target: StoreTarget, fromIdx: number, toIdx: number): void {

@@ -20,7 +20,7 @@ export class GetVectorElement extends Expression {
             throw new Error(`vector index ${index} is out of bounds; expected to be within [${0}, ${sourceLength})`);
         }
         
-        super(Dimensions.scalar(), (source.degree as bigint[])[index], [source]);
+        super(Dimensions.scalar(), [source]);
         this.index = index;
     }
 

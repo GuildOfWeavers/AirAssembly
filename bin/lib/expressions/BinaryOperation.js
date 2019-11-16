@@ -1,41 +1,31 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// IMPORTS
-// ================================================================================================
 const Expression_1 = require("./Expression");
-const utils_1 = require("./utils");
 const LiteralValue_1 = require("./LiteralValue");
 const LoadExpression_1 = require("./LoadExpression");
+const utils_1 = require("./utils");
 // CLASS DEFINITION
 // ================================================================================================
 class BinaryOperation extends Expression_1.Expression {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(operation, lhs, rhs) {
-        let degree;
-        if (operation === 'add' || operation === 'sub') {
+        let dimensions;
+        if (operation === 'add' || operation === 'sub' || operation === 'mul' || operation === 'div') {
             checkDimensions(lhs, rhs, operation);
-            degree = utils_1.maxDegree(lhs.degree, rhs.degree);
-        }
-        else if (operation === 'mul') {
-            checkDimensions(lhs, rhs, operation);
-            degree = utils_1.sumDegree(lhs.degree, rhs.degree);
-        }
-        else if (operation === 'div') {
-            checkDimensions(lhs, rhs, operation);
-            degree = utils_1.sumDegree(lhs.degree, rhs.degree); // TODO: incorrect
+            dimensions = lhs.dimensions;
         }
         else if (operation === 'exp') {
-            const exponent = getExponentValue(rhs);
-            degree = utils_1.mulDegree(lhs.degree, exponent);
+            checkExponent(rhs);
+            dimensions = lhs.dimensions;
         }
         else if (operation === 'prod') {
-            degree = getProductDegree(lhs, rhs);
+            dimensions = getProductDimensions(lhs, rhs);
         }
         else {
             throw new Error(`binary operation '${operation}' is not valid`);
         }
-        super(utils_1.degreeToDimensions(degree), degree, [lhs, rhs]);
+        super(dimensions, [lhs, rhs]);
         this.operation = operation;
     }
     // ACCESSORS
@@ -65,39 +55,34 @@ function checkDimensions(lhs, rhs, operation) {
             throw new Error(`cannot divide {${d1}} value by {${d2}} value`);
     }
 }
-function getProductDegree(rhs, lhs) {
+function checkExponent(exp) {
+    if (!exp.isScalar)
+        throw new Error(`cannot raise to non-scalar power`);
+    if (!(exp instanceof LiteralValue_1.LiteralValue)
+        && !(exp instanceof LoadExpression_1.LoadExpression && exp.binding instanceof LiteralValue_1.LiteralValue)) {
+        throw new Error(`cannot raise to non-constant power`);
+    }
+}
+function getProductDimensions(rhs, lhs) {
     const d1 = lhs.dimensions;
     const d2 = rhs.dimensions;
     if (lhs.isVector && rhs.isVector) {
         if (d1[0] !== d2[0])
             throw new Error(`cannot compute a product of {${d1}} and {${d2}} values`);
-        return utils_1.linearCombinationDegree(lhs.degree, rhs.degree);
+        return utils_1.Dimensions.scalar();
     }
     else if (lhs.isMatrix && rhs.isVector) {
         if (d1[1] !== d2[0])
             throw new Error(`cannot compute a product of {${d1}} and {${d2}} values`);
-        return utils_1.matrixVectorProductDegree(lhs.degree, rhs.degree);
+        return utils_1.Dimensions.vector(lhs.dimensions[0]);
     }
     else if (lhs.isMatrix && rhs.isMatrix) {
         if (d1[1] !== d2[0])
             throw new Error(`cannot compute a product of {${d1}} and {${d2}} values`);
-        return utils_1.matrixMatrixProductDegree(lhs.degree, rhs.degree);
+        return utils_1.Dimensions.matrix(lhs.dimensions[0], rhs.dimensions[1]);
     }
     else {
         throw new Error(`cannot compute a product of {${d1}} and {${d2}} values`);
-    }
-}
-function getExponentValue(exp) {
-    if (!exp.isScalar)
-        throw new Error(`cannot raise to non-scalar power`);
-    if (exp instanceof LiteralValue_1.LiteralValue) {
-        return exp.value;
-    }
-    else if (exp instanceof LoadExpression_1.LoadExpression && exp.binding instanceof LiteralValue_1.LiteralValue) {
-        return exp.binding.value;
-    }
-    else {
-        throw new Error(`cannot raise to non-constant power`);
     }
 }
 //# sourceMappingURL=BinaryOperation.js.map

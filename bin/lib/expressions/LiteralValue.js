@@ -12,20 +12,19 @@ class LiteralValue extends Expression_1.Expression {
     constructor(value) {
         if (typeof value === 'bigint') {
             // value is a scalar
-            super(utils_1.Dimensions.scalar(), 0n);
+            super(utils_1.Dimensions.scalar());
         }
         else if (Array.isArray(value)) {
             // value is a vector or a matrix
             const rowCount = value.length;
             if (typeof value[0] === 'bigint') {
                 // value is a vector
-                super(utils_1.Dimensions.vector(rowCount), new Array(rowCount).fill(0n));
+                super(utils_1.Dimensions.vector(rowCount));
             }
             else {
                 // value is a matrix
                 const colCount = value[0].length;
-                const colDegrees = new Array(colCount).fill(0n);
-                super(utils_1.Dimensions.matrix(rowCount, colCount), new Array(rowCount).fill(colDegrees));
+                super(utils_1.Dimensions.matrix(rowCount, colCount));
                 for (let row of value) {
                     if (row.length !== colCount) {
                         throw new Error(`all matrix rows must have the same number of columns`);

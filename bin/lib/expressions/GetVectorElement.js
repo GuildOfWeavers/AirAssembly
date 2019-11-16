@@ -18,7 +18,7 @@ class GetVectorElement extends Expression_1.Expression {
         if (index < 0 || index >= sourceLength) {
             throw new Error(`vector index ${index} is out of bounds; expected to be within [${0}, ${sourceLength})`);
         }
-        super(utils_1.Dimensions.scalar(), source.degree[index], [source]);
+        super(utils_1.Dimensions.scalar(), [source]);
         this.index = index;
     }
     // ACCESSORS

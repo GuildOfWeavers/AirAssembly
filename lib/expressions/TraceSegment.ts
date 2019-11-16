@@ -12,7 +12,7 @@ export class TraceSegment extends Expression {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(width: number, isStatic: boolean) {
-        super(Dimensions.vector(width), new Array(width).fill(1n));
+        super(Dimensions.vector(width));
         this.isStatic = isStatic;
     }
 
