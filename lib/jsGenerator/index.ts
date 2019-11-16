@@ -1,26 +1,35 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema, AirModule, Procedure, StaticRegisterDescriptor } from "@guildofweavers/air-assembly";
 import { createPrimeField, FiniteField } from "@guildofweavers/galois";
+import { AirModule, StarkLimits } from "@guildofweavers/air-assembly";
+import { AirSchema } from '../AirSchema';
+import { Procedure } from '../procedures';
+import { getConstraintDegrees } from "../analysis";
 import { StaticRegisters } from './registers';
 import * as expressions from "./expressions";
 import * as jsTemplate from './template';
-
 
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
     transition  : 'applyTransition(r, k)',
-    evaluation  : 'evaluateConstraints(r, k, n)'
+    evaluation  : 'evaluateConstraints(r, n, k)'
 }
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
-export function generateModule(schema: AirSchema): AirModule {
+export function instantiateModule(schema: AirSchema, limits: StarkLimits): AirModule {
     let code = `'use strict';\n\n`;
 
-    code += `const traceRegisterCount = ${schema.transitionFunction.resultLength};\n`;
-    code += `const compositionFactor = 4;\n`; // TODO
+    // compute composition factor
+    const constraintDegrees = getConstraintDegrees(schema);
+    const maxConstraintDegree = constraintDegrees.reduce((p, c) => c > p ? c : p, 0);
+    const compositionFactor = 2**Math.ceil(Math.log2(maxConstraintDegree));
+
+    // set up module variables
+    code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
+    code += `const constraintCount = ${schema.constraintCount};\n`;
+    code += `const compositionFactor = ${compositionFactor};\n`;
 
     // build transition function and constraint evaluator
     code += generateProcedureCode(schema.transitionFunction);
@@ -36,9 +45,9 @@ export function generateModule(schema: AirSchema): AirModule {
      code += 'return {\n';
      code += `field: f,\n`;
      code += `traceRegisterCount: traceRegisterCount,\n`;
-     // TODO: code += `kRegisterCount: ${specs.staticRegisters.length},\n`;
-     // TODO: code += `constraints: constraints,\n`;
-     // TODO: code += `maxConstraintDegree: ${specs.maxTransitionConstraintDegree},\n`;
+     code += `staticRegisterCount: staticRegisters.size,\n`;
+     //TODO: code += `constraints: constraints,\n`;
+     code += `maxConstraintDegree: ${maxConstraintDegree},\n`;
      code += `initProof,\n`;
      code += `initVerification\n`;
      code += '};';
@@ -68,16 +77,4 @@ function generateProcedureCode(procedure: Procedure): string {
 function buildField(schema: AirSchema): FiniteField {
     // TODO: check type
     return createPrimeField(schema.field.modulus);
-}
-
-function buildCyclicRegisters(schema: AirSchema): StaticRegisterDescriptor[] {
-    return [];
-    /*
-    return schema.staticRegisters.cyclic.map(r => ({
-        type    : 'cyclic',
-        shape   : [1, r.values.length], // TODO: remove?
-        values  : r.values,
-        secret  : false,
-    }));
-    */
 }

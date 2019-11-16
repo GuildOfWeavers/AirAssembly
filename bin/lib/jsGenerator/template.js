@@ -4,8 +4,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const f = undefined;
 const traceRegisterCount = 0;
+const constraintCount = 0;
+const compositionFactor = 0;
 const staticRegisters = undefined;
-const compositionFactor = 4;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
 const applyTransition = function () { return []; };
@@ -64,13 +65,15 @@ function initProof(inputs, extensionFactor) {
     // CONSTRAINT EVALUATOR
     // --------------------------------------------------------------------------------------------
     function evaluateTracePolynomials(polynomials) {
-        const constraintCount = 1; // TODO
         // make sure trace polynomials are valid
-        // validateTracePolynomials(polynomials, traceLength);
+        validateTracePolynomials(polynomials, traceLength);
         // evaluate transition polynomials over composition domain
         const tEvaluations = f.evalPolysAtRoots(polynomials, compositionDomain);
         // initialize evaluation arrays
         const evaluations = new Array(constraintCount);
+        for (let i = 0; i < constraintCount; i++) {
+            evaluations[i] = new Array(compositionDomainSize);
+        }
         const nfSteps = compositionDomainSize - compositionFactor;
         const rValues = new Array(traceRegisterCount);
         const nValues = new Array(traceRegisterCount);
@@ -149,6 +152,9 @@ function initProof(inputs, extensionFactor) {
         field: f,
         traceLength: traceLength,
         traceRegisterCount: traceRegisterCount,
+        executionDomain: executionDomain,
+        evaluationDomain: evaluationDomain,
+        compositionDomain: compositionDomainSize,
         generateExecutionTrace: generateExecutionTrace,
         evaluateTracePolynomials: evaluateTracePolynomials,
         secretRegisterTraces: secretRegisterTraces
@@ -181,4 +187,18 @@ function buildFillMask(values, domain) {
     return mask;
 }
 exports.buildFillMask = buildFillMask;
+function validateTracePolynomials(trace, traceLength) {
+    if (!trace)
+        throw new TypeError('Trace polynomials is undefined');
+    if (!trace.rowCount || !trace.colCount) { // TODO: improve type checking
+        throw new TypeError('Trace polynomials must be provided as a matrix of coefficients');
+    }
+    if (trace.rowCount !== traceRegisterCount) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceRegisterCount} rows`);
+    }
+    if (trace.colCount !== traceLength) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
+    }
+}
+exports.validateTracePolynomials = validateTracePolynomials;
 //# sourceMappingURL=template.js.map

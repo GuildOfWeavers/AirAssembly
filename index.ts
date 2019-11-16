@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
 import { lexer } from './lib/lexer';
 import { parser } from './lib/parser';
-import { generateModule } from './lib/jsGenerator';
+import { instantiateModule } from './lib/jsGenerator';
 import { analyzeProcedure } from './lib/analysis';
 import { AssemblyError } from './lib/errors';
 import * as expr from './lib/expressions';
@@ -77,9 +77,10 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
     return schema;
 }
 
-export function instantiate(sourceOrPath: AirSchema | Buffer | string, options?: Partial<ModuleOptions>): AirModule {
-    const schema = (sourceOrPath instanceof AirSchema) ? sourceOrPath : compile(sourceOrPath);
-    const module = generateModule(schema);
+export function instantiate(sourceOrPath: AirSchema | Buffer | string, options: Partial<ModuleOptions> = {}): AirModule {
+    const limits: StarkLimits = { ...DEFAULT_LIMITS, ...options.limits };
+    const schema = (sourceOrPath instanceof AirSchema) ? sourceOrPath : compile(sourceOrPath, limits);
+    const module = instantiateModule(schema, limits);
     return module;
 }
 

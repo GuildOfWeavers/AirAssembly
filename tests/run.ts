@@ -32,7 +32,12 @@ const schema = compile(Buffer.from(`
 console.log(schema.toString());
 
 const stats = analyze(schema);
+const air = instantiate(schema);
 
-//const c = m.initProof([[1n, 2n, 3n, 4n], [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]], [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]], 8);
-//const trace = c.generateExecutionTrace();
+const pObject = air.initProof([[1n, 2n, 3n, 4n], [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]], [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]], 8);
+const trace = pObject.generateExecutionTrace();
+const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
+const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);
+const cEvaluations = pObject.evaluateTracePolynomials(pPolys);
+
 console.log('done!');

@@ -35,6 +35,11 @@ class StaticRegisters {
             value: r.value
         }));
     }
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get size() {
+        return this.inputRegisters.length + this.cyclicRegisters.length + this.maskedRegisters.length;
+    }
     // INPUT HANDLERS
     // --------------------------------------------------------------------------------------------
     digestInputs(inputs) {

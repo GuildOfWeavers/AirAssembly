@@ -63,6 +63,12 @@ export class StaticRegisters {
         }));
     }
 
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get size(): number {
+        return this.inputRegisters.length + this.cyclicRegisters.length + this.maskedRegisters.length;
+    }
+
     // INPUT HANDLERS
     // --------------------------------------------------------------------------------------------
     digestInputs(inputs: any[]) {

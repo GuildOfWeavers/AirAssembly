@@ -67,9 +67,10 @@ function compile(sourceOrPath, limits) {
     return schema;
 }
 exports.compile = compile;
-function instantiate(sourceOrPath, options) {
-    const schema = (sourceOrPath instanceof AirSchema_1.AirSchema) ? sourceOrPath : compile(sourceOrPath);
-    const module = jsGenerator_1.generateModule(schema);
+function instantiate(sourceOrPath, options = {}) {
+    const limits = { ...DEFAULT_LIMITS, ...options.limits };
+    const schema = (sourceOrPath instanceof AirSchema_1.AirSchema) ? sourceOrPath : compile(sourceOrPath, limits);
+    const module = jsGenerator_1.instantiateModule(schema, limits);
     return module;
 }
 exports.instantiate = instantiate;

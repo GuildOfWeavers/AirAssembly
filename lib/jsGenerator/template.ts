@@ -13,9 +13,10 @@ export type StaticRegisterEvaluator<T extends bigint | number> = (x: T) => bigin
 // ================================================================================================
 const f: FiniteField = undefined as any;
 const traceRegisterCount = 0;
+const constraintCount = 0;
+const compositionFactor = 0;
 
 const staticRegisters: StaticRegisters = undefined as any;
-const compositionFactor = 4;
 
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -92,16 +93,17 @@ export function initProof(inputs: any[], extensionFactor: number): any {
     // --------------------------------------------------------------------------------------------
     function evaluateTracePolynomials(polynomials: Matrix): Matrix {
 
-        const constraintCount = 1;  // TODO
-
         // make sure trace polynomials are valid
-        // validateTracePolynomials(polynomials, traceLength);
+        validateTracePolynomials(polynomials, traceLength);
 
         // evaluate transition polynomials over composition domain
         const tEvaluations = f.evalPolysAtRoots(polynomials, compositionDomain);
 
         // initialize evaluation arrays
         const evaluations = new Array<bigint[]>(constraintCount);
+        for (let i = 0; i < constraintCount; i++) {
+            evaluations[i] = new Array<bigint>(compositionDomainSize);
+        }
 
         const nfSteps = compositionDomainSize - compositionFactor;
         const rValues = new Array<bigint>(traceRegisterCount);
@@ -198,6 +200,9 @@ export function initProof(inputs: any[], extensionFactor: number): any {
         field                       : f,
         traceLength                 : traceLength,
         traceRegisterCount          : traceRegisterCount,
+        executionDomain             : executionDomain,
+        evaluationDomain            : evaluationDomain,
+        compositionDomain           : compositionDomainSize,
         generateExecutionTrace      : generateExecutionTrace,
         evaluateTracePolynomials    : evaluateTracePolynomials,
         secretRegisterTraces        : secretRegisterTraces
@@ -229,4 +234,18 @@ export function buildFillMask(values: bigint[], domain: Vector): bigint[] {
     const mask = new Array(period).fill(f.zero);
     mask[0] = f.one;
     return mask;
+}
+
+export function validateTracePolynomials(trace: Matrix, traceLength: number): void {
+    if (!trace) throw new TypeError('Trace polynomials is undefined');
+    if (!trace.rowCount || !trace.colCount) { // TODO: improve type checking
+        throw new TypeError('Trace polynomials must be provided as a matrix of coefficients');
+    }
+    if (trace.rowCount !== traceRegisterCount) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceRegisterCount} rows`);
+    }
+
+    if (trace.colCount !== traceLength) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
+    }
 }
