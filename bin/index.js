@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
+const AirSchema_1 = require("./lib/AirSchema");
 const lexer_1 = require("./lib/lexer");
 const parser_1 = require("./lib/parser");
 const jsGenerator_1 = require("./lib/jsGenerator");
+const analysis_1 = require("./lib/analysis");
 const errors_1 = require("./lib/errors");
 const expr = require("./lib/expressions");
 // MODULE VARIABLES
@@ -66,9 +68,15 @@ function compile(sourceOrPath, limits) {
 }
 exports.compile = compile;
 function instantiate(sourceOrPath, options) {
-    const schema = compile(sourceOrPath);
+    const schema = (sourceOrPath instanceof AirSchema_1.AirSchema) ? sourceOrPath : compile(sourceOrPath);
     const module = jsGenerator_1.generateModule(schema);
     return module;
 }
 exports.instantiate = instantiate;
+function analyze(schema) {
+    const transition = analysis_1.analyzeProcedure(schema.transitionFunction);
+    const evaluation = analysis_1.analyzeProcedure(schema.constraintEvaluator);
+    return { transition, evaluation };
+}
+exports.analyze = analyze;
 //# sourceMappingURL=index.js.map

@@ -1,6 +1,6 @@
-import { compile, instantiate } from '../index';
+import { compile, instantiate, analyze } from '../index';
 
-const m = instantiate(Buffer.from(`
+const schema = compile(Buffer.from(`
 (module
     (field prime 96769)
     (const 
@@ -29,7 +29,10 @@ const m = instantiate(Buffer.from(`
                 (get (load.static 0) 1)))))
 `));
 
-//console.log(m.toString());
-const c = m.initProof([[1n, 2n, 3n, 4n], [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]], [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]], 8);
-const trace = c.generateExecutionTrace();
+console.log(schema.toString());
+
+const stats = analyze(schema);
+
+//const c = m.initProof([[1n, 2n, 3n, 4n], [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]], [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]], 8);
+//const trace = c.generateExecutionTrace();
 console.log('done!');
