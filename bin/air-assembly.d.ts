@@ -157,7 +157,7 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export class BinaryOperation extends Expression {
-        readonly operation  : string;
+        readonly operation  : BinaryOperationType;
         readonly lhs        : Expression;
         readonly rhs        : Expression;
     }
@@ -193,8 +193,9 @@ declare module '@guildofweavers/air-assembly' {
 
         readonly field                  : FiniteField;
         readonly traceRegisterCount     : number;
-        readonly staticRegisters        : any[];    // TODO
+        readonly staticRegisterCount    : number;
         readonly constraints            : any[];    // TODO
+        readonly inputSpecs             : InputDescriptor[];
         readonly maxConstraintDegree    : number;
 
         /**
@@ -205,29 +206,31 @@ declare module '@guildofweavers/air-assembly' {
 
         /**
          * Creates verification object for the specified trace shape and public inputs
-         * @param traceShape number of cycles of each depth of input loop
+         * @param traceShape TODO
          * @param publicInputs values for initialize public input registers
          */
-        initVerification(traceShape: number[], publicInputs: any[]): VerificationObject;
+        initVerification(inputShapes: number[][], publicInputs: any[]): VerificationObject;
     }
 
-    export class AirScriptError {
-        readonly errors: any[];
-        constructor(errors: any[]);
+    export interface InputDescriptor {
+        readonly rank       : number;
+        readonly parent?    : number;
+        readonly steps?     : number;
+        readonly secret     : boolean;
+        readonly binary     : boolean;
     }
 
     // CONTEXTS
     // --------------------------------------------------------------------------------------------
     export interface AirObject {
         readonly field              : FiniteField;
-        readonly traceShape         : number[];
+        readonly rootOfUnity        : bigint;
         readonly traceLength        : number;
         readonly extensionFactor    : number;
-        readonly rootOfUnity        : bigint;
-        readonly stateWidth         : number;
         readonly constraintCount    : number;
-        readonly inputRegisterCount : number;
+        readonly traceRegisterCount : number;
         readonly staticRegisterCount: number;
+        readonly inputShapes        : number[][];
     }
 
     export interface VerificationObject extends AirObject {
@@ -256,6 +259,13 @@ declare module '@guildofweavers/air-assembly' {
 
         generateExecutionTrace(): Matrix;
         evaluateTracePolynomials(polynomials: Matrix): Matrix;
+    }
+
+    // ERRORS
+    // --------------------------------------------------------------------------------------------
+    export class AirScriptError {
+        readonly errors: any[];
+        constructor(errors: any[]);
     }
 
     // INTERNAL

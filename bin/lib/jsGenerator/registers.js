@@ -73,6 +73,28 @@ class StaticRegisters {
         const traceLength = this.computeTraceLength(shapes);
         return { traceLength, registerSpecs };
     }
+    digestPublicInputs(inputs, shapes) {
+        let registerSpecs = [], i = 0;
+        for (let { index, rank, secret, binary } of this.inputRegisters) {
+            if (secret) {
+                registerSpecs.push(undefined);
+            }
+            else {
+                let values = unrollRegisterValues(inputs[i], index, rank, 0, shapes[index]);
+                if (binary)
+                    validateBinaryValues(values, index);
+                registerSpecs.push({
+                    type: 'input',
+                    shape: shapes[index],
+                    values: values,
+                    secret: false
+                });
+                i++;
+            }
+        }
+        const traceLength = this.computeTraceLength(shapes);
+        return { traceLength, registerSpecs };
+    }
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------
     computeTraceLength(shapes) {

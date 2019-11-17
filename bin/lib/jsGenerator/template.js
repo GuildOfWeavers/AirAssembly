@@ -30,6 +30,8 @@ function initProof(inputs, extensionFactor) {
     const secretRegisterTraces = [];
     // build static register evaluators
     const kRegisters = registerSpecs.map(r => buildStaticRegisterEvaluator(r));
+    // extract shapes from input register specs
+    const inputShapes = registerSpecs.filter(r => r.type === 'input').map(r => r.shape);
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace() {
@@ -113,7 +115,7 @@ function initProof(inputs, extensionFactor) {
         }
         return f.newMatrixFrom(evaluations);
     }
-    // STATIC BUILDERS
+    // STATIC REGISTER EVALUATOR BUILDER
     // --------------------------------------------------------------------------------------------
     function buildStaticRegisterEvaluator(register) {
         // secret registers are evaluated over the entire evaluation domain
@@ -127,7 +129,7 @@ function initProof(inputs, extensionFactor) {
         }
         else {
             evaluations = f.evalPolyAtRoots(poly, domain);
-            const mask = buildFillMask(register.values, executionDomain);
+            const mask = buildFillMask(register.values, traceLength);
             const maskPoly = interpolateRegisterValues(mask, domain);
             const subdomain = buildSubdomain(domain, mask.length * factor);
             let mEvaluations = f.evalPolyAtRoots(maskPoly, subdomain);
@@ -150,11 +152,16 @@ function initProof(inputs, extensionFactor) {
     // --------------------------------------------------------------------------------------------
     return {
         field: f,
+        rootOfUnity: rootOfUnity,
         traceLength: traceLength,
+        extensionFactor: extensionFactor,
+        constraintCount: constraintCount,
         traceRegisterCount: traceRegisterCount,
+        staticRegisterCount: staticRegisters.size,
+        inputShapes: inputShapes,
         executionDomain: executionDomain,
         evaluationDomain: evaluationDomain,
-        compositionDomain: compositionDomainSize,
+        compositionDomain: compositionDomain,
         generateExecutionTrace: generateExecutionTrace,
         evaluateTracePolynomials: evaluateTracePolynomials,
         secretRegisterTraces: secretRegisterTraces
@@ -163,16 +170,87 @@ function initProof(inputs, extensionFactor) {
 exports.initProof = initProof;
 // VERIFICATION OBJECT GENERATOR
 // ================================================================================================
-function initVerification(traceShape, pInputs) {
+function initVerification(inputShapes, publicInputs) {
+    const { traceLength, registerSpecs } = staticRegisters.digestPublicInputs(publicInputs, inputShapes);
+    const extensionFactor = 8; // TODO
+    const evaluationDomainSize = traceLength * extensionFactor;
+    const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
+    // build static register evaluators
+    const kRegisters = registerSpecs.map(r => buildStaticRegisterEvaluator(r));
+    // CONSTRAINT EVALUATOR
+    // --------------------------------------------------------------------------------------------
+    function evaluateConstraintsAt(x, rValues, nValues, sValues) {
+        // get values of static registers for the current position
+        const kValues = new Array(kRegisters.length);
+        for (let i = 0, j = 0; i < kValues.length; i++) {
+            let evaluator = kRegisters[i];
+            if (evaluator === null) {
+                kValues[i] = sValues[j];
+                j++;
+            }
+            else {
+                kValues[i] = evaluator(x);
+            }
+        }
+        // populate qValues with constraint evaluations
+        const qValues = evaluateConstraints(rValues, nValues, kValues);
+        return qValues;
+    }
+    // STATIC REGISTER EVALUATOR BUILDER
+    // --------------------------------------------------------------------------------------------
+    function buildStaticRegisterEvaluator(register) {
+        if (!register)
+            return null;
+        // determine number of cycles over the execution trace
+        const cycleCount = BigInt(traceLength / register.values.length);
+        // build the polynomial describing cyclic values
+        const g = f.exp(rootOfUnity, BigInt(extensionFactor) * cycleCount);
+        const poly = interpolateRegisterValues(register.values, g);
+        if (register.type === 'cyclic') {
+            // build and return the evaluator function
+            return (x) => f.evalPolyAt(poly, f.exp(x, cycleCount));
+        }
+        else {
+            const mask = buildFillMask(register.values, traceLength);
+            const mCycleCountCount = BigInt(traceLength / mask.length);
+            const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mCycleCountCount);
+            const maskPoly = interpolateRegisterValues(mask, mg);
+            // build and return the evaluator function
+            return (x) => {
+                const v = f.evalPolyAt(poly, x);
+                const m = f.evalPolyAt(maskPoly, f.exp(x, mCycleCountCount));
+                return f.mul(v, m);
+            };
+        }
+    }
+    // VERIFICATION OBJECT
+    // --------------------------------------------------------------------------------------------
+    return {
+        field: f,
+        rootOfUnity: rootOfUnity,
+        traceLength: traceLength,
+        extensionFactor: extensionFactor,
+        constraintCount: constraintCount,
+        staticRegisterCount: staticRegisters.size,
+        traceRegisterCount: traceRegisterCount,
+        inputShapes: inputShapes,
+        evaluateConstraintsAt: evaluateConstraintsAt
+    };
 }
 exports.initVerification = initVerification;
 // HELPER FUNCTIONS
 // ================================================================================================
-function interpolateRegisterValues(values, domain) {
-    const skip = domain.length / values.length;
+function interpolateRegisterValues(values, domainOrRoot) {
     const ys = f.newVectorFrom(values);
-    const xs = f.pluckVector(domain, skip, ys.length);
-    return f.interpolateRoots(xs, ys);
+    if (typeof domainOrRoot === 'bigint') {
+        const xs = f.getPowerSeries(domainOrRoot, ys.length);
+        return f.interpolateRoots(xs, ys);
+    }
+    else {
+        const skip = domainOrRoot.length / values.length;
+        const xs = f.pluckVector(domainOrRoot, skip, ys.length);
+        return f.interpolateRoots(xs, ys);
+    }
 }
 exports.interpolateRegisterValues = interpolateRegisterValues;
 function buildSubdomain(domain, newLength) {
@@ -180,8 +258,8 @@ function buildSubdomain(domain, newLength) {
     return f.pluckVector(domain, skip, newLength);
 }
 exports.buildSubdomain = buildSubdomain;
-function buildFillMask(values, domain) {
-    const period = domain.length / values.length;
+function buildFillMask(values, domainLength) {
+    const period = domainLength / values.length;
     const mask = new Array(period).fill(f.zero);
     mask[0] = f.one;
     return mask;
