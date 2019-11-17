@@ -31,7 +31,8 @@ The code below illustrates AirAssembly module structure on an example of a [MiMC
 ```
 (module
     (field prime 340282366920938463463374607393113505793)
-    (const 3)
+    (const 
+        (scalar 3))
     (static
         (cycle 42 43 170 2209 16426 78087 279978 823517))
     (transition
@@ -74,7 +75,7 @@ Executing an AirAssembly module against a set of inputs produces two outputs:
 
 AirAssembly module execution process is illustrated in the picture below:
 
-![AirAssembly module execution](https://credostore.blob.core.windows.net/web-assets/other/airexe.png)
+![AirAssembly module execution](exemodel.png)
 
 1. First, the static segment of the execution trace table is built by evaluating static register specifications against provided inputs.
 2. Then, the dynamic segment of the execution trace table is built by evaluating the transition function for each step of the computation.
@@ -104,68 +105,72 @@ The above example defines a prime field with modulus = 2<sup>128</sup> - 9 * 2<s
 ### Constant declarations
 Constant declaration section defines constants which can be used in transition functions and constraint evaluators. Constant declaration expression has the following form:
 ```
-(const <value>)
+(const <constants>)
 ```
 where:
-* `value` can be either a scalar, a vector, or a matrix (see [value types](#Value-types) for more info).
+* `constants` is a list of constant declarations which can be scalars, vectors, and matrixes (see [value types](#Value-types) for more info).
 
 For example:
 ```
-(const 5)                       # declares scalar constant with value 5
+(const (scalar 5))              # declares scalar constant with value 5
 (const (vector 1 2 3 4))        # declares vector constant with values [1, 2, 3, 4]
 (const (matrix (1 2) (3 4)))    # declares matrix constant with rows [1, 2] and [3, 4]
 ```
 Constants are un-named and can be referenced only by their indexes. For example, the following code block declares 3 constants with indexes 0, 1, and 2 (in the order of their declaration):
 ```
-(const 5) (const (vector 1 2 3 4)) (const (matrix (1 2) (3 4)))
+(const
+    (scalar 5)
+    (vector 1 2 3 4) 
+    (matrix (1 2) (3 4)))
 ```
-Once defined, values constants cannot be changed. To reference a constant in a transition function or a constraint evaluator `load.const` expression can be used (see [load operations](#Load-operations) for more info).
+Once defined, values of constants cannot be changed. To reference a constant in a transition function or a constraint evaluator `load.const` expression can be used (see [load operations](#Load-operations) for more info).
 
 ### Static registers
 Static registers section defines logic for generating static register traces. These traces are computed before the execution of the transition function, and cannot be changed by the transition function or the constraint evaluator. Static section expression has the following form:
 ```
-(static <registers>)
+(static <input registers> <cyclic registers> <mask registers>)
 ```
 where:
-* `registers` is a list of register declarations consisting of input, embedded, and computed registers.
+* `input registers` is a list of zero or more [input register](#Input-registers) declarations;
+* `cyclic registers` is a list of zero or more [cyclic register](#Cyclic-registers) declarations;
+* `mask registers` is a list of zero or more [mask register](#Mask-registers) declarations;
 
-For example, the following code block declares 2 registers - one input register and one embedded cyclic register:
+For example, the following code block declares 3 registers - one of each type:
 ```
 (static
     (input public vector (steps 8)))
-    (cycle 1 2 3 4))
+    (cycle 1 2 3 4)
+    (mask (input 0) (value 1)))
 ```
 A detailed explanation of each type of static register is provided in the following sections.
 
 #### Input registers
 Input register declarations specify what inputs are required by the computation, and describes the logic needed to transform these inputs into register traces. Input register declaration expression has the following form:
 ```
-(input <visibility> <binary?> <type> <filling> <steps?>)
+(input <scope> <binary?> <type> <steps?>)
 ```
 where:
-* `visibility` can be either `secret` or `public`. Values for `secret` input registers are assumed to be known only to the prover and need to be provided only at the proof generation time. Values for `public` input registers must be known to both, the prover and the verifier, and must be provided at the time of proof generation, as well as, at the time of proof verification.
+* `scope` can be either `secret` or `public`. Values for `secret` input registers are assumed to be known only to the prover and need to be provided only at the proof generation time. Values for `public` input registers must be known to both, the prover and the verifier, and must be provided at the time of proof generation, as well as, at the time of proof verification.
 * An optional `binary` attribute indicates whether the input register accepts only binary values (ones and zeros).
 * Input `type` can be `scalar`, `vector`, or a reference to a parent register. `scalar` input registers expect a single value; `vector` input registers expect a list of at least one value, and the length of the list must be a power of 2. References to parent registers have the form `(parent <index>)`, where `index` is the index of the parent register. This allows forming of nested inputs (see [examples](#Nested-input-registers) for more info).
-* `filling` can be either `sparse` or a `fill` expression. `sparse` filling indicates that values at steps other than input alignment steps are unimportant. `fill` expression has the form `(fill <value>)`, where `value` is a scalar value to be inserted into the register trace at all unaligned steps (see [examples](#Single-input-register) for more info).
 * `steps` expression has the form `(steps <count>)`, where `count` specifies the number of steps by which a register trace should be expanded for each input value. The number of steps must be a power of 2. `steps` expression can be provided only for "leaf" input registers (see [examples](#Nested-input-registers) for more info).
 
 Detailed examples of how different types of input registers are transformed into register traces are available [here](#Input-register-trace-generation), but here are a few simple example of input register declarations:
 ```
-(input public scalar sparse (steps 8))
-(input secret vector (fill 0))
-(input public binary (fill 0) (parent 0) (steps 8))
+(input public scalar (steps 8))
+(input secret vector)
+(input public binary (parent 1) (steps 8))
 ```
 
-#### Embedded registers
-Embedded register declarations contains the data needed to generate register traces without any additional inputs. Embedded register declaration expression has the following form:
+#### Cyclic registers
+Cyclic register are static registers that repeat a pre-defined pattern of values over an execution trace. Cyclic register declaration has the following form:
 ```
-(<type> <values>)
+(cycle <values>)
 ```
 where:
-* `type` is the type of the embedded register. Currently, the only available type is `cycle` which will generate a trace with a cyclic pattern of values.
 * `values` is the list of scalars which form the basis of the register trace. The list must contain at least one value, and the length of the list must be a power of 2.
 
-For example, the following code block declares two embedded cyclic registers:
+For example, the following code block declares two cyclic registers:
 ```
 (cycle 1 2 3 4)
 (cycle 1 1 0 0 0 0 1 1)
@@ -176,78 +181,24 @@ register 0: [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]
 register 1: [1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1]
 ```
 
-#### Computed registers
-Input and embedded registers can be combined using arithmetic and logical operators to form new static registers. Such registers are called computed registers and their declaration has the following form:
+#### Mask registers
+Mask registers are static registers that replace ("mask") values in an input register with a specified value. Mask register declaration has the following form:
 ```
-(<expression>)
-```
-where:
-* `expression` can be either an arithmetic expression or a logical expression involving one or more already declared registers.
-
-For example, in the code block below, two static registers are declared: the first one is an embedded cyclic register, the second on is a computed register where every value for the register is equal to the corresponding value of the cyclic register multiplied by 2.
-```
-(cycle 1 2 3 4)
-(mul (static 0) 2)
-```
-
-**Note:** computed registers cannot be based on secret input registers as a verifier also needs to generate register traces for these registers.
-
-##### Logical expressions
-Logical expressions can combine one or more public input registers into a computed register. Logical expressions have the following form:
-```
-(when <condition> <true value> <false value>)
+(mask (input <register>) (value <value>))
 ```
 where:
-* `condition` is a boolean predicate which evaluates to true when a referenced input register holds input value, and evaluates to false otherwise.
-* `true value` is a scalar which will be assigned to the register when the predicate is true.
-* `false value` is a scalar which will be assigned to the register when the predicate is false.
+* `register` is an index of an input register which should be masked;
+* `value` is a scalar value with which input values should be replaced.
 
-For example:
+For example, the code block below declares an input register and a mask register that masks the input values in the first register with value `1`:
 ```
-(input public vector sparse (steps 4))
-(when (static 0) 1 0)
+(input public vector (steps 4))
+(mask (input 0) (value 1))
 ```
-Assuming inputs for register 0 are [3, 4], register traces for the above example will look like so:
+If we provide [1, 2, 3, 4] as input values for the first register, traces for both registers will look like so:
 ```
-register 0: [3, ?, ?, ?, 4, ?, ?, ?]
-register 1: [1, 0, 0, 0, 1, 0, 0, 0]
-```
-Essentially, the computed register will hold value `1` when there is an input in static register 0, and `0` otherwise.
-
-Predicates can be also combined using standard boolean operators `and`, `or` and, `not`. For example:
-```
-(input public vector sparse)
-(input public (parent 0) (fill 0) (steps 4))
-(when (and (not (static 0)) (static 1)) 1 0)
-```
-Assuming inputs for register 0 are [3, 4], and inputs for register 1 are [[4, 5], [6, 7]], register traces for the above example will look like so:
-```
-register 0: [3, ?, ?, ?, ?, ?, ?, ?, 4, ?, ?, ?, ?, ?, ?, ?]
-register 1: [4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 7, 0, 0, 0]
-register 2: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
-```
-
-##### Arithmetic expressions
-Arithmetic expressions can combine static registers into a new computed register using standard arithmetic operators `add`, `sub`, `mul`, `div`, `exp`, `neg`, and `inv`. Valid operands for these operators are:
-* Embedded, computed, and public input registers.
-* Logical expressions
-* Arithmetic expressions (i.e. arithmetic expressions can be nested).
-
-For example:
-```
-(input public vector (fill 0) (steps 8))
-(cycle 1 2 3 4)
-(mul
-    2
-    (add 
-        (when (static 0) 1 0) 
-        (static 1)))
-```
-Assuming inputs for register 0 are [3, 4], register traces for the above example will look like so:
-```
-register 0: [3, 0, 0, 0, 4, 0, 0, 0]
-register 1: [1, 2, 3, 4, 1, 2, 3, 4]
-register 2: [4, 4, 6, 8, 4, 4, 6, 8]
+register 0: [1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]
+register 1: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
 ```
 
 ### Transition function
@@ -322,11 +273,11 @@ Transition function body consists of a list of [arithmetic expressions](#Arithme
 
 For example, the body of the function below consists of a single expression:
 ```
-(vector (add 1 2))                      # resolves to vector [3]
+(vector (add (scalar 1) (scalar 2)))    # resolves to vector [3]
 ```
 Another example, where a local variable is used to store value of a common sub-expression:
 ```
-(store 0 (add 1 2))                     # stores value 3 into local variable 0
+(store 0 (add (scalar 1) (scalar 2)))   # stores value 3 into local variable 0
 (vector (load.local 0) (load.local 0))  # resolves to vector [3, 3]
 ```
 
@@ -493,11 +444,11 @@ where:
 
 For example:
 ```
-(add 1 2)   # resolves to 3
-(sub 3 1)   # resolves to 2
-(mul 3 3)   # resolves to 9
-(div 4 2)   # resolves to 2
-(exp 2 8)   # resolves to 256
+(add (scalar 1) (scalar 2))   # resolves to 3
+(sub (scalar 3) (scalar 1))   # resolves to 2
+(mul (scalar 3) (scalar 3))   # resolves to 9
+(div (scalar 4) (scalar 2))   # resolves to 2
+(exp (scalar 2) (scalar 8))   # resolves to 256
 ```
 The above operations can also take vectors and matrixes as operands. In such cases, the operations are treated as **element-wise** operations and it is required that both operands have the same lengths/dimensions. For example:
 ```
@@ -506,7 +457,7 @@ The above operations can also take vectors and matrixes as operands. In such cas
 ```
 The second operand can also be replaced with a scalar value. For example:
 ```
-(exp (vector 3 4) 2)                # resolves to [9, 16]
+(exp (vector 3 4) (scalar 2))       # resolves to [9, 16]
 ```
 
 #### prod operation
@@ -529,8 +480,8 @@ where:
 
 For example (assuming field modulus is 23):
 ```
-(neg 21)    # resolves to 2
-(inv 15)    # resolves to 20
+(neg (scalar 21))    # resolves to 2
+(inv (scalar 15))    # resolves to 20
 ```
 If the operand is a vector or a matrix, the operation is performed **element-wise**. For example:
 
@@ -579,14 +530,14 @@ To update a value of a local variable, the following expression can be used:
 
 For example:
 ```
-(store.local 0 1)                   # stores a scalar into local variable 0
+(store.local 0 (scalar 1))          # stores a scalar into local variable 0
 (store.local 1 (vector 1 2 3 4))    # stores a vector into local variable 1
-(store.local 1 5)                   # results in an error
+(store.local 1 (scalar 5))          # results in an error
 ```
 
 Value of a given local variable can be updated an unlimited number of times. Also, the `value` expression can contain references to the variable being updated. For example, the following is perfectly valid:
 ```
-(store.local 0 1)                       # stores 1 into local variable 0
+(store.local 0 (scalar 1))              # stores 1 into local variable 0
 (store.local 0 (add 2 (load.local 0)))  # stores 3 into local variable 0
 ```
 **Note:** unlike other expressions, store expressions do not resolve to a value, and therefore, cannot be used as sub-expressions in other expressions.
@@ -602,38 +553,32 @@ The examples below illustrate how various inputs for a single register are trans
 
 Let's start with a simple example of an input register that expects a scalar value and resolves to a trace of 4 steps long.
 ```
-(input public scalar sparse (steps 4))
+(input public scalar (steps 4))
 ```
-If the input value for this register was `3`, the resulting trace column would be `[3, ?, ?, ?]`. The `sparse` attribute indicates that values at steps other than 0 are not important, and therefore, can be anything. Thus, when interpolating a polynomial for this column, the only thing we need to ensure is that the value at step 0 is `3`.
-
-If we want to make sure trace values at all steps are well-defined, we can replace `sparse` attribute with `fill` expression like so:
-```
-(input public scalar (fill 0) (steps 4))
-```
-Now, with the same input `3`, the resulting trace column would be `[3, 0, 0, 0]`.
+If the input value for this register was `3`, the resulting trace column would be `[3, 0, 0, 0]`. Basically, the first value in the trace would be set to the input value, and the remaining values would be set to `0`.
 
 We can also change trace length by changing the number of steps. For example:
 ```
-(input public scalar (fill 0) (steps 8))
+(input public scalar (steps 8))
 ```
 Given input `3`, this will evaluate to a column with values `[3, 0, 0, 0, 0, 0, 0, 0, 0]`.
 
 If we want the register to accept a list of values (rather than just one value), we can change its type from `scalar` to `vector` like so:
 ```
-(input public vector (fill 0) (steps 4))
+(input public vector (steps 4))
 ```
 Now, we can provide a list of values, and the trace columns will look like so:
 * Input [3] => `[3, 0, 0, 0]`
 * input [3, 4] => `[3, 0, 0, 0, 4, 0, 0, 0]`
 * Input [3, 4, 5, 6] => ` [3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0]`
 
-Notice, how for each input value, trace length extends by 4 steps.
+Notice, how for each input value, trace length is extended by 4 steps.
 
 ### Multiple independent input registers
 We can define multiple input registers, and in such cases the number of trace columns will equal to the number of declared registers. For example, the following code block defines two input registers, each expecting a list of values. The first register expands by 4 steps for each input value, while the second register expand by 8 steps for each input value.
 ```
-(input public vector (fill 0) (steps 4))
-(input public vector (fill 0) (steps 8))
+(input public vector (steps 4))
+(input public vector (steps 8))
 ```
 If we provide [3, 4, 5, 6] as inputs for the first register, and [7, 8] as inputs for the second register, the resulting column traces will look like so: 
 
@@ -646,8 +591,8 @@ Notice that both registers resolve to traces of the same length. This is require
 ### Nested input registers
 We can also specify relationships between input registers like so:
 ```
-(input public vector (fill 0))
-(input public (parent 0) (fill 0) (steps 2))
+(input public vector)
+(input public (parent 0) (steps 2))
 ```
 The above example declares 2 input registers such that:
 1. The first register expects a list of values,
@@ -667,11 +612,11 @@ register 1: [5, 0, 6, 0, 7, 0, 8, 0, 9, 0, 10, 0, 11, 0, 12, 0]
 
 We can also nest register relations as deep as needed. For example, the code block below has two levels of nesting and also two parallel nesting structures:
 ```
-(input public vector (fill 0))
-(input public (parent 0) (fill 0))
-(input public (parent 1) (fill 0) (steps 2))
-(input public (parent 0) (fill 0))
-(input public (parent 3) (fill 0) (steps 4))
+(input public vector)
+(input public (parent 0))
+(input public (parent 1) (steps 2))
+(input public (parent 0))
+(input public (parent 3) (steps 4))
 ```
 This results in a tree-like structure where:
 * Register 0 is the parent of both registers 1 and 3
