@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema as IAirSchema, StarkLimits, Dimensions, FieldDescriptor, ConstraintDescriptor } from "@guildofweavers/air-assembly";
-import { LiteralValue } from "./expressions";
+import { AirSchema as IAirSchema, StarkLimits, FieldDescriptor, ConstraintDescriptor } from "@guildofweavers/air-assembly";
+import { LiteralValue, Dimensions } from "./expressions";
 import { Procedure } from "./procedures";
 import { analyzeProcedure } from "./analysis";
 import { StaticRegister, StaticRegisterSet } from "./registers";

@@ -1,9 +1,7 @@
 // IMPORTS
 // ================================================================================================
-import {
-    Expression, Dimensions, ExpressionDegree, StoreTarget, Subroutine as ISubroutine
-} from "@guildofweavers/air-assembly";
-
+import { Subroutine as ISubroutine } from "@guildofweavers/air-assembly";
+import { Expression, Dimensions } from '../expressions';
 
 // CLASS DEFINITION
 // ================================================================================================

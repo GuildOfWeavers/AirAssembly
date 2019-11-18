@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirModule, StarkLimits, ModuleOptions } from '@guildofweavers/air-assembly';
+import { AirModule, StarkLimits, ModuleOptions, SchemaAnalysisResult } from '@guildofweavers/air-assembly';
 import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
 import { lexer } from './lib/lexer';
@@ -94,7 +94,7 @@ export function instantiate(schema: AirSchema, options: Partial<ModuleOptions> =
     return module;
 }
 
-export function analyze(schema: AirSchema) {
+export function analyze(schema: AirSchema): SchemaAnalysisResult {
     const transition = analyzeProcedure(schema.transitionFunction);
     const evaluation = analyzeProcedure(schema.constraintEvaluator);
     return { transition, evaluation };

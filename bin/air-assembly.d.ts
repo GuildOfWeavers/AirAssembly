@@ -7,12 +7,6 @@ declare module '@guildofweavers/air-assembly' {
 
     // COMMON INTERFACES
     // --------------------------------------------------------------------------------------------
-    export interface ModuleOptions {
-        limits          : Partial<StarkLimits>;
-        wasmOptions     : Partial<WasmOptions> | boolean;
-        extensionFactor : number;
-    }
-
     export interface StarkLimits {
 
         /** Maximum number of steps in an execution trace; defaults to 2^20 */
@@ -31,12 +25,18 @@ declare module '@guildofweavers/air-assembly' {
         maxConstraintDegree: number;
     }
 
+    export interface ModuleOptions {
+        limits          : Partial<StarkLimits>;
+        wasmOptions     : Partial<WasmOptions> | boolean;
+        extensionFactor : number;
+    }
+
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
     export function compile(path: string, limits?: Partial<StarkLimits>): AirSchema;
     export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
 
-    export function analyze(schema: AirSchema): any;
+    export function analyze(schema: AirSchema): SchemaAnalysisResult;
 
     export function instantiate(schema: AirSchema, options?: Partial<ModuleOptions>): AirModule;
 
@@ -45,16 +45,18 @@ declare module '@guildofweavers/air-assembly' {
     export class AirSchema {
 
         readonly field                  : FieldDescriptor;
-        readonly constants              : ReadonlyArray<LiteralValue>;
-        readonly staticRegisters        : ReadonlyArray<StaticRegister>;
+        readonly constants              : ReadonlyArray<expressions.LiteralValue>;
+        readonly staticRegisters        : ReadonlyArray<registers.StaticRegister>;
         readonly transitionFunction     : Procedure;
         readonly constraintEvaluator    : Procedure;
         readonly constraints            : ConstraintDescriptor[];
         readonly maxConstraintDegree    : number;
 
+        constructor();
+
         setField(type: 'prime', modulus: bigint): void;
-        setConstants(values: LiteralValue[]): void;
-        setStaticRegisters(registers: StaticRegisterSet): void;
+        setConstants(values: expressions.LiteralValue[]): void;
+        setStaticRegisters(registers: registers.StaticRegisterSet): void;
         setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure;
         setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure;
 
@@ -72,136 +74,164 @@ declare module '@guildofweavers/air-assembly' {
         readonly span           : number;
         readonly locals         : ReadonlyArray<Dimensions>;
         readonly subroutines    : ReadonlyArray<Subroutine>;
-        readonly expressions    : ReadonlyArray<Expression>;
-        readonly result         : Expression;
+        readonly expressions    : ReadonlyArray<expressions.Expression>;
+        readonly result         : expressions.Expression;
         readonly resultLength   : number;
 
-        setResult(expression: Expression): void;
-        addSubroutine(expression: Expression, localVarIdx: number): void;
-        buildLoadExpression(operation: string, index: number): LoadExpression;
+        setResult(expression: expressions.Expression): void;
+        addSubroutine(expression: expressions.Expression, localVarIdx: number): void;
+        buildLoadExpression(operation: string, index: number): expressions.LoadExpression;
     }
 
     export interface Subroutine {
-        readonly expression     : Expression;
+        readonly expression     : expressions.Expression;
         readonly localVarIdx    : number;
         readonly dimensions     : Dimensions;
     }
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    export abstract class StaticRegister { }
+    export namespace registers {
 
-    export class InputRegister extends StaticRegister {
-        readonly secret : boolean;
-        readonly rank   : number;
-        readonly binary : boolean;
-        readonly parent?: number;
-        readonly steps? : number;
-    }
+        export abstract class StaticRegister { }
 
-    export class CyclicRegister extends StaticRegister {
-        readonly values : ReadonlyArray<bigint>;
-    }
+        export class InputRegister extends StaticRegister {
+            readonly secret : boolean;
+            readonly rank   : number;
+            readonly binary : boolean;
+            readonly parent?: number;
+            readonly steps? : number;
 
-    export class MaskRegister extends StaticRegister {
-        readonly source : number;
-        readonly value  : bigint;
-    }
+            private constructor();
+        }
+    
+        export class CyclicRegister extends StaticRegister {
+            readonly values : ReadonlyArray<bigint>;
 
-    export class StaticRegisterSet {
-               
-        readonly inputs : ReadonlyArray<InputRegister>;
-        readonly cyclic : ReadonlyArray<CyclicRegister>;
-        readonly masked : ReadonlyArray<MaskRegister>;
-        readonly size   : number;
+            private constructor();
+        }
+    
+        export class MaskRegister extends StaticRegister {
+            readonly source : number;
+            readonly value  : bigint;
 
-        constructor();
-
-        addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
-        addCyclic(values: bigint[]): void;
-        addMask(source: number, value: bigint): void;
-
-        get(index: number): StaticRegister;
-        map<T>(callback: (register: StaticRegister, index: number) => T): T[];
-        forEach(callback: (register: StaticRegister, index: number) => void): void;
-
-        getDanglingInputs(): number[];
+            private constructor();
+        }
+    
+        export class StaticRegisterSet {
+                   
+            readonly inputs : ReadonlyArray<InputRegister>;
+            readonly cyclic : ReadonlyArray<CyclicRegister>;
+            readonly masked : ReadonlyArray<MaskRegister>;
+            readonly size   : number;
+    
+            constructor();
+    
+            addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
+            addCyclic(values: bigint[]): void;
+            addMask(source: number, value: bigint): void;
+    
+            get(index: number): StaticRegister;
+            map<T>(callback: (register: StaticRegister, index: number) => T): T[];
+            forEach(callback: (register: StaticRegister, index: number) => void): void;
+    
+            getDanglingInputs(): number[];
+        }
     }
 
     // EXPRESSIONS
     // --------------------------------------------------------------------------------------------
     export type Dimensions = [number, number];
-    export type ExpressionDegree = bigint | bigint[] | bigint[][];
+    export type Degree = bigint | bigint[] | bigint[][];
     export type StoreTarget = 'local';
     export type LoadSource = 'const' | 'trace' | 'static' | 'local';
 
     export type BinaryOperationType = 'add' | 'sub' | 'mul' | 'div' | 'exp' | 'prod';
     export type UnaryOperationType = 'neg' | 'inv';
 
-    export abstract class Expression {
-        readonly dimensions : Dimensions;
-        readonly children   : Expression[];
+    export namespace expressions {
 
-        constructor(dimensions: Dimensions, children?: Expression[]);
-
-        readonly isScalar   : boolean;
-        readonly isVector   : boolean;
-        readonly isMatrix   : boolean;
-
-        isSameDimensions(e: Expression): boolean;
+        export abstract class Expression {
+            readonly dimensions : Dimensions;
+            readonly children   : Expression[];
+    
+            constructor(dimensions: Dimensions, children?: Expression[]);
+    
+            readonly isScalar   : boolean;
+            readonly isVector   : boolean;
+            readonly isMatrix   : boolean;
+    
+            isSameDimensions(e: Expression): boolean;
+        }
+    
+        export class LiteralValue extends Expression {
+            readonly value      : bigint | bigint[] | bigint[][];
+    
+            constructor(value: bigint | bigint[] | bigint[][]);
+        }
+    
+        export class BinaryOperation extends Expression {
+            readonly operation  : BinaryOperationType;
+            readonly lhs        : Expression;
+            readonly rhs        : Expression;
+    
+            constructor(operation: string, lhs: Expression, rhs: Expression);
+        }
+    
+        export class UnaryOperation extends Expression {
+            readonly operation  : UnaryOperationType;
+            readonly operand    : Expression;
+    
+            constructor(operation: string, operand: Expression);
+        }
+    
+        export class MakeVector extends Expression {
+            readonly elements   : Expression[];
+    
+            constructor(elements: Expression[]);
+        }
+    
+        export class GetVectorElement extends Expression {
+            readonly source     : Expression;
+            readonly index      : number;
+    
+            constructor(source: Expression, index: number);
+        }
+    
+        export class SliceVector extends Expression {
+            readonly source     : Expression;
+            readonly start      : number;
+            readonly end        : number;
+    
+            constructor(source: Expression, start: number, end: number);
+        }
+    
+        export class MakeMatrix extends Expression {
+            readonly elements   : Expression[][];
+    
+            constructor(elements: Expression[][]);
+        }
+    
+        export class LoadExpression extends Expression {
+            readonly source : LoadSource;
+            readonly index  : number;
+        }
     }
 
-    export class LiteralValue extends Expression {
-        readonly value      : bigint | bigint[] | bigint[][];
-
-        constructor(value: bigint | bigint[] | bigint[][]);
+    // ANALYSIS
+    // --------------------------------------------------------------------------------------------
+    export interface ProcedureAnalysisResult {
+        readonly degree     : bigint[];
+        readonly operations : {
+            readonly add    : number;
+            readonly mul    : number;
+            readonly inv    : number;
+        };
     }
 
-    export class BinaryOperation extends Expression {
-        readonly operation  : BinaryOperationType;
-        readonly lhs        : Expression;
-        readonly rhs        : Expression;
-
-        constructor(operation: string, lhs: Expression, rhs: Expression);
-    }
-
-    export class UnaryOperation extends Expression {
-        readonly operation  : UnaryOperationType;
-        readonly operand    : Expression;
-
-        constructor(operation: string, operand: Expression);
-    }
-
-    export class MakeVector extends Expression {
-        readonly elements   : Expression[];
-
-        constructor(elements: Expression[]);
-    }
-
-    export class GetVectorElement extends Expression {
-        readonly source     : Expression;
-        readonly index      : number;
-
-        constructor(source: Expression, index: number);
-    }
-
-    export class SliceVector extends Expression {
-        readonly source     : Expression;
-        readonly start      : number;
-        readonly end        : number;
-
-        constructor(source: Expression, start: number, end: number);
-    }
-
-    export class MakeMatrix extends Expression {
-        readonly elements   : Expression[][];
-
-        constructor(elements: Expression[][]);
-    }
-
-    export class LoadExpression extends Expression {
-        readonly source : LoadSource;
-        readonly index  : number;
+    export interface SchemaAnalysisResult {
+        readonly transition : ProcedureAnalysisResult;
+        readonly evaluation : ProcedureAnalysisResult;
     }
 
     // AIR MODULE
@@ -319,7 +349,7 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export interface MaskRegisterDescriptor {
-        source  : number;
-        value   : bigint;
+        readonly source : number;
+        readonly value  : bigint;
     }
 }

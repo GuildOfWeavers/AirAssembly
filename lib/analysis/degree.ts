@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { ExpressionDegree } from "@guildofweavers/air-assembly";
+import { Degree } from "@guildofweavers/air-assembly";
 import { BinaryOperation, UnaryOperation } from "../expressions";
 import { getExponentValue } from "./utils";
 
@@ -12,7 +12,7 @@ interface DegreeOp {
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
-export function getBinaryOperationDegree(e: BinaryOperation, lhsDegree: ExpressionDegree, rhsDegree: ExpressionDegree): ExpressionDegree {
+export function getBinaryOperationDegree(e: BinaryOperation, lhsDegree: Degree, rhsDegree: Degree): Degree {
     const op = e.operation;
 
     if (op === 'add' || op === 'sub') {
@@ -43,7 +43,7 @@ export function getBinaryOperationDegree(e: BinaryOperation, lhsDegree: Expressi
     throw new Error(`invalid binary operation '${e.operation}'`);
 }
 
-export function getUnaryOperationDegree(e: UnaryOperation, opDegree: ExpressionDegree): ExpressionDegree {
+export function getUnaryOperationDegree(e: UnaryOperation, opDegree: Degree): Degree {
     if (e.operation === 'neg') {
         return opDegree;
     }
@@ -56,7 +56,7 @@ export function getUnaryOperationDegree(e: UnaryOperation, opDegree: ExpressionD
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function maxDegree(d1: ExpressionDegree, d2: ExpressionDegree): ExpressionDegree {
+function maxDegree(d1: Degree, d2: Degree): Degree {
     if (typeof d1 === 'bigint') {
         if (typeof d2 !== 'bigint') throw new Error('cannot infer max degree');
         return (d1 > d2 ? d1 : d2);
@@ -69,7 +69,7 @@ function maxDegree(d1: ExpressionDegree, d2: ExpressionDegree): ExpressionDegree
     }
 }
 
-function sumDegree(d1: ExpressionDegree, d2: ExpressionDegree): ExpressionDegree {
+function sumDegree(d1: Degree, d2: Degree): Degree {
     if (typeof d1 === 'bigint') {
         if (typeof d2 !== 'bigint') throw new Error('cannot infer sum degree');
         return d1 + d2;
@@ -82,7 +82,7 @@ function sumDegree(d1: ExpressionDegree, d2: ExpressionDegree): ExpressionDegree
     }
 }
 
-function mulDegree(d1: ExpressionDegree, d2: ExpressionDegree): ExpressionDegree {
+function mulDegree(d1: Degree, d2: Degree): Degree {
     if (typeof d1 === 'bigint') {
         if (typeof d2 !== 'bigint') throw new Error('cannot infer mul degree');
         return d1 * d2;

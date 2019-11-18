@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { ExpressionDegree } from "@guildofweavers/air-assembly";
+import { Degree, ProcedureAnalysisResult } from "@guildofweavers/air-assembly";
 import { Procedure } from "../procedures";
 import {
     ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
@@ -13,27 +13,27 @@ import { analyzeBinaryOperation, analyzeUnaryOperation, OperationStats } from ".
 // ================================================================================================
 interface AnalysisContext {
     degree: {
-        const   : ExpressionDegree[];
-        local   : ExpressionDegree[];
-        static  : ExpressionDegree;
-        trace   : ExpressionDegree;
+        const   : Degree[];
+        local   : Degree[];
+        static  : Degree;
+        trace   : Degree;
     }
     stats       : OperationStats;
 }
 
 // EXPRESSION ANALYZER CLASS
 // ================================================================================================
-class ExpressionAnalyzer extends ExpressionVisitor<ExpressionDegree> {
+class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
 
     // LITERALS
     // --------------------------------------------------------------------------------------------
-    literalValue(e: LiteralValue): ExpressionDegree {
+    literalValue(e: LiteralValue): Degree {
         return 0n;
     }
 
     // OPERATIONS
     // --------------------------------------------------------------------------------------------
-    binaryOperation(e: BinaryOperation, ctx: AnalysisContext): ExpressionDegree {
+    binaryOperation(e: BinaryOperation, ctx: AnalysisContext): Degree {
         analyzeBinaryOperation(e, ctx.stats);
         const lhsDegree = this.visit(e.lhs, ctx);
         const rhsDegree = this.visit(e.rhs, ctx);
@@ -41,7 +41,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionDegree> {
         return degree;
     }
 
-    unaryOperation(e: UnaryOperation, ctx: AnalysisContext): ExpressionDegree {
+    unaryOperation(e: UnaryOperation, ctx: AnalysisContext): Degree {
         analyzeUnaryOperation(e, ctx.stats);
         const opDegree = this.visit(e, ctx);
         const degree = getUnaryOperationDegree(e, opDegree);
@@ -50,7 +50,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionDegree> {
 
     // VECTORS AND MATRIXES
     // --------------------------------------------------------------------------------------------
-    makeVector(e: MakeVector, ctx: AnalysisContext): ExpressionDegree {
+    makeVector(e: MakeVector, ctx: AnalysisContext): Degree {
         let degree: bigint[] = [];
         for (let element of e.elements) {
             const elementDegree = this.visit(element, ctx);
@@ -64,17 +64,17 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionDegree> {
         return degree;
     }
 
-    getVectorElement(e: GetVectorElement, ctx: AnalysisContext): ExpressionDegree {
+    getVectorElement(e: GetVectorElement, ctx: AnalysisContext): Degree {
         const sourceDegree = this.visit(e.source, ctx) as bigint[];
         return sourceDegree[e.index];
     }
 
-    sliceVector(e: SliceVector, ctx: AnalysisContext): ExpressionDegree {
+    sliceVector(e: SliceVector, ctx: AnalysisContext): Degree {
         const sourceDegree = this.visit(e.source, ctx) as bigint[];
         return sourceDegree.slice(e.start, e.end + 1);
     }
 
-    makeMatrix(e: MakeMatrix, ctx: AnalysisContext): ExpressionDegree {
+    makeMatrix(e: MakeMatrix, ctx: AnalysisContext): Degree {
         const degree: bigint[][] = [];
         for (let row of e.elements) {
             let rowDegree: bigint[] = [];
@@ -91,7 +91,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionDegree> {
 
     // LOAD AND STORE
     // --------------------------------------------------------------------------------------------
-    loadExpression(e: LoadExpression, ctx: AnalysisContext): ExpressionDegree {
+    loadExpression(e: LoadExpression, ctx: AnalysisContext): Degree {
         if (e.source === 'const') return ctx.degree.const[0];
         else if (e.source === 'local') return ctx.degree.local[0];
         else if (e.source === 'static') return ctx.degree.static;
@@ -102,7 +102,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionDegree> {
 // PUBLIC FUNCTIONS
 // ================================================================================================
 const analyzer = new ExpressionAnalyzer();
-export function analyzeProcedure(procedure: Procedure) {
+export function analyzeProcedure(procedure: Procedure): ProcedureAnalysisResult {
 
     // initialize context
     const context: AnalysisContext = {
@@ -123,12 +123,12 @@ export function analyzeProcedure(procedure: Procedure) {
 
     // analyze result and return
     const degree = analyzer.visit(procedure.result, context) as bigint[];
-    return { degree, stats: context.stats };
+    return { degree, operations: context.stats };
 }
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function dimensionsToDegree(dimensions: Dimensions, degree: bigint): ExpressionDegree {
+function dimensionsToDegree(dimensions: Dimensions, degree: bigint): Degree {
     if (Dimensions.isScalar(dimensions)) {
         return degree;
     }

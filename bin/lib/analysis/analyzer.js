@@ -97,7 +97,7 @@ function analyzeProcedure(procedure) {
     });
     // analyze result and return
     const degree = analyzer.visit(procedure.result, context);
-    return { degree, stats: context.stats };
+    return { degree, operations: context.stats };
 }
 exports.analyzeProcedure = analyzeProcedure;
 // HELPER FUNCTIONS
