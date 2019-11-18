@@ -2,9 +2,8 @@
 // ================================================================================================
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, RegisterEvaluatorSpecs,
-    ProofObject, VerificationObject, ConstraintDescriptor
+    ProofObject, VerificationObject, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor
 } from "@guildofweavers/air-assembly";
-import { StaticRegisters } from "./registers";
 
 // INTERFACES
 // ================================================================================================
@@ -18,7 +17,11 @@ const compositionFactor = 0;
 const extensionFactor = 0;
 
 const constraints: ConstraintDescriptor[] = [];
-const staticRegisters: StaticRegisters = undefined as any;
+const staticRegisters: {
+    inputs  : InputDescriptor[];
+    cyclic  : RegisterEvaluatorSpecs[];
+    masked  : MaskRegisterDescriptor[];
+} = {} as any;
 
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -30,7 +33,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 export function initProof(inputs: any[]): ProofObject {
 
     // validate inputs
-    const { traceLength, registerSpecs } = staticRegisters.digestInputs(inputs);
+    const { traceLength, registerSpecs } = digestInputs(inputs);
 
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
@@ -222,7 +225,7 @@ export function initProof(inputs: any[]): ProofObject {
 // ================================================================================================
 export function initVerification(inputShapes: number[][], publicInputs: any[]): VerificationObject {
     
-    const { traceLength, registerSpecs } = staticRegisters.digestPublicInputs(publicInputs, inputShapes);
+    const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
         
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -295,6 +298,57 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
     };
 }
 
+// INPUT HANDLERS
+// ================================================================================================
+export function digestInputs(inputs: any[]) {
+
+    let specs: RegisterEvaluatorSpecs[] = [];
+
+    // build input register descriptors
+    const shapes = new Array<number[]>(staticRegisters.inputs.length);
+    staticRegisters.inputs.forEach((register, i) => {
+        shapes[i] = (register.parent === undefined) ? [1] : shapes[register.parent].slice(0);
+        let values = unrollRegisterValues(inputs[i], i, register.rank, 0, shapes[i]);
+        if (register.binary) validateBinaryValues(values, i);
+        specs.push({ type: 'input', shape: shapes[i], values, secret: register.secret });
+    });
+
+    // append cyclic register descriptors
+    specs = specs.concat(staticRegisters.cyclic);
+
+    // build and append masked register descriptors
+    staticRegisters.masked.forEach(register => specs.push({
+        type    : 'mask',
+        values  : new Array(specs[register.source].values.length).fill(register.value),
+        secret  : false
+    }));
+
+    const traceLength = computeTraceLength(shapes);
+
+    return { traceLength, registerSpecs: specs };
+}
+
+export function digestPublicInputs(inputs: any[], shapes: number[][]) {
+
+    let specs: (RegisterEvaluatorSpecs | undefined)[] = [], inputIdx = 0;
+    shapes.forEach((shape, regIdx) => {
+        const register = staticRegisters.inputs[regIdx];
+        if (register.secret) {
+            specs.push(undefined);
+        }
+        else {
+            let values = unrollRegisterValues(inputs[inputIdx], regIdx, register.rank, 0, shape);
+            if (register.binary) validateBinaryValues(values, regIdx);
+            specs.push({ type: 'input', shape, values, secret  : false });
+            inputIdx++;
+        }
+    });
+
+    const traceLength = computeTraceLength(shapes);
+
+    return { traceLength, registerSpecs: specs };
+}
+
 // HELPER FUNCTIONS
 // ================================================================================================
 export function interpolateRegisterValues(values: bigint[], domainOrRoot: Vector | bigint): Vector {
@@ -335,4 +389,62 @@ export function validateTracePolynomials(trace: Matrix, traceLength: number): vo
     if (trace.colCount !== traceLength) {
         throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
     }
+}
+
+export function unrollRegisterValues(value: any[] | bigint, regIdx: number, rank: number, depth: number, shape: number[]): bigint[] {
+    if (typeof value === 'bigint') {
+        if (depth !== rank)
+            throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        return [value];
+    }
+    else {
+        if (depth === rank)
+            throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        if (!Array.isArray(value))
+            throw new Error(`value provided for register ${regIdx} at depth ${depth} is invalid`);
+        else if (value.length === 0)
+            throw new Error(`number of values for register ${regIdx} at depth ${depth} must be greater than 0`);
+        else if (!isPowerOf2(value.length)) 
+            throw new Error(`number of values for register ${regIdx} at depth ${depth} must be a power of 2`);
+
+        depth++;
+        if (shape[depth] === undefined) {
+            shape[depth] = value.length;
+        }
+        else if (value.length !== shape[depth]) {
+            throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        }
+
+        let result: bigint[] = [];
+        for (let i = 0; i < value.length; i++) {
+            result = [...result, ...unrollRegisterValues(value[i], regIdx, rank, depth, shape)];
+        }
+        return result;
+    }
+}
+
+export function computeTraceLength(shapes: number[][]): number {
+        
+    let result = 0;
+    staticRegisters.inputs.forEach((register, i) => {
+        if (register.steps) {
+            const traceLength = shapes[i].reduce((p, c) => p * c, register.steps!);
+            if (result === 0) {
+                result = traceLength;
+            }
+            else if (result !== traceLength) {
+                throw new Error(`trace length conflict`);   // TODO: better error message
+            }
+        }
+    });
+
+    return result;
+}
+
+export function validateBinaryValues(values: bigint[], regIdx: number): void {
+    // TODO: implement
+}
+
+export function isPowerOf2(value: number): boolean {
+    return (value !== 0) && (value & (value - 1)) === 0;
 }

@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const galois_1 = require("@guildofweavers/galois");
-const registers_1 = require("./registers");
+const registers_1 = require("../registers");
+const utils_1 = require("../utils");
 const expressions = require("./expressions");
 const jsTemplate = require("./template");
-const utils_1 = require("../utils");
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
@@ -33,8 +33,8 @@ function instantiateModule(schema, options) {
     code += 'return {\n';
     code += `field: f,\n`;
     code += `traceRegisterCount: traceRegisterCount,\n`;
-    code += `staticRegisterCount: staticRegisters.size,\n`;
-    code += `inputDescriptors: staticRegisters.inputDescriptors,\n`;
+    code += `staticRegisterCount: ${schema.staticRegisterCount},\n`;
+    code += `inputDescriptors: staticRegisters.inputs,\n`;
     code += `constraints: constraints,\n`;
     code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
@@ -43,7 +43,7 @@ function instantiateModule(schema, options) {
     code += '};';
     // create and execute module builder function
     const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', code);
-    return buildModule(buildField(schema.field, options.wasmOptions), schema.constants.map(c => c.value), schema.constraints, new registers_1.StaticRegisters(schema.staticRegisters));
+    return buildModule(buildField(schema.field, options.wasmOptions), schema.constants.map(c => c.value), schema.constraints, buildStaticRegisters(schema.staticRegisters));
 }
 exports.instantiateModule = instantiateModule;
 // HELPER FUNCTIONS
@@ -68,5 +68,28 @@ function buildField(field, wasmOptions) {
     else {
         throw new Error(`field type '${field.type}' is not supported`);
     }
+}
+function buildStaticRegisters(registers) {
+    const inputs = [];
+    const cyclic = [];
+    const masked = [];
+    for (let register of registers) {
+        if (register instanceof registers_1.InputRegister) {
+            inputs.push({
+                rank: register.rank,
+                parent: register.parent,
+                secret: register.secret,
+                binary: register.binary,
+                steps: register.steps
+            });
+        }
+        else if (register instanceof registers_1.CyclicRegister) {
+            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
+        }
+        else if (register instanceof registers_1.MaskRegister) {
+            masked.push({ source: register.source, value: register.value });
+        }
+    }
+    return { inputs, cyclic, masked };
 }
 //# sourceMappingURL=index.js.map

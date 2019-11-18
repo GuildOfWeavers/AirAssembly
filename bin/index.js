@@ -7,6 +7,7 @@ const jsGenerator_1 = require("./lib/jsGenerator");
 const analysis_1 = require("./lib/analysis");
 const errors_1 = require("./lib/errors");
 const expr = require("./lib/expressions");
+const reg = require("./lib/registers");
 const utils_1 = require("./lib/utils");
 // MODULE VARIABLES
 // ================================================================================================
@@ -17,7 +18,7 @@ const DEFAULT_LIMITS = {
     maxConstraintCount: 1024,
     maxConstraintDegree: 16
 };
-// EXPRESSION EXPORTS
+// EXPRESSION AND REGISTER EXPORTS
 // ================================================================================================
 exports.expressions = {
     LiteralValue: expr.LiteralValue,
@@ -28,6 +29,13 @@ exports.expressions = {
     SliceVector: expr.SliceVector,
     MakeMatrix: expr.MakeMatrix,
     LoadExpression: expr.LoadExpression
+};
+exports.registers = {
+    StaticRegister: reg.StaticRegister,
+    InputRegister: reg.InputRegister,
+    CyclicRegister: reg.CyclicRegister,
+    MaskRegister: reg.MaskRegister,
+    StaticRegisterSet: reg.StaticRegisterSet
 };
 // PUBLIC FUNCTIONS
 // ================================================================================================

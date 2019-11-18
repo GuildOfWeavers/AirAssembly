@@ -9,6 +9,7 @@ import { instantiateModule } from './lib/jsGenerator';
 import { analyzeProcedure } from './lib/analysis';
 import { AssemblyError } from './lib/errors';
 import * as expr from './lib/expressions';
+import * as reg from './lib/registers';
 import { getCompositionFactor, isPowerOf2 } from './lib/utils';
 
 // MODULE VARIABLES
@@ -21,7 +22,7 @@ const DEFAULT_LIMITS: StarkLimits = {
     maxConstraintDegree : 16
 };
 
-// EXPRESSION EXPORTS
+// EXPRESSION AND REGISTER EXPORTS
 // ================================================================================================
 export const expressions = {
     LiteralValue        : expr.LiteralValue,
@@ -32,6 +33,14 @@ export const expressions = {
     SliceVector         : expr.SliceVector,
     MakeMatrix          : expr.MakeMatrix,
     LoadExpression      : expr.LoadExpression
+};
+
+export const registers = {
+    StaticRegister      : reg.StaticRegister,
+    InputRegister       : reg.InputRegister,
+    CyclicRegister      : reg.CyclicRegister,
+    MaskRegister        : reg.MaskRegister,
+    StaticRegisterSet   : reg.StaticRegisterSet
 };
 
 // PUBLIC FUNCTIONS

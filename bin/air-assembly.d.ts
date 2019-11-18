@@ -100,7 +100,7 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export class CyclicRegister extends StaticRegister {
-        readonly values : bigint[];        
+        readonly values : ReadonlyArray<bigint>;
     }
 
     export class MaskRegister extends StaticRegister {
@@ -108,12 +108,14 @@ declare module '@guildofweavers/air-assembly' {
         readonly value  : bigint;
     }
 
-    export interface StaticRegisterSet {
+    export class StaticRegisterSet {
                
-        readonly size   : number;
         readonly inputs : ReadonlyArray<InputRegister>;
         readonly cyclic : ReadonlyArray<CyclicRegister>;
         readonly masked : ReadonlyArray<MaskRegister>;
+        readonly size   : number;
+
+        constructor();
 
         addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
         addCyclic(values: bigint[]): void;
@@ -122,6 +124,8 @@ declare module '@guildofweavers/air-assembly' {
         get(index: number): StaticRegister;
         map<T>(callback: (register: StaticRegister, index: number) => T): T[];
         forEach(callback: (register: StaticRegister, index: number) => void): void;
+
+        getDanglingInputs(): number[];
     }
 
     // EXPRESSIONS
@@ -312,5 +316,10 @@ declare module '@guildofweavers/air-assembly' {
         readonly shape? : number[];
         readonly values : bigint[];
         readonly secret : boolean;
+    }
+
+    export interface MaskRegisterDescriptor {
+        source  : number;
+        value   : bigint;
     }
 }

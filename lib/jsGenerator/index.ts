@@ -4,10 +4,10 @@ import { createPrimeField, FiniteField, WasmOptions } from "@guildofweavers/galo
 import { AirModule, ModuleOptions, FieldDescriptor } from "@guildofweavers/air-assembly";
 import { AirSchema } from '../AirSchema';
 import { Procedure } from '../procedures';
-import { StaticRegisters } from './registers';
+import { StaticRegister, InputRegister, CyclicRegister, MaskRegister } from "../registers";
+import { getCompositionFactor } from "../utils";
 import * as expressions from "./expressions";
 import * as jsTemplate from './template';
-import { getCompositionFactor } from "../utils";
 
 // MODULE VARIABLES
 // ================================================================================================
@@ -40,8 +40,8 @@ export function instantiateModule(schema: AirSchema, options: ModuleOptions): Ai
     code += 'return {\n';
     code += `field: f,\n`;
     code += `traceRegisterCount: traceRegisterCount,\n`;
-    code += `staticRegisterCount: staticRegisters.size,\n`;
-    code += `inputDescriptors: staticRegisters.inputDescriptors,\n`
+    code += `staticRegisterCount: ${schema.staticRegisterCount},\n`;
+    code += `inputDescriptors: staticRegisters.inputs,\n`
     code += `constraints: constraints,\n`;
     code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
@@ -55,7 +55,7 @@ export function instantiateModule(schema: AirSchema, options: ModuleOptions): Ai
         buildField(schema.field, options.wasmOptions),
         schema.constants.map(c => c.value),
         schema.constraints,
-        new StaticRegisters(schema.staticRegisters)
+        buildStaticRegisters(schema.staticRegisters)
     );
 }
 
@@ -82,4 +82,30 @@ function buildField(field: FieldDescriptor, wasmOptions?: Partial<WasmOptions> |
     else {
         throw new Error(`field type '${field.type}' is not supported`);
     }
+}
+
+function buildStaticRegisters(registers: ReadonlyArray<StaticRegister>) {
+    const inputs = [];
+    const cyclic = [];
+    const masked = [];
+
+    for (let register of registers) {
+        if (register instanceof InputRegister) {
+            inputs.push({
+                rank    : register.rank,
+                parent  : register.parent,
+                secret  : register.secret,
+                binary  : register.binary,
+                steps   : register.steps
+            });
+        }
+        else if (register instanceof CyclicRegister) {
+            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
+        }
+        else if (register instanceof MaskRegister) {
+            masked.push({ source: register.source, value: register.value });
+        }
+    }
+
+    return { inputs, cyclic, masked };
 }

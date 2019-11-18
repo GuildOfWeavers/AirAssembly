@@ -7,7 +7,7 @@ const traceRegisterCount = 0;
 const compositionFactor = 0;
 const extensionFactor = 0;
 const constraints = [];
-const staticRegisters = undefined;
+const staticRegisters = {};
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
 const applyTransition = function () { return []; };
@@ -16,7 +16,7 @@ const evaluateConstraints = function () { return []; };
 // ================================================================================================
 function initProof(inputs) {
     // validate inputs
-    const { traceLength, registerSpecs } = staticRegisters.digestInputs(inputs);
+    const { traceLength, registerSpecs } = digestInputs(inputs);
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -170,7 +170,7 @@ exports.initProof = initProof;
 // VERIFICATION OBJECT GENERATOR
 // ================================================================================================
 function initVerification(inputShapes, publicInputs) {
-    const { traceLength, registerSpecs } = staticRegisters.digestPublicInputs(publicInputs, inputShapes);
+    const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
     // build static register evaluators
@@ -233,6 +233,50 @@ function initVerification(inputShapes, publicInputs) {
     };
 }
 exports.initVerification = initVerification;
+// INPUT HANDLERS
+// ================================================================================================
+function digestInputs(inputs) {
+    let specs = [];
+    // build input register descriptors
+    const shapes = new Array(staticRegisters.inputs.length);
+    staticRegisters.inputs.forEach((register, i) => {
+        shapes[i] = (register.parent === undefined) ? [1] : shapes[register.parent].slice(0);
+        let values = unrollRegisterValues(inputs[i], i, register.rank, 0, shapes[i]);
+        if (register.binary)
+            validateBinaryValues(values, i);
+        specs.push({ type: 'input', shape: shapes[i], values, secret: register.secret });
+    });
+    // append cyclic register descriptors
+    specs = specs.concat(staticRegisters.cyclic);
+    // build and append masked register descriptors
+    staticRegisters.masked.forEach(register => specs.push({
+        type: 'mask',
+        values: new Array(specs[register.source].values.length).fill(register.value),
+        secret: false
+    }));
+    const traceLength = computeTraceLength(shapes);
+    return { traceLength, registerSpecs: specs };
+}
+exports.digestInputs = digestInputs;
+function digestPublicInputs(inputs, shapes) {
+    let specs = [], inputIdx = 0;
+    shapes.forEach((shape, regIdx) => {
+        const register = staticRegisters.inputs[regIdx];
+        if (register.secret) {
+            specs.push(undefined);
+        }
+        else {
+            let values = unrollRegisterValues(inputs[inputIdx], regIdx, register.rank, 0, shape);
+            if (register.binary)
+                validateBinaryValues(values, regIdx);
+            specs.push({ type: 'input', shape, values, secret: false });
+            inputIdx++;
+        }
+    });
+    const traceLength = computeTraceLength(shapes);
+    return { traceLength, registerSpecs: specs };
+}
+exports.digestPublicInputs = digestPublicInputs;
 // HELPER FUNCTIONS
 // ================================================================================================
 function interpolateRegisterValues(values, domainOrRoot) {
@@ -275,4 +319,58 @@ function validateTracePolynomials(trace, traceLength) {
     }
 }
 exports.validateTracePolynomials = validateTracePolynomials;
+function unrollRegisterValues(value, regIdx, rank, depth, shape) {
+    if (typeof value === 'bigint') {
+        if (depth !== rank)
+            throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        return [value];
+    }
+    else {
+        if (depth === rank)
+            throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        if (!Array.isArray(value))
+            throw new Error(`value provided for register ${regIdx} at depth ${depth} is invalid`);
+        else if (value.length === 0)
+            throw new Error(`number of values for register ${regIdx} at depth ${depth} must be greater than 0`);
+        else if (!isPowerOf2(value.length))
+            throw new Error(`number of values for register ${regIdx} at depth ${depth} must be a power of 2`);
+        depth++;
+        if (shape[depth] === undefined) {
+            shape[depth] = value.length;
+        }
+        else if (value.length !== shape[depth]) {
+            throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        }
+        let result = [];
+        for (let i = 0; i < value.length; i++) {
+            result = [...result, ...unrollRegisterValues(value[i], regIdx, rank, depth, shape)];
+        }
+        return result;
+    }
+}
+exports.unrollRegisterValues = unrollRegisterValues;
+function computeTraceLength(shapes) {
+    let result = 0;
+    staticRegisters.inputs.forEach((register, i) => {
+        if (register.steps) {
+            const traceLength = shapes[i].reduce((p, c) => p * c, register.steps);
+            if (result === 0) {
+                result = traceLength;
+            }
+            else if (result !== traceLength) {
+                throw new Error(`trace length conflict`); // TODO: better error message
+            }
+        }
+    });
+    return result;
+}
+exports.computeTraceLength = computeTraceLength;
+function validateBinaryValues(values, regIdx) {
+    // TODO: implement
+}
+exports.validateBinaryValues = validateBinaryValues;
+function isPowerOf2(value) {
+    return (value !== 0) && (value & (value - 1)) === 0;
+}
+exports.isPowerOf2 = isPowerOf2;
 //# sourceMappingURL=template.js.map
