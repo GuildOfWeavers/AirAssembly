@@ -51,6 +51,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly constraintEvaluator    : Procedure;
         readonly constraints            : ConstraintDescriptor[];
         readonly maxConstraintDegree    : number;
+        readonly exports                : ReadonlyMap<string, ExportDeclaration>;
 
         constructor();
 
@@ -59,6 +60,7 @@ declare module '@guildofweavers/air-assembly' {
         setStaticRegisters(registers: registers.StaticRegisterSet): void;
         setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure;
         setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure;
+        setExports(declarations: ExportDeclaration[]): void;
 
         validateLimits(limits: StarkLimits): void;
     }
@@ -87,6 +89,16 @@ declare module '@guildofweavers/air-assembly' {
         readonly expression     : expressions.Expression;
         readonly localVarIdx    : number;
         readonly dimensions     : Dimensions;
+    }
+
+    export class ExportDeclaration {
+        readonly name           : string;
+        readonly cycleLength    : number;
+        readonly initializer?   : expressions.LiteralValue | 'seed';
+
+        readonly isMain         : boolean;
+
+        constructor(name: string, cycleLength: number, initializer?: expressions.LiteralValue | 'seed');
     }
 
     // STATIC REGISTERS

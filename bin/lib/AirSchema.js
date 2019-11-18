@@ -107,6 +107,21 @@ class AirSchema {
         this._constraintEvaluator = new procedures_1.Procedure('evaluation', span, width, constants, locals, traceWidth, staticWidth);
         return this._constraintEvaluator;
     }
+    // EXPORT DECLARATIONS
+    // --------------------------------------------------------------------------------------------
+    get exports() {
+        if (!this._exportDeclarations)
+            throw new Error(`exports have not been set yet`);
+        return this._exportDeclarations;
+    }
+    setExports(declarations) {
+        if (this._exportDeclarations)
+            throw new Error(`exports have already been set`);
+        // TODO: check duplicate names
+        // TODO: check cycle length consistency
+        this._exportDeclarations = new Map();
+        declarations.forEach(d => this._exportDeclarations.set(d.name, d));
+    }
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
@@ -117,6 +132,7 @@ class AirSchema {
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
+        this.exports.forEach(d => code += `\n  ${d.toString()}`);
         return `(module${code}\n)`;
     }
     // VALIDATION

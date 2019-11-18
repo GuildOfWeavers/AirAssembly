@@ -22,8 +22,10 @@ const DEFAULT_LIMITS: StarkLimits = {
     maxConstraintDegree : 16
 };
 
-// EXPRESSION AND REGISTER EXPORTS
+// RE-EXPORTS
 // ================================================================================================
+export { ExportDeclaration } from './lib/exports';
+
 export const expressions = {
     LiteralValue        : expr.LiteralValue,
     BinaryOperation     : expr.BinaryOperation,

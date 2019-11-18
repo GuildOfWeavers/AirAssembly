@@ -26,7 +26,8 @@ const schema = compile(Buffer.from(`
             (load.trace 1)
             (add
                 (exp (load.trace 0) (load.const 0))
-                (get (load.static 0) 1)))))
+                (get (load.static 0) 1))))
+    (export main (init seed) (steps 64)))
 `));
 
 console.log(schema.toString());

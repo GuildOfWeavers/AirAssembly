@@ -5,6 +5,7 @@ import { LiteralValue, Dimensions } from "./expressions";
 import { Procedure } from "./procedures";
 import { analyzeProcedure } from "./analysis";
 import { StaticRegister, StaticRegisterSet } from "./registers";
+import { ExportDeclaration } from "./exports";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -20,6 +21,8 @@ export class AirSchema implements IAirSchema {
 
     private _constraints?           : ConstraintDescriptor[];
     private _maxConstraintDegree?   : number;
+
+    private _exportDeclarations?    : Map<string, ExportDeclaration>;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
@@ -131,6 +134,21 @@ export class AirSchema implements IAirSchema {
         return this._constraintEvaluator;
     }
 
+    // EXPORT DECLARATIONS
+    // --------------------------------------------------------------------------------------------
+    get exports(): Map<string, ExportDeclaration> {
+        if (!this._exportDeclarations) throw new Error(`exports have not been set yet`);
+        return this._exportDeclarations;
+    }
+
+    setExports(declarations: ExportDeclaration[]): void {
+        if (this._exportDeclarations) throw new Error(`exports have already been set`);
+        // TODO: check duplicate names
+        // TODO: check cycle length consistency
+        this._exportDeclarations = new Map();
+        declarations.forEach(d => this._exportDeclarations!.set(d.name, d));
+    }
+
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
@@ -141,6 +159,7 @@ export class AirSchema implements IAirSchema {
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
+        this.exports.forEach(d => code += `\n  ${d.toString()}`);
 
         return `(module${code}\n)`;
     }

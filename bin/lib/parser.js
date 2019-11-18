@@ -8,6 +8,7 @@ const registers_1 = require("./registers");
 const lexer_1 = require("./lexer");
 const expressions_1 = require("./expressions");
 const errors_1 = require("./errors");
+const ExportDeclaration_1 = require("./exports/ExportDeclaration");
 // PARSER DEFINITION
 // ================================================================================================
 class AirParser extends chevrotain_1.EmbeddedActionsParser {
@@ -20,11 +21,11 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Module);
             this.SUBRULE(this.fieldDeclaration, { ARGS: [schema] });
-            this.MANY(() => this.SUBRULE(this.constantDeclarations, { ARGS: [schema] }));
-            this.OPTION(() => this.SUBRULE(this.staticRegisters, { ARGS: [schema] }));
+            this.OPTION1(() => this.SUBRULE(this.constantDeclarations, { ARGS: [schema] }));
+            this.OPTION2(() => this.SUBRULE(this.staticRegisters, { ARGS: [schema] }));
             this.SUBRULE(this.transitionFunction, { ARGS: [schema] });
             this.SUBRULE(this.transitionConstraints, { ARGS: [schema] });
-            // TODO: exports
+            this.SUBRULE(this.exportDeclarations, { ARGS: [schema] });
             this.CONSUME(lexer_1.RParen);
             return schema;
         });
@@ -44,7 +45,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const values = [];
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Const);
-            this.MANY(() => {
+            this.AT_LEAST_ONE(() => {
                 const value = this.OR([
                     { ALT: () => this.SUBRULE(this.literalScalar) },
                     { ALT: () => this.SUBRULE(this.literalVector) },
@@ -313,6 +314,48 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.integerLiteral = this.RULE('integerLiteral', () => {
             const value = this.CONSUME(lexer_1.Literal).image;
             return this.ACTION(() => Number.parseInt(value, 10));
+        });
+        // EXPORTS
+        // --------------------------------------------------------------------------------------------
+        this.exportDeclarations = this.RULE('exportDeclarations', (schema) => {
+            const declarations = [];
+            this.AT_LEAST_ONE(() => declarations.push(this.SUBRULE(this.exportDeclaration)));
+            this.ACTION(() => schema.setExports(declarations));
+        });
+        this.exportDeclaration = this.RULE('exportDeclaration', () => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Export);
+            let initializer;
+            const name = this.OR([
+                { ALT: () => {
+                        const name = this.CONSUME(lexer_1.Main).image;
+                        initializer = this.SUBRULE(this.initExpression);
+                        return name;
+                    } },
+                { ALT: () => {
+                        return this.CONSUME(lexer_1.Identifier).image;
+                    } }
+            ]);
+            const cycleLength = this.SUBRULE(this.traceCycleExpression);
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => new ExportDeclaration_1.ExportDeclaration(name, cycleLength, initializer));
+        });
+        this.initExpression = this.RULE('initExpression', () => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Init);
+            const initializer = this.OR([
+                { ALT: () => this.SUBRULE(this.literalVector) },
+                { ALT: () => this.CONSUME(lexer_1.Seed).image }
+            ]);
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => initializer);
+        });
+        this.traceCycleExpression = this.RULE('traceCycleExpression', () => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Steps);
+            const steps = this.CONSUME(lexer_1.Literal).image;
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => Number(steps));
         });
         this.performSelfAnalysis();
     }

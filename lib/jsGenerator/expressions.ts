@@ -113,6 +113,6 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
 // PUBLIC FUNCTIONS
 // ================================================================================================
 const generator = new ExpressionCodeGenerator();
-export function toJsCode(e: Expression) {
-    return generator.visit(e);
+export function toJsCode(e: Expression, options: JsCodeOptions = {}) {
+    return generator.visit(e, options);
 }

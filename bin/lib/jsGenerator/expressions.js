@@ -94,8 +94,8 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
 // PUBLIC FUNCTIONS
 // ================================================================================================
 const generator = new ExpressionCodeGenerator();
-function toJsCode(e) {
-    return generator.visit(e);
+function toJsCode(e, options = {}) {
+    return generator.visit(e, options);
 }
 exports.toJsCode = toJsCode;
 //# sourceMappingURL=expressions.js.map

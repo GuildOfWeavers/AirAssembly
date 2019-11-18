@@ -67,7 +67,7 @@ function generateProcedureCode(procedure: Procedure): string {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
         code += procedure.subroutines.map(a => `v${a.localVarIdx} = ${expressions.toJsCode(a.expression)};\n`);
     }
-    code += `return ${expressions.toJsCode(procedure.result)}.toValues();`; // TODO
+    code += `return ${expressions.toJsCode(procedure.result, { vectorAsArray: true })};`;
     code += '\n}\n';
     return code;
 }
@@ -85,9 +85,7 @@ function buildField(field: FieldDescriptor, wasmOptions?: Partial<WasmOptions> |
 }
 
 function buildStaticRegisters(registers: ReadonlyArray<StaticRegister>) {
-    const inputs = [];
-    const cyclic = [];
-    const masked = [];
+    const inputs = [], cyclic = [], masked = [];
 
     for (let register of registers) {
         if (register instanceof InputRegister) {

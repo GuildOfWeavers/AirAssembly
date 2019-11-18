@@ -18,8 +18,10 @@ const DEFAULT_LIMITS = {
     maxConstraintCount: 1024,
     maxConstraintDegree: 16
 };
-// EXPRESSION AND REGISTER EXPORTS
+// RE-EXPORTS
 // ================================================================================================
+var exports_1 = require("./lib/exports");
+exports.ExportDeclaration = exports_1.ExportDeclaration;
 exports.expressions = {
     LiteralValue: expr.LiteralValue,
     BinaryOperation: expr.BinaryOperation,

@@ -7,13 +7,14 @@ import { Procedure } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input,
     Binary, Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp,
-    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent, Mask, Value
+    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent, Mask, Value, Export, Identifier, Main, Init, Seed
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
     GetVectorElement, SliceVector, LoadExpression, Dimensions
 } from "./expressions";
 import { parserErrorMessageProvider } from "./errors";
+import { ExportDeclaration } from "./exports/ExportDeclaration";
 
 // PARSER DEFINITION
 // ================================================================================================
@@ -29,12 +30,12 @@ class AirParser extends EmbeddedActionsParser {
         const schema = new AirSchema();
         this.CONSUME(LParen);
         this.CONSUME(Module);
-        this.SUBRULE(this.fieldDeclaration,                     { ARGS: [schema] });
-        this.MANY(() => this.SUBRULE(this.constantDeclarations, { ARGS: [schema] }));
-        this.OPTION(() => this.SUBRULE(this.staticRegisters,    { ARGS: [schema] }));
-        this.SUBRULE(this.transitionFunction,                   { ARGS: [schema] });
-        this.SUBRULE(this.transitionConstraints,                { ARGS: [schema] });
-        // TODO: exports
+        this.SUBRULE(this.fieldDeclaration,                         { ARGS: [schema] });
+        this.OPTION1(() => this.SUBRULE(this.constantDeclarations,  { ARGS: [schema] }));
+        this.OPTION2(() => this.SUBRULE(this.staticRegisters,       { ARGS: [schema] }));
+        this.SUBRULE(this.transitionFunction,                       { ARGS: [schema] });
+        this.SUBRULE(this.transitionConstraints,                    { ARGS: [schema] });
+        this.SUBRULE(this.exportDeclarations,                       { ARGS: [schema] });
         this.CONSUME(RParen);
         return schema;
     });
@@ -56,7 +57,7 @@ class AirParser extends EmbeddedActionsParser {
         const values: LiteralValue[] = [];
         this.CONSUME(LParen);
         this.CONSUME(Const);
-        this.MANY(() => {
+        this.AT_LEAST_ONE(() => {
             const value = this.OR([
                 { ALT: () => this.SUBRULE(this.literalScalar) },
                 { ALT: () => this.SUBRULE(this.literalVector) },
@@ -105,7 +106,6 @@ class AirParser extends EmbeddedActionsParser {
     private staticRegisters = this.RULE('staticRegisters', (schema: AirSchema) => { 
         this.CONSUME(LParen);
         this.CONSUME(Static);
-        
         const registers = new StaticRegisterSet();
         this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
         this.MANY2(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
@@ -359,6 +359,52 @@ class AirParser extends EmbeddedActionsParser {
     private integerLiteral = this.RULE<number>('integerLiteral', () => {
         const value = this.CONSUME(Literal).image;
         return this.ACTION(() => Number.parseInt(value, 10));
+    });
+
+    // EXPORTS
+    // --------------------------------------------------------------------------------------------
+    private exportDeclarations = this.RULE('exportDeclarations', (schema: AirSchema) => {
+        const declarations: ExportDeclaration[] = []; 
+        this.AT_LEAST_ONE(() => declarations.push(this.SUBRULE(this.exportDeclaration)));
+        this.ACTION(() => schema.setExports(declarations));
+    });
+
+    private exportDeclaration = this.RULE<ExportDeclaration>('exportDeclaration', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Export);
+        let initializer: LiteralValue | 'seed' | undefined;
+        const name = this.OR([
+            { ALT: () => {
+                const name = this.CONSUME(Main).image;
+                initializer = this.SUBRULE(this.initExpression);
+                return name;
+            }},
+            { ALT: () => {
+                return this.CONSUME(Identifier).image;
+            }}
+        ]);
+        const cycleLength = this.SUBRULE(this.traceCycleExpression);
+        this.CONSUME(RParen);
+        return this.ACTION(() => new ExportDeclaration(name, cycleLength, initializer));
+    });
+
+    private initExpression = this.RULE<LiteralValue | 'seed'>('initExpression', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Init);
+        const initializer = this.OR([
+            { ALT: () => this.SUBRULE(this.literalVector)   },
+            { ALT: () => this.CONSUME(Seed).image           }
+        ]);
+        this.CONSUME(RParen);
+        return this.ACTION(() => initializer);
+    });
+
+    private traceCycleExpression = this.RULE<number>('traceCycleExpression', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Steps);
+        const steps = this.CONSUME(Literal).image;
+        this.CONSUME(RParen);
+        return this.ACTION(() => Number(steps));
     });
 }
 
