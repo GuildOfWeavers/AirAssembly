@@ -27,15 +27,6 @@ export class Subroutine implements ISubroutine {
 
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    updateAccessorIndex(target: StoreTarget, fromIdx: number, toIdx: number): void {
-        // TODO
-        /*
-        if (this.target === target && this._index === fromIdx) {
-            this._index = toIdx;
-        }
-        */
-    }
-
     toString() {
         return `(store.local ${this.localVarIdx} ${this.expression.toString()})`;
     }

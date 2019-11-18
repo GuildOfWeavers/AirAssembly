@@ -73,11 +73,13 @@ function generateProcedureCode(procedure: Procedure): string {
 }
 
 function buildField(field: FieldDescriptor, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
-    // TODO: check type
-    if (typeof wasmOptions === 'boolean') {
-        return createPrimeField(field.modulus, wasmOptions);
+    if (field.type !== 'prime') {
+        // needed for type checking to work
+        return (typeof wasmOptions === 'boolean')
+            ? createPrimeField(field.modulus, wasmOptions)
+            : createPrimeField(field.modulus, wasmOptions);
     }
     else {
-        return createPrimeField(field.modulus, wasmOptions);
+        throw new Error(`field type '${field.type}' is not supported`);
     }
 }

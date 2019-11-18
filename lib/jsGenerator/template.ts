@@ -223,7 +223,6 @@ export function initProof(inputs: any[]): ProofObject {
 export function initVerification(inputShapes: number[][], publicInputs: any[]): VerificationObject {
     
     const { traceLength, registerSpecs } = staticRegisters.digestPublicInputs(publicInputs, inputShapes);
-    const extensionFactor = 8; // TODO
         
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -299,6 +298,7 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
 // HELPER FUNCTIONS
 // ================================================================================================
 export function interpolateRegisterValues(values: bigint[], domainOrRoot: Vector | bigint): Vector {
+    // TODO: handle cases with fewer than 4 values
     const ys = f.newVectorFrom(values);
     if (typeof domainOrRoot === 'bigint') {
         const xs = f.getPowerSeries(domainOrRoot, ys.length);

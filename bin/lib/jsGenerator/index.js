@@ -59,12 +59,14 @@ function generateProcedureCode(procedure) {
     return code;
 }
 function buildField(field, wasmOptions) {
-    // TODO: check type
-    if (typeof wasmOptions === 'boolean') {
-        return galois_1.createPrimeField(field.modulus, wasmOptions);
+    if (field.type !== 'prime') {
+        // needed for type checking to work
+        return (typeof wasmOptions === 'boolean')
+            ? galois_1.createPrimeField(field.modulus, wasmOptions)
+            : galois_1.createPrimeField(field.modulus, wasmOptions);
     }
     else {
-        return galois_1.createPrimeField(field.modulus, wasmOptions);
+        throw new Error(`field type '${field.type}' is not supported`);
     }
 }
 //# sourceMappingURL=index.js.map

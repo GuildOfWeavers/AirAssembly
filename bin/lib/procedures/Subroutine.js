@@ -16,14 +16,6 @@ class Subroutine {
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    updateAccessorIndex(target, fromIdx, toIdx) {
-        // TODO
-        /*
-        if (this.target === target && this._index === fromIdx) {
-            this._index = toIdx;
-        }
-        */
-    }
     toString() {
         return `(store.local ${this.localVarIdx} ${this.expression.toString()})`;
     }

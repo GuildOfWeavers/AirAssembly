@@ -126,7 +126,8 @@ class AirSchema {
             throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
         else if (this.constraintCount > limits.maxConstraintCount)
             throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
-        // TODO: check constraint degree
+        else if (this.maxConstraintDegree > limits.maxConstraintDegree)
+            throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
     }
 }
 exports.AirSchema = AirSchema;

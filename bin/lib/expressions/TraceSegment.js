@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const Expression_1 = require("./Expression");
 const utils_1 = require("./utils");
+// TODO: rename
 // CLASS DEFINITION
 // ================================================================================================
 class TraceSegment extends Expression_1.Expression {

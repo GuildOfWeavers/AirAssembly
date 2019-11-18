@@ -171,7 +171,6 @@ exports.initProof = initProof;
 // ================================================================================================
 function initVerification(inputShapes, publicInputs) {
     const { traceLength, registerSpecs } = staticRegisters.digestPublicInputs(publicInputs, inputShapes);
-    const extensionFactor = 8; // TODO
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
     // build static register evaluators
@@ -237,6 +236,7 @@ exports.initVerification = initVerification;
 // HELPER FUNCTIONS
 // ================================================================================================
 function interpolateRegisterValues(values, domainOrRoot) {
+    // TODO: handle cases with fewer than 4 values
     const ys = f.newVectorFrom(values);
     if (typeof domainOrRoot === 'bigint') {
         const xs = f.getPowerSeries(domainOrRoot, ys.length);

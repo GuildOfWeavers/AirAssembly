@@ -3,6 +3,8 @@
 import { Expression } from "./Expression";
 import { Dimensions } from "./utils";
 
+// TODO: rename
+
 // CLASS DEFINITION
 // ================================================================================================
 export class TraceSegment extends Expression {

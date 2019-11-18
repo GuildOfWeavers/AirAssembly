@@ -62,6 +62,7 @@ export class Procedure implements IProcedure {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     addSubroutine(expression: Expression, localIndex: number): void {
+        // TODO: make sure subroutines can't be added after the result has been set?
         const variable = this.getLocalVariable(localIndex);
         const subroutine = new Subroutine(expression, localIndex)
         variable.bind(subroutine, localIndex);
