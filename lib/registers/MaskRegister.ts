@@ -1,31 +1,20 @@
 // IMPORTS
 // ================================================================================================
-import { MaskRegister as IMaskRegister } from "@guildofweavers/air-assembly";
+import { StaticRegister } from "./StaticRegister";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class MaskRegister implements IMaskRegister {
+export class MaskRegister extends StaticRegister {
 
-    readonly index      : number;
     readonly source     : number;
     readonly value      : bigint;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(index: number, source: number, value: bigint) {
-        this.index = index;
+    constructor(source: number, value: bigint) {
+        super();
         this.source = source;
         this.value = value;
-    }
-
-    // ACCESSORS
-    // --------------------------------------------------------------------------------------------
-    get type(): 'mask' {
-        return 'mask';
-    }
-
-    get secret(): boolean {
-        return false;
     }
 
     // PUBLIC METHODS

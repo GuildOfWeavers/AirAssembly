@@ -73,7 +73,7 @@ function generateProcedureCode(procedure: Procedure): string {
 }
 
 function buildField(field: FieldDescriptor, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
-    if (field.type !== 'prime') {
+    if (field.type === 'prime') {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
             ? createPrimeField(field.modulus, wasmOptions)

@@ -1,9 +1,10 @@
 // IMPORTS
 // ================================================================================================
-import { StaticRegister } from "@guildofweavers/air-assembly";
+import { StaticRegister } from "./StaticRegister";
 import { InputRegister } from "./InputRegister";
 import { CyclicRegister } from "./CyclicRegister";
 import { MaskRegister } from "./MaskRegister";
+import { isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -57,33 +58,35 @@ export class StaticRegisterSet {
         if (typeof typeOrParent === 'number') {
             const parent = this.getParentInput(typeOrParent);
             rank = parent.rank + 1;
-            parentIdx = parent.index;
+            parentIdx = typeOrParent;
         }
         else if (typeOrParent === 'vector') {
             rank = 1;
         }
     
-        const register = new InputRegister(this.size, scope, rank, binary, parentIdx, steps);
+        const register = new InputRegister(scope, rank, binary, parentIdx, steps);
         this.inputs.push(register);
         this.registers.push(register);
     }
 
     addCyclic(values: bigint[]): void {
-        const register = new CyclicRegister(this.size, values);
+        if (!isPowerOf2(values.length))
+            throw new Error(`number of values in cyclic register ${this.size} is ${values.length}, but must be a power of 2`);
+        const register = new CyclicRegister(values);
         this.registers.push(register);
     }
 
     addMask(source: number, value: bigint): void {
-        this.validateMaskSource(source);
-        const register = new MaskRegister(this.size, source, value);
+        this.validateMaskSource(source, this.size);
+        const register = new MaskRegister(source, value);
         this.registers.push(register);
     }
 
     // OTHER PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    toString() {
-        if (this.size === 0) return '';
-        return `\n  (static\n    ${this.registers.map(r => r.toString()).join('\n    ')})`;
+    getDanglingInputs(): number[] {
+        // TODO: implement
+        return [];
     }
 
     // PRIVATE METHODS
@@ -98,10 +101,11 @@ export class StaticRegisterSet {
         return parent;
     }
 
-    private validateMaskSource(index: number): void {
-        const source = this.inputs[index];
-        if (!source) throw new Error(`invalid source register index: ${index}`);
+    private validateMaskSource(sourceIdx: number, regIdx: number): void {
+        const source = this.inputs[sourceIdx];
+        if (!source)
+            throw new Error(`invalid source for mask register ${regIdx}: register ${sourceIdx} is undefined`);
         if (!(source instanceof InputRegister))
-            throw new Error(`register at index ${index} is not an input register`);
+            throw new Error(`invalid source for mask register ${regIdx}: register ${sourceIdx} is not an input register`);
     }
 }

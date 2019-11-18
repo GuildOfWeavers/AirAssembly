@@ -1,7 +1,7 @@
 // INTERFACE IMPORTS
 // ================================================================================================
 import {
-    FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, StaticRegisterDescriptor,
+    FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, RegisterEvaluatorSpecs,
     ProofObject, VerificationObject, ConstraintDescriptor
 } from "@guildofweavers/air-assembly";
 import { StaticRegisters } from "./registers";
@@ -161,7 +161,7 @@ export function initProof(inputs: any[]): ProofObject {
 
     // STATIC REGISTER EVALUATOR BUILDER
     // --------------------------------------------------------------------------------------------
-    function buildStaticRegisterEvaluator(register: StaticRegisterDescriptor): StaticRegisterEvaluator<number> {
+    function buildStaticRegisterEvaluator(register: RegisterEvaluatorSpecs): StaticRegisterEvaluator<number> {
 
         // secret registers are evaluated over the entire evaluation domain
         const domain = register.secret ? evaluationDomain : compositionDomain;
@@ -253,7 +253,7 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
 
     // STATIC REGISTER EVALUATOR BUILDER
     // --------------------------------------------------------------------------------------------
-    function buildStaticRegisterEvaluator(register: StaticRegisterDescriptor | undefined): StaticRegisterEvaluator<bigint> | null {
+    function buildStaticRegisterEvaluator(register: RegisterEvaluatorSpecs | undefined): StaticRegisterEvaluator<bigint> | null {
         if (!register) return null;
 
         // determine number of cycles over the execution trace

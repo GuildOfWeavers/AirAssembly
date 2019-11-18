@@ -1,33 +1,20 @@
 // IMPORTS
 // ================================================================================================
-import { CyclicRegister as ICyclicRegister } from "@guildofweavers/air-assembly";
-import { isPowerOf2 } from "../utils";
+import { StaticRegister } from "./StaticRegister";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class CyclicRegister implements ICyclicRegister {
+export class CyclicRegister extends StaticRegister {
 
-    readonly index      : number;
-    readonly values     : bigint[];
+    readonly values: bigint[];
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(index: number, values: bigint[]) {
-        if (!isPowerOf2(values.length))
-            throw new Error(`number of values in a cyclic register must be a power of 2, but ${values.length} values provided`);
-        
-        this.index = index;
+    constructor(values: bigint[]) {
+        super();    
+        // make sure the length of values is at least 4; this is needed for FFT interpolation
+        while (values.length < 4) values = values.concat(values);
         this.values = values;
-    }
-
-    // ACCESSORS
-    // --------------------------------------------------------------------------------------------
-    get type(): 'cyclic' {
-        return 'cyclic';
-    }
-
-    get secret(): boolean {
-        return false;
     }
 
     // PUBLIC METHODS

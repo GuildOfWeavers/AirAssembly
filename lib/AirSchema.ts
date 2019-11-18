@@ -4,7 +4,7 @@ import { AirSchema as IAirSchema, StarkLimits, Dimensions, FieldDescriptor, Cons
 import { LiteralValue } from "./expressions";
 import { Procedure } from "./procedures";
 import { analyzeProcedure } from "./analysis";
-import { StaticRegisterSet } from "./registers";
+import { StaticRegister, StaticRegisterSet } from "./registers";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -13,7 +13,7 @@ export class AirSchema implements IAirSchema {
     private _field?                 : FieldDescriptor;
 
     private _constants              : LiteralValue[];
-    private _staticRegisters        : StaticRegisterSet;
+    private _staticRegisters        : StaticRegister[];
 
     private _transitionFunction?    : Procedure;
     private _constraintEvaluator?   : Procedure;
@@ -25,7 +25,7 @@ export class AirSchema implements IAirSchema {
     // --------------------------------------------------------------------------------------------
     constructor() {
         this._constants = [];
-        this._staticRegisters = new StaticRegisterSet();
+        this._staticRegisters = [];
     }
 
     // FIELD
@@ -52,24 +52,26 @@ export class AirSchema implements IAirSchema {
     }
 
     setConstants(values: LiteralValue[]): void {
-        if (this._constants.length > 0) throw new Error(`constants have already been set`);
+        if (this.constantCount > 0) throw new Error(`constants have already been set`);
         this._constants = values.slice();
     }
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
     get staticRegisterCount(): number {
-        return this._staticRegisters.size;
+        return this._staticRegisters.length;
     }
 
-    get staticRegisters(): StaticRegisterSet {
+    get staticRegisters(): ReadonlyArray<StaticRegister> {
         return this._staticRegisters;
     }
 
     setStaticRegisters(registers: StaticRegisterSet): void {
-        if (this._staticRegisters.size > 0) throw new Error(`static registers have already been set`);
-        this._staticRegisters = registers;
-        // TODO: validate registers
+        if (this.staticRegisterCount > 0) throw new Error(`static registers have already been set`);
+        const danglingInputs = registers.getDanglingInputs();
+        if (danglingInputs.length > 0)
+            throw new Error('dangling inputs'); // TODO: better message
+        registers.forEach(r => this._staticRegisters.push(r));
     }
 
     // TRANSITION FUNCTION
@@ -135,7 +137,8 @@ export class AirSchema implements IAirSchema {
         let code = `\n  (field ${this.field.type} ${this.field.modulus})`;
         if (this.constantCount > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
-        code += this.staticRegisters.toString();
+        if (this.staticRegisterCount > 0)
+            code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
 

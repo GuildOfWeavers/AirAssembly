@@ -1,22 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+// IMPORTS
+// ================================================================================================
+const StaticRegister_1 = require("./StaticRegister");
 // CLASS DEFINITION
 // ================================================================================================
-class MaskRegister {
+class MaskRegister extends StaticRegister_1.StaticRegister {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(index, source, value) {
-        this.index = index;
+    constructor(source, value) {
+        super();
         this.source = source;
         this.value = value;
-    }
-    // ACCESSORS
-    // --------------------------------------------------------------------------------------------
-    get type() {
-        return 'mask';
-    }
-    get secret() {
-        return false;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

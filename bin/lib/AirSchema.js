@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const procedures_1 = require("./procedures");
 const analysis_1 = require("./analysis");
-const registers_1 = require("./registers");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
@@ -10,7 +9,7 @@ class AirSchema {
     // --------------------------------------------------------------------------------------------
     constructor() {
         this._constants = [];
-        this._staticRegisters = new registers_1.StaticRegisterSet();
+        this._staticRegisters = [];
     }
     // FIELD
     // --------------------------------------------------------------------------------------------
@@ -35,23 +34,25 @@ class AirSchema {
         return this._constants;
     }
     setConstants(values) {
-        if (this._constants.length > 0)
+        if (this.constantCount > 0)
             throw new Error(`constants have already been set`);
         this._constants = values.slice();
     }
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
     get staticRegisterCount() {
-        return this._staticRegisters.size;
+        return this._staticRegisters.length;
     }
     get staticRegisters() {
         return this._staticRegisters;
     }
     setStaticRegisters(registers) {
-        if (this._staticRegisters.size > 0)
+        if (this.staticRegisterCount > 0)
             throw new Error(`static registers have already been set`);
-        this._staticRegisters = registers;
-        // TODO: validate registers
+        const danglingInputs = registers.getDanglingInputs();
+        if (danglingInputs.length > 0)
+            throw new Error('dangling inputs'); // TODO: better message
+        registers.forEach(r => this._staticRegisters.push(r));
     }
     // TRANSITION FUNCTION
     // --------------------------------------------------------------------------------------------
@@ -112,7 +113,8 @@ class AirSchema {
         let code = `\n  (field ${this.field.type} ${this.field.modulus})`;
         if (this.constantCount > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
-        code += this.staticRegisters.toString();
+        if (this.staticRegisterCount > 0)
+            code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
         return `(module${code}\n)`;

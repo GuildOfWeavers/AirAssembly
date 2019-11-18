@@ -1,24 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const utils_1 = require("../utils");
+// IMPORTS
+// ================================================================================================
+const StaticRegister_1 = require("./StaticRegister");
 // CLASS DEFINITION
 // ================================================================================================
-class CyclicRegister {
+class CyclicRegister extends StaticRegister_1.StaticRegister {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(index, values) {
-        if (!utils_1.isPowerOf2(values.length))
-            throw new Error(`number of values in a cyclic register must be a power of 2, but ${values.length} values provided`);
-        this.index = index;
+    constructor(values) {
+        super();
+        // make sure the length of values is at least 4; this is needed for FFT interpolation
+        while (values.length < 4)
+            values = values.concat(values);
         this.values = values;
-    }
-    // ACCESSORS
-    // --------------------------------------------------------------------------------------------
-    get type() {
-        return 'cyclic';
-    }
-    get secret() {
-        return false;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

@@ -46,7 +46,7 @@ declare module '@guildofweavers/air-assembly' {
 
         readonly field                  : FieldDescriptor;
         readonly constants              : ReadonlyArray<LiteralValue>;
-        readonly staticRegisters        : StaticRegisterSet;
+        readonly staticRegisters        : ReadonlyArray<StaticRegister>;
         readonly transitionFunction     : Procedure;
         readonly constraintEvaluator    : Procedure;
         readonly constraints            : ConstraintDescriptor[];
@@ -89,38 +89,23 @@ declare module '@guildofweavers/air-assembly' {
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    export type StaticRegisterType = 'input' | 'cyclic' | 'mask';
+    export abstract class StaticRegister { }
 
-    export interface StaticRegister {
-        readonly type   : StaticRegisterType;
-        readonly index  : number;
+    export class InputRegister extends StaticRegister {
         readonly secret : boolean;
-    }
-
-    export interface InputRegister extends StaticRegister {
-        readonly type   : 'input';
         readonly rank   : number;
         readonly binary : boolean;
         readonly parent?: number;
         readonly steps? : number;
     }
 
-    export interface CyclicRegister extends StaticRegister {
-        readonly type   : 'cyclic';
+    export class CyclicRegister extends StaticRegister {
         readonly values : bigint[];        
     }
 
-    export interface MaskRegister extends StaticRegister {
-        readonly type   : 'mask';
+    export class MaskRegister extends StaticRegister {
         readonly source : number;
         readonly value  : bigint;
-    }
-
-    export interface StaticRegisterDescriptor {
-        readonly type   : StaticRegisterType;
-        readonly shape? : number[];
-        readonly values : bigint[];
-        readonly secret : boolean;
     }
 
     export interface StaticRegisterSet {
@@ -319,5 +304,13 @@ declare module '@guildofweavers/air-assembly' {
          * @readonly Array to hold values of constraint evaluated at the current step
          */
         (r: bigint[], n: bigint[], k: bigint[]): bigint[];
+    }
+
+    export type StaticRegisterType = 'input' | 'cyclic' | 'mask';
+    export interface RegisterEvaluatorSpecs {
+        readonly type   : StaticRegisterType;
+        readonly shape? : number[];
+        readonly values : bigint[];
+        readonly secret : boolean;
     }
 }

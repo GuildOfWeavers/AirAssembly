@@ -59,7 +59,7 @@ function generateProcedureCode(procedure) {
     return code;
 }
 function buildField(field, wasmOptions) {
-    if (field.type !== 'prime') {
+    if (field.type === 'prime') {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
             ? galois_1.createPrimeField(field.modulus, wasmOptions)

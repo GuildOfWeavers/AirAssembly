@@ -1,39 +1,33 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("../utils");
+const registers_1 = require("../registers");
 // CLASS DEFINITION
 // ================================================================================================
 class StaticRegisters {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(registers) {
-        // process input registers
-        this.inputRegisters = registers.inputs.map(r => ({
-            index: r.index,
-            rank: r.rank,
-            parent: r.parent,
-            secret: r.secret,
-            binary: r.binary,
-            steps: r.steps
-        }));
-        const maxRank = this.inputRegisters.reduce((p, c) => c.rank > p ? c.rank : p, 0);
-        this.rankedInputs = [];
-        for (let i = 0; i <= maxRank; i++) {
-            this.rankedInputs.push(this.inputRegisters.filter(r => r.rank === i));
+        this.inputRegisters = [];
+        this.cyclicRegisters = [];
+        this.maskedRegisters = [];
+        for (let register of registers) {
+            if (register instanceof registers_1.InputRegister) {
+                this.inputRegisters.push({
+                    rank: register.rank,
+                    parent: register.parent,
+                    secret: register.secret,
+                    binary: register.binary,
+                    steps: register.steps
+                });
+            }
+            else if (register instanceof registers_1.CyclicRegister) {
+                this.cyclicRegisters.push({ type: 'cyclic', values: register.values, secret: false });
+            }
+            else if (register instanceof registers_1.MaskRegister) {
+                this.maskedRegisters.push({ source: register.source, value: register.value });
+            }
         }
-        // process cyclic registers
-        this.cyclicRegisters = registers.cyclic.map(r => {
-            // make sure the length of values is at least 4; this is needed for FFT interpolation
-            let values = r.values;
-            while (values.length < 4)
-                values = values.concat(values);
-            return { type: 'cyclic', values, secret: false };
-        });
-        // process mask registers
-        this.maskedRegisters = registers.masked.map(r => ({
-            source: r.source,
-            value: r.value
-        }));
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
@@ -46,71 +40,61 @@ class StaticRegisters {
     // INPUT HANDLERS
     // --------------------------------------------------------------------------------------------
     digestInputs(inputs) {
-        // determine input shapes and values
-        const shapes = new Array(this.inputRegisters.length);
-        const values = new Array(this.inputRegisters.length);
-        for (let i = 0; i < this.rankedInputs.length; i++) {
-            let registers = this.rankedInputs[i];
-            for (let { index, rank, parent, binary } of registers) {
-                shapes[index] = (parent === undefined) ? [1] : shapes[parent].slice(0);
-                values[index] = unrollRegisterValues(inputs[index], index, rank, 0, shapes[index]);
-                if (binary)
-                    validateBinaryValues(values[index], index);
-            }
-        }
+        let specs = [];
         // build input register descriptors
-        let registerSpecs = this.inputRegisters.map((r, i) => ({
-            type: 'input',
-            shape: shapes[i],
-            values: values[i],
-            secret: r.secret
-        }));
+        const shapes = new Array(this.inputRegisters.length);
+        this.inputRegisters.forEach((register, i) => {
+            shapes[i] = (register.parent === undefined) ? [1] : shapes[register.parent].slice(0);
+            let values = unrollRegisterValues(inputs[i], i, register.rank, 0, shapes[i]);
+            if (register.binary)
+                validateBinaryValues(values, i);
+            specs.push({ type: 'input', shape: shapes[i], values, secret: register.secret });
+        });
         // append cyclic register descriptors
-        registerSpecs = registerSpecs.concat(this.cyclicRegisters);
+        specs = specs.concat(this.cyclicRegisters);
         // build and append masked register descriptors
-        this.maskedRegisters.forEach(r => registerSpecs.push({
+        this.maskedRegisters.forEach(register => specs.push({
             type: 'mask',
-            values: new Array(values[r.source].length).fill(r.value),
+            values: new Array(specs[register.source].values.length).fill(register.value),
             secret: false
         }));
         const traceLength = this.computeTraceLength(shapes);
-        return { traceLength, registerSpecs };
+        return { traceLength, registerSpecs: specs };
     }
     digestPublicInputs(inputs, shapes) {
-        let registerSpecs = [], i = 0;
-        for (let { index, rank, secret, binary } of this.inputRegisters) {
-            if (secret) {
-                registerSpecs.push(undefined);
+        let specs = [], inputIdx = 0;
+        shapes.forEach((shape, regIdx) => {
+            const register = this.inputRegisters[regIdx];
+            if (register.secret) {
+                specs.push(undefined);
             }
             else {
-                let values = unrollRegisterValues(inputs[i], index, rank, 0, shapes[index]);
-                if (binary)
-                    validateBinaryValues(values, index);
-                registerSpecs.push({
-                    type: 'input',
-                    shape: shapes[index],
-                    values: values,
-                    secret: false
-                });
-                i++;
+                let values = unrollRegisterValues(inputs[inputIdx], regIdx, register.rank, 0, shape);
+                if (register.binary)
+                    validateBinaryValues(values, regIdx);
+                specs.push({ type: 'input', shape, values, secret: false });
+                inputIdx++;
             }
-        }
+        });
         const traceLength = this.computeTraceLength(shapes);
-        return { traceLength, registerSpecs };
+        return { traceLength, registerSpecs: specs };
     }
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------
     computeTraceLength(shapes) {
-        const leafRegisters = this.rankedInputs[this.rankedInputs.length - 1];
-        let register = leafRegisters[0];
-        const traceLength = shapes[register.index].reduce((p, c) => p * c, register.steps);
-        for (let i = 1; i < leafRegisters.length; i++) {
-            register = leafRegisters[i];
-            if (shapes[register.index].reduce((p, c) => p * c, register.steps) !== traceLength) {
-                throw new Error(`trace length conflict`); // TODO: better error message
+        let result = 0;
+        this.inputRegisters.forEach((register, i) => {
+            if (register.steps) {
+                const traceLength = shapes[i].reduce((p, c) => p * c, register.steps);
+                if (result === 0) {
+                    result = traceLength;
+                }
+                else if (result !== traceLength) {
+                    throw new Error(`trace length conflict`); // TODO: better error message
+                }
             }
-        }
-        return traceLength;
+        });
+        return result;
     }
 }
 exports.StaticRegisters = StaticRegisters;
