@@ -40,6 +40,9 @@ class StaticRegisters {
     get size() {
         return this.inputRegisters.length + this.cyclicRegisters.length + this.maskedRegisters.length;
     }
+    get inputDescriptors() {
+        return this.inputRegisters;
+    }
     // INPUT HANDLERS
     // --------------------------------------------------------------------------------------------
     digestInputs(inputs) {

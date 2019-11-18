@@ -4,8 +4,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const f = undefined;
 const traceRegisterCount = 0;
-const constraintCount = 0;
 const compositionFactor = 0;
+const extensionFactor = 0;
+const constraints = [];
 const staticRegisters = undefined;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -13,7 +14,7 @@ const applyTransition = function () { return []; };
 const evaluateConstraints = function () { return []; };
 // PROOF OBJECT GENERATOR
 // ================================================================================================
-function initProof(inputs, extensionFactor) {
+function initProof(inputs) {
     // validate inputs
     const { traceLength, registerSpecs } = staticRegisters.digestInputs(inputs);
     // build evaluation domain
@@ -67,6 +68,7 @@ function initProof(inputs, extensionFactor) {
     // CONSTRAINT EVALUATOR
     // --------------------------------------------------------------------------------------------
     function evaluateTracePolynomials(polynomials) {
+        const constraintCount = constraints.length;
         // make sure trace polynomials are valid
         validateTracePolynomials(polynomials, traceLength);
         // evaluate transition polynomials over composition domain
@@ -155,9 +157,6 @@ function initProof(inputs, extensionFactor) {
         rootOfUnity: rootOfUnity,
         traceLength: traceLength,
         extensionFactor: extensionFactor,
-        constraintCount: constraintCount,
-        traceRegisterCount: traceRegisterCount,
-        staticRegisterCount: staticRegisters.size,
         inputShapes: inputShapes,
         executionDomain: executionDomain,
         evaluationDomain: evaluationDomain,
@@ -230,9 +229,6 @@ function initVerification(inputShapes, publicInputs) {
         rootOfUnity: rootOfUnity,
         traceLength: traceLength,
         extensionFactor: extensionFactor,
-        constraintCount: constraintCount,
-        staticRegisterCount: staticRegisters.size,
-        traceRegisterCount: traceRegisterCount,
         inputShapes: inputShapes,
         evaluateConstraintsAt: evaluateConstraintsAt
     };

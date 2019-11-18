@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { StaticRegisterSet, StaticRegisterDescriptor } from "@guildofweavers/air-assembly";
+import { StaticRegisterSet, StaticRegisterDescriptor, InputDescriptor } from "@guildofweavers/air-assembly";
 import { isPowerOf2 } from "../utils";
 
 // INTERFACES
@@ -67,6 +67,10 @@ export class StaticRegisters {
     // --------------------------------------------------------------------------------------------
     get size(): number {
         return this.inputRegisters.length + this.cyclicRegisters.length + this.maskedRegisters.length;
+    }
+
+    get inputDescriptors(): InputDescriptor[] {
+        return this.inputRegisters;
     }
 
     // INPUT HANDLERS

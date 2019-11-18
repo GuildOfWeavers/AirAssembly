@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirModule, StarkLimits, ModuleOptions, WasmOptions } from '@guildofweavers/air-assembly';
+import { AirModule, StarkLimits, ModuleOptions } from '@guildofweavers/air-assembly';
 import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
 import { lexer } from './lib/lexer';
@@ -9,6 +9,7 @@ import { instantiateModule } from './lib/jsGenerator';
 import { analyzeProcedure } from './lib/analysis';
 import { AssemblyError } from './lib/errors';
 import * as expr from './lib/expressions';
+import { getCompositionFactor, isPowerOf2 } from './lib/utils';
 
 // MODULE VARIABLES
 // ================================================================================================
@@ -77,10 +78,10 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
     return schema;
 }
 
-export function instantiate(sourceOrPath: AirSchema | Buffer | string, options: Partial<ModuleOptions> = {}): AirModule {
-    const limits: StarkLimits = { ...DEFAULT_LIMITS, ...options.limits };
-    const schema = (sourceOrPath instanceof AirSchema) ? sourceOrPath : compile(sourceOrPath, limits);
-    const module = instantiateModule(schema, limits);
+export function instantiate(schema: AirSchema, options: Partial<ModuleOptions> = {}): AirModule {
+    const compositionFactor = getCompositionFactor(schema);
+    const vOptions = validateModuleOptions(options, compositionFactor);
+    const module = instantiateModule(schema, vOptions);
     return module;
 }
 
@@ -88,4 +89,24 @@ export function analyze(schema: AirSchema) {
     const transition = analyzeProcedure(schema.transitionFunction);
     const evaluation = analyzeProcedure(schema.constraintEvaluator);
     return { transition, evaluation };
+}
+
+// HELPER FUNCTIONS
+// ================================================================================================
+function validateModuleOptions(options: Partial<ModuleOptions>, compositionFactor: number): ModuleOptions {
+
+    const minExtensionFactor = compositionFactor * 2;
+    const extensionFactor = options.extensionFactor || minExtensionFactor;
+    if (extensionFactor < minExtensionFactor) {
+        throw new Error(`extension factor cannot be smaller than ${minExtensionFactor}`);
+    }
+    else if (!isPowerOf2(extensionFactor)) {
+        throw new Error(`extension factor ${extensionFactor} is not a power of 2`)
+    }
+
+    return {
+        limits          : { ...DEFAULT_LIMITS, ...options.limits },
+        wasmOptions     : options.wasmOptions || false,
+        extensionFactor : extensionFactor
+    };
 }

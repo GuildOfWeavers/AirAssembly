@@ -122,7 +122,7 @@ export function analyzeProcedure(procedure: Procedure) {
     })
 
     // analyze result and return
-    const degree = analyzer.visit(procedure.result, context);
+    const degree = analyzer.visit(procedure.result, context) as bigint[];
     return { degree, stats: context.stats };
 }
 

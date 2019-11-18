@@ -2,7 +2,7 @@
 // ================================================================================================
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, StaticRegisterDescriptor,
-    ProofObject, VerificationObject
+    ProofObject, VerificationObject, ConstraintDescriptor
 } from "@guildofweavers/air-assembly";
 import { StaticRegisters } from "./registers";
 
@@ -14,9 +14,10 @@ export type StaticRegisterEvaluator<T extends bigint | number> = (x: T) => bigin
 // ================================================================================================
 const f: FiniteField = undefined as any;
 const traceRegisterCount = 0;
-const constraintCount = 0;
 const compositionFactor = 0;
+const extensionFactor = 0;
 
+const constraints: ConstraintDescriptor[] = [];
 const staticRegisters: StaticRegisters = undefined as any;
 
 // GENERATED FUNCTION PLACEHOLDERS
@@ -26,7 +27,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 
 // PROOF OBJECT GENERATOR
 // ================================================================================================
-export function initProof(inputs: any[], extensionFactor: number): ProofObject {
+export function initProof(inputs: any[]): ProofObject {
 
     // validate inputs
     const { traceLength, registerSpecs } = staticRegisters.digestInputs(inputs);
@@ -96,6 +97,8 @@ export function initProof(inputs: any[], extensionFactor: number): ProofObject {
     // CONSTRAINT EVALUATOR
     // --------------------------------------------------------------------------------------------
     function evaluateTracePolynomials(polynomials: Matrix): Matrix {
+
+        const constraintCount = constraints.length;
 
         // make sure trace polynomials are valid
         validateTracePolynomials(polynomials, traceLength);
@@ -205,9 +208,6 @@ export function initProof(inputs: any[], extensionFactor: number): ProofObject {
         rootOfUnity                 : rootOfUnity,
         traceLength                 : traceLength,
         extensionFactor             : extensionFactor,
-        constraintCount             : constraintCount,
-        traceRegisterCount          : traceRegisterCount,
-        staticRegisterCount         : staticRegisters.size,
         inputShapes                 : inputShapes,
         executionDomain             : executionDomain,
         evaluationDomain            : evaluationDomain,
@@ -291,9 +291,6 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
         rootOfUnity                 : rootOfUnity,
         traceLength                 : traceLength,
         extensionFactor             : extensionFactor,
-        constraintCount             : constraintCount,
-        staticRegisterCount         : staticRegisters.size,
-        traceRegisterCount          : traceRegisterCount,
         inputShapes                 : inputShapes,
         evaluateConstraintsAt       : evaluateConstraintsAt
     };

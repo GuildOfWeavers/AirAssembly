@@ -5,12 +5,12 @@ declare module '@guildofweavers/air-assembly' {
     import { FiniteField, Vector, Matrix, WasmOptions } from '@guildofweavers/galois';
     export { FiniteField, Vector, Matrix, WasmOptions } from '@guildofweavers/galois';
 
-    // INTERFACES
+    // COMMON INTERFACES
     // --------------------------------------------------------------------------------------------
     export interface ModuleOptions {
-        limits?         : Partial<StarkLimits>;
-        wasmOptions?    : Partial<WasmOptions> | boolean;
-        extensionFactor?: number;
+        limits          : Partial<StarkLimits>;
+        wasmOptions     : Partial<WasmOptions> | boolean;
+        extensionFactor : number;
     }
 
     export interface StarkLimits {
@@ -31,6 +31,15 @@ declare module '@guildofweavers/air-assembly' {
         maxConstraintDegree: number;
     }
 
+    // PUBLIC FUNCTIONS
+    // --------------------------------------------------------------------------------------------
+    export function compile(path: string, limits?: Partial<StarkLimits>): AirSchema;
+    export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
+
+    export function analyze(schema: AirSchema): any;
+
+    export function instantiate(schema: AirSchema, options?: Partial<ModuleOptions>): AirModule;
+
     // AIR SCHEMA
     // --------------------------------------------------------------------------------------------
     export class AirSchema {
@@ -40,6 +49,8 @@ declare module '@guildofweavers/air-assembly' {
         readonly staticRegisters        : StaticRegisterSet;
         readonly transitionFunction     : Procedure;
         readonly constraintEvaluator    : Procedure;
+        readonly constraints            : ConstraintDescriptor[];
+        readonly maxConstraintDegree    : number;
 
         setField(type: 'prime', modulus: bigint): void;
         setConstants(values: LiteralValue[]): void;
@@ -152,7 +163,8 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export class LiteralValue extends Expression {
-        readonly value: bigint | bigint[] | bigint[][];
+        readonly value      : bigint | bigint[] | bigint[][];
+
         constructor(value: bigint | bigint[] | bigint[][]);
     }
 
@@ -160,26 +172,42 @@ declare module '@guildofweavers/air-assembly' {
         readonly operation  : BinaryOperationType;
         readonly lhs        : Expression;
         readonly rhs        : Expression;
+
+        constructor(operation: string, lhs: Expression, rhs: Expression);
     }
 
     export class UnaryOperation extends Expression {
+        readonly operation  : UnaryOperationType;
+        readonly operand    : Expression;
 
+        constructor(operation: string, operand: Expression);
     }
 
     export class MakeVector extends Expression {
+        readonly elements   : Expression[];
 
+        constructor(elements: Expression[]);
     }
 
     export class GetVectorElement extends Expression {
+        readonly source     : Expression;
+        readonly index      : number;
 
+        constructor(source: Expression, index: number);
     }
 
     export class SliceVector extends Expression {
+        readonly source     : Expression;
+        readonly start      : number;
+        readonly end        : number;
 
+        constructor(source: Expression, start: number, end: number);
     }
 
     export class MakeMatrix extends Expression {
+        readonly elements   : Expression[][];
 
+        constructor(elements: Expression[][]);
     }
 
     export class LoadExpression extends Expression {
@@ -194,30 +222,37 @@ declare module '@guildofweavers/air-assembly' {
         readonly field                  : FiniteField;
         readonly traceRegisterCount     : number;
         readonly staticRegisterCount    : number;
-        readonly constraints            : any[];    // TODO
-        readonly inputSpecs             : InputDescriptor[];
+        readonly inputDescriptors       : InputDescriptor[];
+        readonly constraints            : ConstraintDescriptor[];
         readonly maxConstraintDegree    : number;
+        readonly extensionFactor        : number;
 
         /**
          * Creates proof object for the provided input values
          * @param inputs values for initializing input registers
          */
-        initProof(inputs: any[], extensionFactor: number): ProofObject;
+        initProof(inputs: any[]): ProofObject;
 
         /**
-         * Creates verification object for the specified trace shape and public inputs
-         * @param traceShape TODO
+         * Creates verification object for the specified input shapes and public inputs
+         * @param inputShapes 
          * @param publicInputs values for initialize public input registers
          */
-        initVerification(inputShapes: number[][], publicInputs: any[]): VerificationObject;
+        initVerification(inputShapes: InputShape[], publicInputs: any[]): VerificationObject;
     }
 
     export interface InputDescriptor {
         readonly rank       : number;
-        readonly parent?    : number;
-        readonly steps?     : number;
         readonly secret     : boolean;
         readonly binary     : boolean;
+        readonly parent?    : number;
+        readonly steps?     : number;
+    }
+
+    export type InputShape = number[];
+
+    export interface ConstraintDescriptor {
+        readonly degree     : number;
     }
 
     // CONTEXTS
@@ -227,10 +262,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly rootOfUnity        : bigint;
         readonly traceLength        : number;
         readonly extensionFactor    : number;
-        readonly constraintCount    : number;
-        readonly traceRegisterCount : number;
-        readonly staticRegisterCount: number;
-        readonly inputShapes        : number[][];
+        readonly inputShapes        : InputShape[];
     }
 
     export interface VerificationObject extends AirObject {
@@ -254,7 +286,7 @@ declare module '@guildofweavers/air-assembly' {
         /** Domain of the low-degree extended composition polynomial */
         readonly compositionDomain: Vector;
 
-        /** Values of secret registers evaluated over execution domain */
+        /** Values of secret registers evaluated over evaluation domain */
         readonly secretRegisterTraces: Vector[];
 
         generateExecutionTrace(): Matrix;
@@ -288,12 +320,4 @@ declare module '@guildofweavers/air-assembly' {
          */
         (r: bigint[], n: bigint[], k: bigint[]): bigint[];
     }
-
-    // PUBLIC FUNCTIONS
-    // --------------------------------------------------------------------------------------------
-    export function compile(path: string, limits?: Partial<StarkLimits>): AirSchema;
-    export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
-
-    export function instantiate(path: string, options?: Partial<ModuleOptions>): Promise<AirModule>;
-    export function instantiate(source: Buffer, options?: Partial<ModuleOptions>): Promise<AirModule>;
 }

@@ -1,8 +1,9 @@
 // IMPORTS
 // ================================================================================================
-import { StarkLimits, Dimensions, FieldDescriptor, AirSchema as IAirSchema } from "@guildofweavers/air-assembly";
+import { AirSchema as IAirSchema, StarkLimits, Dimensions, FieldDescriptor, ConstraintDescriptor } from "@guildofweavers/air-assembly";
 import { LiteralValue } from "./expressions";
 import { Procedure } from "./procedures";
+import { analyzeProcedure } from "./analysis";
 import { StaticRegisterSet } from "./registers";
 
 // CLASS DEFINITION
@@ -16,6 +17,9 @@ export class AirSchema implements IAirSchema {
 
     private _transitionFunction?    : Procedure;
     private _constraintEvaluator?   : Procedure;
+
+    private _constraints?           : ConstraintDescriptor[];
+    private _maxConstraintDegree?   : number;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
@@ -97,6 +101,23 @@ export class AirSchema implements IAirSchema {
     get constraintEvaluator(): Procedure {
         if (!this._constraintEvaluator) throw new Error(`constraint evaluator hasn't been set yet`);
         return this._constraintEvaluator;
+    }
+
+    get constraints(): ConstraintDescriptor[] {
+        if (!this._constraints)  {
+            const constraintAnalysis = analyzeProcedure(this.constraintEvaluator);
+            this._constraints = constraintAnalysis.degree.map(d => ({
+                degree  : d > Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : Number(d)
+            }));
+        }
+        return this._constraints;
+    }
+
+    get maxConstraintDegree(): number {
+        if (this._maxConstraintDegree === undefined) {
+            this._maxConstraintDegree = this.constraints.reduce((p, c) => c.degree > p ? c.degree : p, 0);
+        }
+        return this._maxConstraintDegree;
     }
 
     setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure {

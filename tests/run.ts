@@ -37,10 +37,9 @@ const inputs = [
     [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]    // secret
 ];
 
-const stats = analyze(schema);
 const air = instantiate(schema);
 
-const pObject = air.initProof(inputs, 8);
+const pObject = air.initProof(inputs);
 const trace = pObject.generateExecutionTrace();
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);

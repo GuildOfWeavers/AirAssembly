@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const galois_1 = require("@guildofweavers/galois");
-const analysis_1 = require("../analysis");
 const registers_1 = require("./registers");
 const expressions = require("./expressions");
 const jsTemplate = require("./template");
+const utils_1 = require("../utils");
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
@@ -15,16 +15,12 @@ const procedureSignatures = {
 };
 // PUBLIC FUNCTIONS
 // ================================================================================================
-function instantiateModule(schema, limits) {
+function instantiateModule(schema, options) {
     let code = `'use strict';\n\n`;
-    // compute composition factor
-    const constraintDegrees = analysis_1.getConstraintDegrees(schema);
-    const maxConstraintDegree = constraintDegrees.reduce((p, c) => c > p ? c : p, 0);
-    const compositionFactor = 2 ** Math.ceil(Math.log2(maxConstraintDegree));
     // set up module variables
     code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
-    code += `const constraintCount = ${schema.constraintCount};\n`;
-    code += `const compositionFactor = ${compositionFactor};\n`;
+    code += `const extensionFactor = ${options.extensionFactor};\n`;
+    code += `const compositionFactor = ${utils_1.getCompositionFactor(schema)};\n`;
     // build transition function and constraint evaluator
     code += generateProcedureCode(schema.transitionFunction);
     code += generateProcedureCode(schema.constraintEvaluator);
@@ -38,14 +34,16 @@ function instantiateModule(schema, limits) {
     code += `field: f,\n`;
     code += `traceRegisterCount: traceRegisterCount,\n`;
     code += `staticRegisterCount: staticRegisters.size,\n`;
-    //TODO: code += `constraints: constraints,\n`;
-    code += `maxConstraintDegree: ${maxConstraintDegree},\n`;
+    code += `inputDescriptors: staticRegisters.inputDescriptors,\n`;
+    code += `constraints: constraints,\n`;
+    code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
+    code += `extensionFactor: extensionFactor,\n`;
     code += `initProof,\n`;
     code += `initVerification\n`;
     code += '};';
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'staticRegisters', code);
-    return buildModule(buildField(schema), schema.constants.map(c => c.value), new registers_1.StaticRegisters(schema.staticRegisters));
+    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', code);
+    return buildModule(buildField(schema.field, options.wasmOptions), schema.constants.map(c => c.value), schema.constraints, new registers_1.StaticRegisters(schema.staticRegisters));
 }
 exports.instantiateModule = instantiateModule;
 // HELPER FUNCTIONS
@@ -60,8 +58,13 @@ function generateProcedureCode(procedure) {
     code += '\n}\n';
     return code;
 }
-function buildField(schema) {
+function buildField(field, wasmOptions) {
     // TODO: check type
-    return galois_1.createPrimeField(schema.field.modulus);
+    if (typeof wasmOptions === 'boolean') {
+        return galois_1.createPrimeField(field.modulus, wasmOptions);
+    }
+    else {
+        return galois_1.createPrimeField(field.modulus, wasmOptions);
+    }
 }
 //# sourceMappingURL=index.js.map

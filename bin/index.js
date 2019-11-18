@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
-const AirSchema_1 = require("./lib/AirSchema");
 const lexer_1 = require("./lib/lexer");
 const parser_1 = require("./lib/parser");
 const jsGenerator_1 = require("./lib/jsGenerator");
 const analysis_1 = require("./lib/analysis");
 const errors_1 = require("./lib/errors");
 const expr = require("./lib/expressions");
+const utils_1 = require("./lib/utils");
 // MODULE VARIABLES
 // ================================================================================================
 const DEFAULT_LIMITS = {
@@ -67,10 +67,10 @@ function compile(sourceOrPath, limits) {
     return schema;
 }
 exports.compile = compile;
-function instantiate(sourceOrPath, options = {}) {
-    const limits = { ...DEFAULT_LIMITS, ...options.limits };
-    const schema = (sourceOrPath instanceof AirSchema_1.AirSchema) ? sourceOrPath : compile(sourceOrPath, limits);
-    const module = jsGenerator_1.instantiateModule(schema, limits);
+function instantiate(schema, options = {}) {
+    const compositionFactor = utils_1.getCompositionFactor(schema);
+    const vOptions = validateModuleOptions(options, compositionFactor);
+    const module = jsGenerator_1.instantiateModule(schema, vOptions);
     return module;
 }
 exports.instantiate = instantiate;
@@ -80,4 +80,21 @@ function analyze(schema) {
     return { transition, evaluation };
 }
 exports.analyze = analyze;
+// HELPER FUNCTIONS
+// ================================================================================================
+function validateModuleOptions(options, compositionFactor) {
+    const minExtensionFactor = compositionFactor * 2;
+    const extensionFactor = options.extensionFactor || minExtensionFactor;
+    if (extensionFactor < minExtensionFactor) {
+        throw new Error(`extension factor cannot be smaller than ${minExtensionFactor}`);
+    }
+    else if (!utils_1.isPowerOf2(extensionFactor)) {
+        throw new Error(`extension factor ${extensionFactor} is not a power of 2`);
+    }
+    return {
+        limits: { ...DEFAULT_LIMITS, ...options.limits },
+        wasmOptions: options.wasmOptions || false,
+        extensionFactor: extensionFactor
+    };
+}
 //# sourceMappingURL=index.js.map

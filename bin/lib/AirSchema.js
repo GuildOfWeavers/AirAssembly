@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const procedures_1 = require("./procedures");
+const analysis_1 = require("./analysis");
 const registers_1 = require("./registers");
 // CLASS DEFINITION
 // ================================================================================================
@@ -80,6 +81,21 @@ class AirSchema {
         if (!this._constraintEvaluator)
             throw new Error(`constraint evaluator hasn't been set yet`);
         return this._constraintEvaluator;
+    }
+    get constraints() {
+        if (!this._constraints) {
+            const constraintAnalysis = analysis_1.analyzeProcedure(this.constraintEvaluator);
+            this._constraints = constraintAnalysis.degree.map(d => ({
+                degree: d > Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : Number(d)
+            }));
+        }
+        return this._constraints;
+    }
+    get maxConstraintDegree() {
+        if (this._maxConstraintDegree === undefined) {
+            this._maxConstraintDegree = this.constraints.reduce((p, c) => c.degree > p ? c.degree : p, 0);
+        }
+        return this._maxConstraintDegree;
     }
     setConstraintEvaluator(span, width, locals) {
         if (this._constraintEvaluator)
