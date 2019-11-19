@@ -14,8 +14,8 @@ class Procedure {
         this.span = validateSpan(name, span);
         this.constants = constants;
         this.localVariables = locals.map(d => new LocalVariable_1.LocalVariable(d));
-        this.traceRegisters = new expressions_1.TraceSegment(traceWidth, false);
-        this.staticRegisters = new expressions_1.TraceSegment(staticWidth, true);
+        this.traceRegisters = new expressions_1.TraceSegment('trace', traceWidth);
+        this.staticRegisters = new expressions_1.TraceSegment('static', staticWidth);
         this.resultLength = width;
         this.subroutines = [];
     }
@@ -79,6 +79,46 @@ class Procedure {
             code += `\n    ${this.subroutines.map(s => s.toString()).join('\n    ')}`;
         code += `\n    ${this.result.toString()}`;
         return `\n  (${this.name}${code})`;
+    }
+    // MUTATION METHODS
+    // --------------------------------------------------------------------------------------------
+    transformExpressions(transformer, subIdx) {
+        for (let i = subIdx; i < this.subroutines.length; i++) {
+            this.subroutines[i].transformExpression(transformer);
+        }
+        let result = transformer(this.result);
+        if (this.result !== result) {
+            this._result = result;
+        }
+        else {
+            result.transform(transformer);
+        }
+    }
+    replaceSubroutines(subroutines) {
+        // TODO: replace subroutines in a different way
+        this.subroutines.length = 0;
+        subroutines.forEach(s => this.subroutines.push(s));
+        this.localVariables.forEach(v => v.clearBinding());
+        this.subroutines.forEach(s => this.localVariables[s.localVarIdx].bind(s, s.localVarIdx));
+        let shiftCount = 0;
+        for (let i = 0; i < this.localVariables.length; i++) {
+            let variable = this.localVariables[i];
+            if (!variable.isBound) {
+                this.localVariables.splice(i, 1);
+                shiftCount++;
+                i--;
+            }
+            else if (shiftCount > 0) {
+                let fromIdx = i + shiftCount;
+                this.transformExpressions(e => {
+                    if (e instanceof expressions_1.LoadExpression && e.binding instanceof Subroutine_1.Subroutine && e.index === fromIdx) {
+                        return new expressions_1.LoadExpression(e.binding, i);
+                    }
+                    return e;
+                }, 0);
+                this.subroutines.forEach(s => s.updateIndex(fromIdx, i));
+            }
+        }
     }
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------

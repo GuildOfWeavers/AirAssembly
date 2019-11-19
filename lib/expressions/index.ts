@@ -1,4 +1,4 @@
-export { Expression } from './Expression';
+export { Expression, ExpressionTransformer } from './Expression';
 export { LiteralValue } from './LiteralValue';
 export { BinaryOperation } from './BinaryOperation';
 export { UnaryOperation } from './UnaryOperation';

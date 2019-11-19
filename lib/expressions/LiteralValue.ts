@@ -42,6 +42,12 @@ export class LiteralValue extends Expression {
         this.value = value;
     }
 
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get isStatic(): boolean {
+        return true;
+    }
+
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     toString(): string {

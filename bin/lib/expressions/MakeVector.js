@@ -26,8 +26,16 @@ class MakeVector extends Expression_1.Expression {
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get elements() { return this.children; }
-    // PUBLIC MEMBERS
+    // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    getElementFor(index) {
+        let position = 0;
+        for (let element of this.elements) {
+            if (position >= index)
+                return element;
+            position += element.dimensions[0] || 1;
+        }
+    }
     toString(options = {}) {
         const list = this.elements.map(e => e.toString({ vectorAsList: true })).join(' ');
         return options.vectorAsList ? list : `(vector ${list})`;

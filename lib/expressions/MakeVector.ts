@@ -29,8 +29,16 @@ export class MakeVector extends Expression {
     // --------------------------------------------------------------------------------------------
     get elements(): Expression[] { return this.children; }
 
-    // PUBLIC MEMBERS
+    // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    getElementFor(index: number): Expression | undefined {
+        let position = 0;
+        for (let element of this.elements) {
+            if (position >= index) return element;
+            position += element.dimensions[0] || 1;
+        }
+    }
+
     toString(options: AssemblyOptions = {}): string {
         const list = this.elements.map(e => e.toString({ vectorAsList: true })).join(' ');
         return options.vectorAsList ? list : `(vector ${list})`;

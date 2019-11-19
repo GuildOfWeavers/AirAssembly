@@ -1,4 +1,5 @@
 import { compile, instantiate, analyze } from '../index';
+import { compressProcedure } from '../lib/analysis/compressor';
 
 const schema = compile(Buffer.from(`
 (module
@@ -15,11 +16,18 @@ const schema = compile(Buffer.from(`
         (mask (input 0) (value 1)))
     (transition
         (span 1) (result vector 1)
-        (local scalar)
-        (store.local 0 (scalar 4))
-        (add
-            (exp (load.trace 0) (scalar 3))
-            (get (load.static 0) 1)))
+        (local scalar) (local vector 4)
+        (store.local 0 (scalar 3))
+        (store.local 1 (vector (scalar 1) (scalar 2) (scalar 3) (scalar 4)))
+        (store.local 1 (load.local 1))
+        (store.local 1 (add (load.local 1) (scalar 3)))
+        (add 
+            (add
+                (exp (load.trace 0) (load.local 0))
+                (get (load.static 0) 1)
+            )
+            (get (load.local 1) 0)
+        ))
     (evaluation
         (span 2) (result vector 1)
         (sub
@@ -32,6 +40,8 @@ const schema = compile(Buffer.from(`
 `));
 
 console.log(schema.toString());
+console.log('-'.repeat(100));
+console.log(compressProcedure(schema.transitionFunction).toString());
 
 const inputs = [
     [1n, 2n, 3n, 4n],                                   // public

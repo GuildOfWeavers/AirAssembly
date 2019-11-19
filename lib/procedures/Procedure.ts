@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { Procedure as IProcedure, ProcedureName } from '@guildofweavers/air-assembly';
-import { Expression, LoadExpression, LiteralValue, TraceSegment } from "../expressions";
+import { Expression, LoadExpression, LiteralValue, TraceSegment, ExpressionTransformer } from "../expressions";
 import { Dimensions, getLoadSource } from "../expressions/utils";
 import { Subroutine } from "./Subroutine";
 import { LocalVariable } from "./LocalVariable";
@@ -28,8 +28,8 @@ export class Procedure implements IProcedure {
         this.span = validateSpan(name, span);
         this.constants = constants;
         this.localVariables = locals.map(d => new LocalVariable(d));
-        this.traceRegisters = new TraceSegment(traceWidth, false);
-        this.staticRegisters = new TraceSegment(staticWidth, true);
+        this.traceRegisters = new TraceSegment('trace', traceWidth);
+        this.staticRegisters = new TraceSegment('static', staticWidth);
         this.resultLength = width;
 
         this.subroutines = [];
@@ -97,6 +97,51 @@ export class Procedure implements IProcedure {
             code += `\n    ${this.subroutines.map(s => s.toString()).join('\n    ')}`;
         code += `\n    ${this.result.toString()}`
         return `\n  (${this.name}${code})`;
+    }
+
+    // MUTATION METHODS
+    // --------------------------------------------------------------------------------------------
+    transformExpressions(transformer: ExpressionTransformer, subIdx: number): void {
+        for (let i = subIdx; i < this.subroutines.length; i++) {
+            this.subroutines[i].transformExpression(transformer);
+        }
+    
+        let result = transformer(this.result);
+        if (this.result !== result) {
+            this._result = result;
+        }
+        else {
+            result.transform(transformer);
+        }
+    }
+
+    replaceSubroutines(subroutines: Subroutine[]): void {
+        // TODO: replace subroutines in a different way
+        this.subroutines.length = 0;
+        subroutines.forEach(s => this.subroutines.push(s));
+
+        this.localVariables.forEach(v => v.clearBinding());
+        this.subroutines.forEach(s => this.localVariables[s.localVarIdx].bind(s, s.localVarIdx));
+    
+        let shiftCount = 0;
+        for (let i = 0; i < this.localVariables.length; i++) {
+            let variable = this.localVariables[i];
+            if (!variable.isBound) {
+                this.localVariables.splice(i, 1);
+                shiftCount++;
+                i--;
+            }
+            else if (shiftCount > 0) {
+                let fromIdx = i + shiftCount;
+                this.transformExpressions(e => {
+                    if (e instanceof LoadExpression && e.binding instanceof Subroutine && e.index === fromIdx) {
+                        return new LoadExpression(e.binding, i);
+                    }
+                    return e;
+                }, 0);
+                this.subroutines.forEach(s => s.updateIndex(fromIdx, i));
+            }
+        }
     }
 
     // PRIVATE METHODS

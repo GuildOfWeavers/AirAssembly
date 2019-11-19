@@ -10,14 +10,9 @@ const utils_1 = require("./utils");
 class TraceSegment extends Expression_1.Expression {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(width, isStatic) {
+    constructor(segment, width) {
         super(utils_1.Dimensions.vector(width));
-        this.isStatic = isStatic;
-    }
-    // ACCESSORS
-    // --------------------------------------------------------------------------------------------
-    get segment() {
-        return this.isStatic ? 'static' : 'trace';
+        this.segment = segment;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

@@ -57,7 +57,8 @@ function generateProcedureCode(procedure) {
     let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
     if (procedure.locals.length > 0) {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
-        code += procedure.subroutines.map(a => `v${a.localVarIdx} = ${expressions.toJsCode(a.expression)};\n`);
+        code += procedure.subroutines.map(a => `v${a.localVarIdx} = ${expressions.toJsCode(a.expression)};`).join('\n');
+        code += '\n';
     }
     code += `return ${expressions.toJsCode(procedure.result, { vectorAsArray: true })};`;
     code += '\n}\n';

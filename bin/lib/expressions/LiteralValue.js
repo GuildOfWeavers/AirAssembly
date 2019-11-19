@@ -37,6 +37,11 @@ class LiteralValue extends Expression_1.Expression {
         }
         this.value = value;
     }
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get isStatic() {
+        return true;
+    }
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     toString() {

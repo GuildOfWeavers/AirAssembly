@@ -68,10 +68,7 @@ function checkDimensions(lhs: Expression, rhs: Expression, operation: BinaryOper
 
 function checkExponent(exp: Expression): void {
     if (!exp.isScalar) throw new Error(`cannot raise to non-scalar power`);
-    if (!(exp instanceof LiteralValue) 
-        && !(exp instanceof LoadExpression && exp.binding instanceof LiteralValue)) {
-        throw new Error(`cannot raise to non-constant power`);
-    }
+    if (!exp.isStatic) throw new Error(`cannot raise to non-constant power`);
 }
 
 function getProductDimensions(rhs: Expression, lhs: Expression): Dimensions {

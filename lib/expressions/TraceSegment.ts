@@ -9,19 +9,13 @@ import { Dimensions } from "./utils";
 // ================================================================================================
 export class TraceSegment extends Expression {
 
-    readonly isStatic: boolean;
+    readonly segment: 'trace' | 'static'
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(width: number, isStatic: boolean) {
+    constructor(segment: 'trace' | 'static', width: number) {
         super(Dimensions.vector(width));
-        this.isStatic = isStatic;
-    }
-
-    // ACCESSORS
-    // --------------------------------------------------------------------------------------------
-    get segment(): 'trace' | 'static' {
-        return this.isStatic ? 'static' : 'trace';
+        this.segment = segment;
     }
 
     // PUBLIC METHODS

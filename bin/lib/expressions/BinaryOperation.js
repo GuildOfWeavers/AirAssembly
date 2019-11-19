@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Expression_1 = require("./Expression");
-const LiteralValue_1 = require("./LiteralValue");
-const LoadExpression_1 = require("./LoadExpression");
 const utils_1 = require("./utils");
 // CLASS DEFINITION
 // ================================================================================================
@@ -58,10 +56,8 @@ function checkDimensions(lhs, rhs, operation) {
 function checkExponent(exp) {
     if (!exp.isScalar)
         throw new Error(`cannot raise to non-scalar power`);
-    if (!(exp instanceof LiteralValue_1.LiteralValue)
-        && !(exp instanceof LoadExpression_1.LoadExpression && exp.binding instanceof LiteralValue_1.LiteralValue)) {
+    if (!exp.isStatic)
         throw new Error(`cannot raise to non-constant power`);
-    }
 }
 function getProductDimensions(rhs, lhs) {
     const d1 = lhs.dimensions;

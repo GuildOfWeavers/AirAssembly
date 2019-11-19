@@ -24,6 +24,49 @@ class Expression {
     isSameDimensions(e) {
         return utils_1.Dimensions.areSameDimensions(this.dimensions, e.dimensions);
     }
+    get isStatic() {
+        return false;
+    }
+    // PUBLIC METHODS
+    // --------------------------------------------------------------------------------------------
+    transform(transformer) {
+        for (let i = 0; i < this.children.length; i++) {
+            let oChild = this.children[i];
+            let nChild = transformer(oChild);
+            if (oChild !== nChild) {
+                this.children[i] = nChild;
+            }
+            else {
+                oChild.transform(transformer);
+            }
+        }
+    }
+    update(update) {
+        for (let i = 0; i < this.children.length; i++) {
+            let oChild = this.children[i];
+            let nChild = update(oChild);
+            if (oChild !== nChild) {
+                this.children[i] = nChild;
+            }
+            else {
+                oChild.update(update);
+            }
+        }
+    }
+    findPath(expression) {
+        for (let i = 0; i < this.children.length; i++) {
+            let child = this.children[i];
+            if (child === expression) {
+                return [i];
+            }
+            else {
+                let subPath = child.findPath(expression);
+                if (subPath) {
+                    return [i, ...subPath];
+                }
+            }
+        }
+    }
 }
 exports.Expression = Expression;
 //# sourceMappingURL=Expression.js.map
