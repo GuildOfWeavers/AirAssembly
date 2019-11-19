@@ -2,8 +2,6 @@
 // ================================================================================================
 import { BinaryOperationType } from "@guildofweavers/air-assembly";
 import { Expression, } from "./Expression";
-import { LiteralValue } from "./LiteralValue";
-import { LoadExpression } from "./LoadExpression";
 import { Dimensions } from "./utils";
 
 // CLASS DEFINITION
@@ -51,7 +49,7 @@ export class BinaryOperation extends Expression {
 // HELPER FUNCTIONS
 // ================================================================================================
 function checkDimensions(lhs: Expression, rhs: Expression, operation: BinaryOperationType): void {
-    if (!rhs.isScalar && !lhs.isSameDimensions(rhs)) {
+    if (!rhs.isScalar && !Dimensions.areSameDimensions(lhs.dimensions, rhs.dimensions)) {
         const d1 = `${lhs.dimensions[0]}x${lhs.dimensions[1]}`;
         const d2 = `${rhs.dimensions[0]}x${rhs.dimensions[1]}`;
 

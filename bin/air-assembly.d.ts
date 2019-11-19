@@ -174,7 +174,7 @@ declare module '@guildofweavers/air-assembly' {
             readonly isVector   : boolean;
             readonly isMatrix   : boolean;
     
-            isSameDimensions(e: Expression): boolean;
+            readonly isStatic   : boolean;
         }
     
         export class LiteralValue extends Expression {

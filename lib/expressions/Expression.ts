@@ -31,7 +31,7 @@ export abstract class Expression implements expressions.Expression {
     // --------------------------------------------------------------------------------------------
     abstract toString(options?: AssemblyOptions): string;
 
-    // DIMENSION METHODS AND ACCESSORS
+    // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get isScalar(): boolean {
         return Dimensions.isScalar(this.dimensions);
@@ -43,10 +43,6 @@ export abstract class Expression implements expressions.Expression {
 
     get isMatrix(): boolean {
         return Dimensions.isMatrix(this.dimensions);
-    }
-
-    isSameDimensions(e: Expression) {
-        return Dimensions.areSameDimensions(this.dimensions, e.dimensions);
     }
 
     get isStatic(): boolean {

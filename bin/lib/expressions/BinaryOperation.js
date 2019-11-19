@@ -40,7 +40,7 @@ exports.BinaryOperation = BinaryOperation;
 // HELPER FUNCTIONS
 // ================================================================================================
 function checkDimensions(lhs, rhs, operation) {
-    if (!rhs.isScalar && !lhs.isSameDimensions(rhs)) {
+    if (!rhs.isScalar && !utils_1.Dimensions.areSameDimensions(lhs.dimensions, rhs.dimensions)) {
         const d1 = `${lhs.dimensions[0]}x${lhs.dimensions[1]}`;
         const d2 = `${rhs.dimensions[0]}x${rhs.dimensions[1]}`;
         if (operation === 'add')

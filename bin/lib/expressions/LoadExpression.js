@@ -11,14 +11,11 @@ class LoadExpression extends Expression_1.Expression {
     // --------------------------------------------------------------------------------------------
     constructor(binding, index) {
         super(binding.dimensions);
-        this._index = index;
+        this.index = index;
         this.binding = binding;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get index() {
-        return this._index;
-    }
     get source() {
         if (this.binding instanceof LiteralValue_1.LiteralValue)
             return 'const';
@@ -41,9 +38,6 @@ class LoadExpression extends Expression_1.Expression {
     }
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
-    clone() {
-        return new LoadExpression(this.binding, this.index);
-    }
     toString() {
         return `(load.${this.source} ${this.index})`;
     }

@@ -10,7 +10,7 @@ class Expression {
         this.dimensions = dimensions;
         this.children = children;
     }
-    // DIMENSION METHODS AND ACCESSORS
+    // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get isScalar() {
         return utils_1.Dimensions.isScalar(this.dimensions);
@@ -20,9 +20,6 @@ class Expression {
     }
     get isMatrix() {
         return utils_1.Dimensions.isMatrix(this.dimensions);
-    }
-    isSameDimensions(e) {
-        return utils_1.Dimensions.areSameDimensions(this.dimensions, e.dimensions);
     }
     get isStatic() {
         return false;
@@ -38,18 +35,6 @@ class Expression {
             }
             else {
                 oChild.transform(transformer);
-            }
-        }
-    }
-    update(update) {
-        for (let i = 0; i < this.children.length; i++) {
-            let oChild = this.children[i];
-            let nChild = update(oChild);
-            if (oChild !== nChild) {
-                this.children[i] = nChild;
-            }
-            else {
-                oChild.update(update);
             }
         }
     }

@@ -281,6 +281,17 @@ function digestPublicInputs(inputs, shapes) {
             inputIdx++;
         }
     });
+    // append cyclic register descriptors
+    specs = specs.concat(staticRegisters.cyclic);
+    // build and append masked register descriptors
+    staticRegisters.masked.forEach(register => {
+        const valueCount = shapes[register.source].reduce((p, c) => p * c, 1);
+        specs.push({
+            type: 'mask',
+            values: new Array(valueCount).fill(register.value),
+            secret: false
+        });
+    });
     const traceLength = computeTraceLength(shapes);
     return { traceLength, registerSpecs: specs };
 }
