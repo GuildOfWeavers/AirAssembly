@@ -12,11 +12,11 @@ export class Procedure implements IProcedure {
 
     readonly name               : ProcedureName;
     readonly span               : number;
+    readonly resultLength       : number;
     readonly constants          : LiteralValue[];
     readonly localVariables     : LocalVariable[];
     readonly traceRegisters     : TraceSegment;
     readonly staticRegisters    : TraceSegment;
-    readonly resultLength       : number;
 
     readonly subroutines        : Subroutine[];
     private _result?            : Expression;
@@ -53,19 +53,14 @@ export class Procedure implements IProcedure {
         return this.localVariables.map(v => v.dimensions);
     }
 
-    get expressions(): ReadonlyArray<Expression> {
-        const expressions = this.subroutines.map(s => s.expression);
-        expressions.push(this.result);
-        return expressions;
-    }
-
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    addSubroutine(expression: Expression, localIndex: number): void {
-        // TODO: make sure subroutines can't be added after the result has been set?
-        const variable = this.getLocalVariable(localIndex);
-        const subroutine = new Subroutine(expression, localIndex)
-        variable.bind(subroutine, localIndex);
+    addSubroutine(expression: Expression, localVarIdx: number): void {
+        if (this._result)
+            throw new Error(`cannot add subroutines to ${this.name} procedure after result has been set`);
+        const variable = this.getLocalVariable(localVarIdx);
+        const subroutine = new Subroutine(expression, localVarIdx)
+        variable.bind(subroutine, localVarIdx);
         this.subroutines.push(subroutine);
     }
 
@@ -73,16 +68,15 @@ export class Procedure implements IProcedure {
         const source = getLoadSource(operation);
         if (source === 'const') {
             if (index >= this.constants.length)
-                throw new Error(`constant with index ${index} has not been defined`);
+                throw new Error(`constant with index ${index} has not been defined for ${this.name} procedure`);
             return new LoadExpression(this.constants[index], index);
         }
         else if (source === 'trace') {
-            //TODO: this.validateFrameIndex(index);
+            this.validateTraceOffset(index);
             return new LoadExpression(this.traceRegisters, index);
         }
         else if (source === 'static') {
-            //TODO: this.validateFrameIndex(index);
-            if (!this.staticRegisters) throw new Error(`static registers have not been defined`);
+            if (index !== 0) throw new Error(`static registers offset must be 0 for ${this.name} procedure`);
             return new LoadExpression(this.staticRegisters, index);
         }
         else if (source === 'local') {
@@ -109,8 +103,15 @@ export class Procedure implements IProcedure {
     // --------------------------------------------------------------------------------------------
     private getLocalVariable(index: number): LocalVariable {
         if (index >= this.localVariables.length)
-            throw new Error(`local variable ${index} has not been defined`);
+            throw new Error(`local variable ${index} has not been defined for ${this.name} procedure`);
         return this.localVariables[index];
+    }
+
+    private validateTraceOffset(offset: number): void {
+        if (offset < 0)
+            throw new Error(`trace offset for ${this.name} procedure cannot be less than 0`);
+        if (offset > (this.span - 1))
+            throw new Error(`trace offset for ${this.name} procedure cannot be greater than ${(this.span - 1)}`);
     }
 }
 

@@ -76,7 +76,6 @@ declare module '@guildofweavers/air-assembly' {
         readonly span           : number;
         readonly locals         : ReadonlyArray<Dimensions>;
         readonly subroutines    : ReadonlyArray<Subroutine>;
-        readonly expressions    : ReadonlyArray<expressions.Expression>;
         readonly result         : expressions.Expression;
         readonly resultLength   : number;
 

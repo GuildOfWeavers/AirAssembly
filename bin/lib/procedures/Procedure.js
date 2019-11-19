@@ -36,35 +36,30 @@ class Procedure {
     get locals() {
         return this.localVariables.map(v => v.dimensions);
     }
-    get expressions() {
-        const expressions = this.subroutines.map(s => s.expression);
-        expressions.push(this.result);
-        return expressions;
-    }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    addSubroutine(expression, localIndex) {
-        // TODO: make sure subroutines can't be added after the result has been set?
-        const variable = this.getLocalVariable(localIndex);
-        const subroutine = new Subroutine_1.Subroutine(expression, localIndex);
-        variable.bind(subroutine, localIndex);
+    addSubroutine(expression, localVarIdx) {
+        if (this._result)
+            throw new Error(`cannot add subroutines to ${this.name} procedure after result has been set`);
+        const variable = this.getLocalVariable(localVarIdx);
+        const subroutine = new Subroutine_1.Subroutine(expression, localVarIdx);
+        variable.bind(subroutine, localVarIdx);
         this.subroutines.push(subroutine);
     }
     buildLoadExpression(operation, index) {
         const source = utils_1.getLoadSource(operation);
         if (source === 'const') {
             if (index >= this.constants.length)
-                throw new Error(`constant with index ${index} has not been defined`);
+                throw new Error(`constant with index ${index} has not been defined for ${this.name} procedure`);
             return new expressions_1.LoadExpression(this.constants[index], index);
         }
         else if (source === 'trace') {
-            //TODO: this.validateFrameIndex(index);
+            this.validateTraceOffset(index);
             return new expressions_1.LoadExpression(this.traceRegisters, index);
         }
         else if (source === 'static') {
-            //TODO: this.validateFrameIndex(index);
-            if (!this.staticRegisters)
-                throw new Error(`static registers have not been defined`);
+            if (index !== 0)
+                throw new Error(`static registers offset must be 0 for ${this.name} procedure`);
             return new expressions_1.LoadExpression(this.staticRegisters, index);
         }
         else if (source === 'local') {
@@ -89,8 +84,14 @@ class Procedure {
     // --------------------------------------------------------------------------------------------
     getLocalVariable(index) {
         if (index >= this.localVariables.length)
-            throw new Error(`local variable ${index} has not been defined`);
+            throw new Error(`local variable ${index} has not been defined for ${this.name} procedure`);
         return this.localVariables[index];
+    }
+    validateTraceOffset(offset) {
+        if (offset < 0)
+            throw new Error(`trace offset for ${this.name} procedure cannot be less than 0`);
+        if (offset > (this.span - 1))
+            throw new Error(`trace offset for ${this.name} procedure cannot be greater than ${(this.span - 1)}`);
     }
 }
 exports.Procedure = Procedure;
