@@ -4,7 +4,7 @@ import { AirSchema as IAirSchema, StarkLimits, FieldDescriptor, ConstraintDescri
 import { LiteralValue, Dimensions } from "./expressions";
 import { Procedure } from "./procedures";
 import { analyzeProcedure } from "./analysis";
-import { StaticRegister, StaticRegisterSet } from "./registers";
+import { StaticRegister, StaticRegisterSet, InputRegister } from "./registers";
 import { ExportDeclaration } from "./exports";
 
 // CLASS DEFINITION
@@ -67,6 +67,16 @@ export class AirSchema implements IAirSchema {
 
     get staticRegisters(): ReadonlyArray<StaticRegister> {
         return this._staticRegisters;
+    }
+
+    get maxInputCycle(): number {
+        let result = 0;
+        for (let register of this.staticRegisters) {
+            if (register instanceof InputRegister && register.steps && register.steps > result) {
+                result = register.steps;
+            }
+        }
+        return result;
     }
 
     setStaticRegisters(registers: StaticRegisterSet): void {
@@ -143,10 +153,21 @@ export class AirSchema implements IAirSchema {
 
     setExports(declarations: ExportDeclaration[]): void {
         if (this._exportDeclarations) throw new Error(`exports have already been set`);
-        // TODO: check duplicate names
-        // TODO: check cycle length consistency
         this._exportDeclarations = new Map();
-        declarations.forEach(d => this._exportDeclarations!.set(d.name, d));
+
+        const maxInputCycle = this.maxInputCycle;
+        for (let declaration of declarations) {
+            if (this._exportDeclarations.has(declaration.name))
+                throw new Error(`export with name '${declaration.name}' is declared more than once`);
+            if (declaration.cycleLength < maxInputCycle)
+                throw new Error(`trace cycle for export '${declaration.name}' is smaller than possible input cycle`);
+            this._exportDeclarations.set(declaration.name, declaration)
+        }
+
+        const mainExport = this.exports.get('main');
+        if (mainExport && mainExport.seed && mainExport.seed.length !== this.traceRegisterCount) {
+            throw new Error(`initializer for main export must resolve to a vector of ${this.traceRegisterCount} elements`);
+        }
     }
 
     // CODE OUTPUT

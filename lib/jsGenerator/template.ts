@@ -2,7 +2,8 @@
 // ================================================================================================
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, RegisterEvaluatorSpecs,
-    ProofObject, VerificationObject, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor
+    ProofObject, VerificationObject, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor,
+    TraceInitializer
 } from "@guildofweavers/air-assembly";
 
 // INTERFACES
@@ -12,6 +13,7 @@ export type StaticRegisterEvaluator<T extends bigint | number> = (x: T) => bigin
 // MODULE VARIABLE PLACEHOLDERS
 // ================================================================================================
 const f: FiniteField = undefined as any;
+const traceCycleLength = 0;
 const traceRegisterCount = 0;
 const compositionFactor = 0;
 const extensionFactor = 0;
@@ -22,6 +24,7 @@ const staticRegisters: {
     cyclic  : RegisterEvaluatorSpecs[];
     masked  : MaskRegisterDescriptor[];
 } = {} as any;
+const initializeExecutionTrace: TraceInitializer = undefined as any;
 
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -59,10 +62,13 @@ export function initProof(inputs: any[]): ProofObject {
 
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
-    function generateExecutionTrace(): Matrix {
+    function generateExecutionTrace(seed?: bigint[]): Matrix {
         const steps = traceLength - 1;
         
-        let rValues = new Array<bigint>(traceRegisterCount).fill(f.zero);
+        let rValues = initializeExecutionTrace(seed);
+        if (rValues.length !== traceRegisterCount){
+            throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
+        }
         let nValues = new Array<bigint>(traceRegisterCount).fill(f.zero);
         const kValues = new Array<bigint>(kRegisters.length).fill(f.zero);
 
@@ -437,6 +443,10 @@ export function computeTraceLength(shapes: number[][]): number {
             }
         }
     });
+
+    if (result < traceCycleLength) {
+        result = traceCycleLength;
+    }
 
     return result;
 }

@@ -7,57 +7,57 @@ const errors_1 = require("./errors");
 // LITERALS AND IDENTIFIERS
 // ================================================================================================
 exports.Literal = chevrotain_1.createToken({ name: "Literal", pattern: /0|[1-9]\d*/ });
-exports.Identifier = chevrotain_1.createToken({ name: "Identifier", pattern: /\$[a-zA-Z]\w*/ });
+exports.Identifier = chevrotain_1.createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/ });
 // KEYWORDS
 // ================================================================================================
-exports.Module = chevrotain_1.createToken({ name: "Module", pattern: /module/ });
-exports.Field = chevrotain_1.createToken({ name: "Field", pattern: /field/ });
-exports.Prime = chevrotain_1.createToken({ name: "Prime", pattern: /prime/ });
-exports.Const = chevrotain_1.createToken({ name: "Const", pattern: /const/ });
-exports.Static = chevrotain_1.createToken({ name: "Static", pattern: /static/ });
-exports.Input = chevrotain_1.createToken({ name: "Input", pattern: /input/ });
-exports.Secret = chevrotain_1.createToken({ name: "Secret", pattern: /secret/ });
-exports.Public = chevrotain_1.createToken({ name: "Public", pattern: /public/ });
-exports.Binary = chevrotain_1.createToken({ name: "Binary", pattern: /binary/ });
-exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/ });
-exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/ });
-exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/ });
-exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/ });
-exports.Value = chevrotain_1.createToken({ name: "Value", pattern: /value/ });
-exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/ });
-exports.Evaluation = chevrotain_1.createToken({ name: "Evaluation", pattern: /evaluation/ });
-exports.Span = chevrotain_1.createToken({ name: "Span", pattern: /span/ });
-exports.Result = chevrotain_1.createToken({ name: "Result", pattern: /result/ });
-exports.Local = chevrotain_1.createToken({ name: "Local", pattern: /local/ });
-exports.Export = chevrotain_1.createToken({ name: "Export", pattern: /export/ });
-exports.Main = chevrotain_1.createToken({ name: "Main", pattern: /main/ });
-exports.Init = chevrotain_1.createToken({ name: "Init", pattern: /init/ });
-exports.Seed = chevrotain_1.createToken({ name: "Seed", pattern: /seed/ });
+exports.Module = chevrotain_1.createToken({ name: "Module", pattern: /module/, longer_alt: exports.Identifier });
+exports.Field = chevrotain_1.createToken({ name: "Field", pattern: /field/, longer_alt: exports.Identifier });
+exports.Prime = chevrotain_1.createToken({ name: "Prime", pattern: /prime/, longer_alt: exports.Identifier });
+exports.Const = chevrotain_1.createToken({ name: "Const", pattern: /const/, longer_alt: exports.Identifier });
+exports.Static = chevrotain_1.createToken({ name: "Static", pattern: /static/, longer_alt: exports.Identifier });
+exports.Input = chevrotain_1.createToken({ name: "Input", pattern: /input/, longer_alt: exports.Identifier });
+exports.Secret = chevrotain_1.createToken({ name: "Secret", pattern: /secret/, longer_alt: exports.Identifier });
+exports.Public = chevrotain_1.createToken({ name: "Public", pattern: /public/, longer_alt: exports.Identifier });
+exports.Binary = chevrotain_1.createToken({ name: "Binary", pattern: /binary/, longer_alt: exports.Identifier });
+exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/, longer_alt: exports.Identifier });
+exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/, longer_alt: exports.Identifier });
+exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/, longer_alt: exports.Identifier });
+exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/, longer_alt: exports.Identifier });
+exports.Value = chevrotain_1.createToken({ name: "Value", pattern: /value/, longer_alt: exports.Identifier });
+exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/, longer_alt: exports.Identifier });
+exports.Evaluation = chevrotain_1.createToken({ name: "Evaluation", pattern: /evaluation/, longer_alt: exports.Identifier });
+exports.Span = chevrotain_1.createToken({ name: "Span", pattern: /span/, longer_alt: exports.Identifier });
+exports.Result = chevrotain_1.createToken({ name: "Result", pattern: /result/, longer_alt: exports.Identifier });
+exports.Local = chevrotain_1.createToken({ name: "Local", pattern: /local/, longer_alt: exports.Identifier });
+exports.Export = chevrotain_1.createToken({ name: "Export", pattern: /export/, longer_alt: exports.Identifier });
+exports.Main = chevrotain_1.createToken({ name: "Main", pattern: /main/, longer_alt: exports.Identifier });
+exports.Init = chevrotain_1.createToken({ name: "Init", pattern: /init/, longer_alt: exports.Identifier });
+exports.Seed = chevrotain_1.createToken({ name: "Seed", pattern: /seed/, longer_alt: exports.Identifier });
 // TYPES
 // ================================================================================================
-exports.Scalar = chevrotain_1.createToken({ name: "Scalar", pattern: /scalar/ });
-exports.Vector = chevrotain_1.createToken({ name: "Vector", pattern: /vector/ });
-exports.Matrix = chevrotain_1.createToken({ name: "Matrix", pattern: /matrix/ });
+exports.Scalar = chevrotain_1.createToken({ name: "Scalar", pattern: /scalar/, longer_alt: exports.Identifier });
+exports.Vector = chevrotain_1.createToken({ name: "Vector", pattern: /vector/, longer_alt: exports.Identifier });
+exports.Matrix = chevrotain_1.createToken({ name: "Matrix", pattern: /matrix/, longer_alt: exports.Identifier });
 // OPERATORS
 // ================================================================================================
-exports.Get = chevrotain_1.createToken({ name: "Get", pattern: /get/ });
-exports.Slice = chevrotain_1.createToken({ name: "Slice", pattern: /slice/ });
+exports.Get = chevrotain_1.createToken({ name: "Get", pattern: /get/, longer_alt: exports.Identifier });
+exports.Slice = chevrotain_1.createToken({ name: "Slice", pattern: /slice/, longer_alt: exports.Identifier });
 exports.BinaryOp = chevrotain_1.createToken({ name: "BinaryOp", pattern: chevrotain_1.Lexer.NA });
-exports.Add = chevrotain_1.createToken({ name: "Add", pattern: /add/, categories: exports.BinaryOp });
-exports.Sub = chevrotain_1.createToken({ name: "Sub", pattern: /sub/, categories: exports.BinaryOp });
-exports.Mul = chevrotain_1.createToken({ name: "Mul", pattern: /mul/, categories: exports.BinaryOp });
-exports.Div = chevrotain_1.createToken({ name: "Div", pattern: /div/, categories: exports.BinaryOp });
-exports.Exp = chevrotain_1.createToken({ name: "Exp", pattern: /exp/, categories: exports.BinaryOp });
-exports.Prod = chevrotain_1.createToken({ name: "Prod", pattern: /prod/, categories: exports.BinaryOp });
+exports.Add = chevrotain_1.createToken({ name: "Add", pattern: /add/, longer_alt: exports.Identifier, categories: exports.BinaryOp });
+exports.Sub = chevrotain_1.createToken({ name: "Sub", pattern: /sub/, longer_alt: exports.Identifier, categories: exports.BinaryOp });
+exports.Mul = chevrotain_1.createToken({ name: "Mul", pattern: /mul/, longer_alt: exports.Identifier, categories: exports.BinaryOp });
+exports.Div = chevrotain_1.createToken({ name: "Div", pattern: /div/, longer_alt: exports.Identifier, categories: exports.BinaryOp });
+exports.Exp = chevrotain_1.createToken({ name: "Exp", pattern: /exp/, longer_alt: exports.Identifier, categories: exports.BinaryOp });
+exports.Prod = chevrotain_1.createToken({ name: "Prod", pattern: /prod/, longer_alt: exports.Identifier, categories: exports.BinaryOp });
 exports.UnaryOp = chevrotain_1.createToken({ name: "UnaryOp", pattern: chevrotain_1.Lexer.NA });
-exports.Neg = chevrotain_1.createToken({ name: "Neg", pattern: /neg/, categories: exports.UnaryOp });
-exports.Inv = chevrotain_1.createToken({ name: "Inv", pattern: /inv/, categories: exports.UnaryOp });
+exports.Neg = chevrotain_1.createToken({ name: "Neg", pattern: /neg/, longer_alt: exports.Identifier, categories: exports.UnaryOp });
+exports.Inv = chevrotain_1.createToken({ name: "Inv", pattern: /inv/, longer_alt: exports.Identifier, categories: exports.UnaryOp });
 exports.LoadOp = chevrotain_1.createToken({ name: "LoadOp", pattern: chevrotain_1.Lexer.NA });
-exports.LoadConst = chevrotain_1.createToken({ name: "LoadConst", pattern: /load.const/, categories: exports.LoadOp });
-exports.LoadTrace = chevrotain_1.createToken({ name: "LoadTrace", pattern: /load.trace/, categories: exports.LoadOp });
-exports.LoadStatic = chevrotain_1.createToken({ name: "LoadStatic", pattern: /load.static/, categories: exports.LoadOp });
-exports.LoadLocal = chevrotain_1.createToken({ name: "LoadLocal", pattern: /load.local/, categories: exports.LoadOp });
-exports.StoreOp = chevrotain_1.createToken({ name: "StoreLocal", pattern: /store.local/ });
+exports.LoadConst = chevrotain_1.createToken({ name: "LoadConst", pattern: /load.const/, longer_alt: exports.Identifier, categories: exports.LoadOp });
+exports.LoadTrace = chevrotain_1.createToken({ name: "LoadTrace", pattern: /load.trace/, longer_alt: exports.Identifier, categories: exports.LoadOp });
+exports.LoadStatic = chevrotain_1.createToken({ name: "LoadStatic", pattern: /load.static/, longer_alt: exports.Identifier, categories: exports.LoadOp });
+exports.LoadLocal = chevrotain_1.createToken({ name: "LoadLocal", pattern: /load.local/, longer_alt: exports.Identifier, categories: exports.LoadOp });
+exports.StoreOp = chevrotain_1.createToken({ name: "StoreLocal", pattern: /store.local/, longer_alt: exports.Identifier });
 // SYMBOLS
 // ================================================================================================
 exports.LParen = chevrotain_1.createToken({ name: "LParen", pattern: /\(/ });

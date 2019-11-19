@@ -94,12 +94,14 @@ declare module '@guildofweavers/air-assembly' {
     export class ExportDeclaration {
         readonly name           : string;
         readonly cycleLength    : number;
-        readonly initializer?   : expressions.LiteralValue | 'seed';
+        readonly initializer?   : TraceInitializer;
 
         readonly isMain         : boolean;
 
         constructor(name: string, cycleLength: number, initializer?: expressions.LiteralValue | 'seed');
     }
+
+    export type TraceInitializer = (seed?: bigint[]) => bigint[];
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
@@ -320,7 +322,7 @@ declare module '@guildofweavers/air-assembly' {
         /** Values of secret registers evaluated over evaluation domain */
         readonly secretRegisterTraces: Vector[];
 
-        generateExecutionTrace(): Matrix;
+        generateExecutionTrace(seed?: bigint[]): Matrix;
         evaluateTracePolynomials(polynomials: Matrix): Matrix;
     }
 

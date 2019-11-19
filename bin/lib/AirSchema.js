@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const procedures_1 = require("./procedures");
 const analysis_1 = require("./analysis");
+const registers_1 = require("./registers");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
@@ -45,6 +46,15 @@ class AirSchema {
     }
     get staticRegisters() {
         return this._staticRegisters;
+    }
+    get maxInputCycle() {
+        let result = 0;
+        for (let register of this.staticRegisters) {
+            if (register instanceof registers_1.InputRegister && register.steps && register.steps > result) {
+                result = register.steps;
+            }
+        }
+        return result;
     }
     setStaticRegisters(registers) {
         if (this.staticRegisterCount > 0)
@@ -117,10 +127,19 @@ class AirSchema {
     setExports(declarations) {
         if (this._exportDeclarations)
             throw new Error(`exports have already been set`);
-        // TODO: check duplicate names
-        // TODO: check cycle length consistency
         this._exportDeclarations = new Map();
-        declarations.forEach(d => this._exportDeclarations.set(d.name, d));
+        const maxInputCycle = this.maxInputCycle;
+        for (let declaration of declarations) {
+            if (this._exportDeclarations.has(declaration.name))
+                throw new Error(`export with name '${declaration.name}' is declared more than once`);
+            if (declaration.cycleLength < maxInputCycle)
+                throw new Error(`trace cycle for export '${declaration.name}' is smaller than possible input cycle`);
+            this._exportDeclarations.set(declaration.name, declaration);
+        }
+        const mainExport = this.exports.get('main');
+        if (mainExport && mainExport.seed && mainExport.seed.length !== this.traceRegisterCount) {
+            throw new Error(`initializer for main export must resolve to a vector of ${this.traceRegisterCount} elements`);
+        }
     }
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------

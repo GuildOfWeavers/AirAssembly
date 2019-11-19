@@ -27,7 +27,8 @@ const schema = compile(Buffer.from(`
             (add
                 (exp (load.trace 0) (load.const 0))
                 (get (load.static 0) 1))))
-    (export main (init seed) (steps 64)))
+    (export main (init (vector 3)) (steps 32))
+    (export mimc_128 (steps 256)))
 `));
 
 console.log(schema.toString());

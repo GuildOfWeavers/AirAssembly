@@ -3,11 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // MODULE VARIABLE PLACEHOLDERS
 // ================================================================================================
 const f = undefined;
+const traceCycleLength = 0;
 const traceRegisterCount = 0;
 const compositionFactor = 0;
 const extensionFactor = 0;
 const constraints = [];
 const staticRegisters = {};
+const initializeExecutionTrace = undefined;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
 const applyTransition = function () { return []; };
@@ -35,9 +37,12 @@ function initProof(inputs) {
     const inputShapes = registerSpecs.filter(r => r.type === 'input').map(r => r.shape);
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
-    function generateExecutionTrace() {
+    function generateExecutionTrace(seed) {
         const steps = traceLength - 1;
-        let rValues = new Array(traceRegisterCount).fill(f.zero);
+        let rValues = initializeExecutionTrace(seed);
+        if (rValues.length !== traceRegisterCount) {
+            throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
+        }
         let nValues = new Array(traceRegisterCount).fill(f.zero);
         const kValues = new Array(kRegisters.length).fill(f.zero);
         // initialize execution trace and copy over the first row
@@ -362,6 +367,9 @@ function computeTraceLength(shapes) {
             }
         }
     });
+    if (result < traceCycleLength) {
+        result = traceCycleLength;
+    }
     return result;
 }
 exports.computeTraceLength = computeTraceLength;
