@@ -24,7 +24,7 @@ const staticRegisters: {
     cyclic  : RegisterEvaluatorSpecs[];
     masked  : MaskRegisterDescriptor[];
 } = {} as any;
-const initializeExecutionTrace: TraceInitializer = undefined as any;
+const initializeTrace: TraceInitializer = undefined as any;
 
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
@@ -65,7 +65,7 @@ export function initProof(inputs: any[]): ProofObject {
     function generateExecutionTrace(seed?: bigint[]): Matrix {
         const steps = traceLength - 1;
         
-        let rValues = initializeExecutionTrace(seed);
+        let rValues = initializeTrace(seed);
         if (rValues.length !== traceRegisterCount){
             throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
         }
@@ -265,6 +265,8 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
     function buildStaticRegisterEvaluator(register: RegisterEvaluatorSpecs | undefined): StaticRegisterEvaluator<bigint> | null {
         if (!register) return null;
 
+        // TODO: fix comments
+
         // determine number of cycles over the execution trace
         const cycleCount = BigInt(traceLength / register.values.length);
 
@@ -307,7 +309,7 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
 // INPUT HANDLERS
 // ================================================================================================
 export function digestInputs(inputs: any[]) {
-
+    // TODO: validate inputs
     let specs: RegisterEvaluatorSpecs[] = [];
 
     // build input register descriptors
@@ -335,6 +337,7 @@ export function digestInputs(inputs: any[]) {
 }
 
 export function digestPublicInputs(inputs: any[], shapes: number[][]) {
+    // TODO: validate shapes/inputs
 
     let specs: (RegisterEvaluatorSpecs | undefined)[] = [], inputIdx = 0;
     shapes.forEach((shape, regIdx) => {

@@ -1,10 +1,10 @@
 // IMPORTS
 // ================================================================================================
-import { createPrimeField, FiniteField, WasmOptions } from "@guildofweavers/galois";
-import { AirModule, ModuleOptions, FieldDescriptor } from "@guildofweavers/air-assembly";
+import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
+import { AirModule, ModuleOptions } from "@guildofweavers/air-assembly";
 import { AirSchema } from '../AirSchema';
 import { Procedure } from '../procedures';
-import { StaticRegister, InputRegister, CyclicRegister, MaskRegister } from "../registers";
+import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
 import { getCompositionFactor } from "../utils";
 import * as expressions from "./expressions";
 import * as jsTemplate from './template';
@@ -55,12 +55,13 @@ export function instantiateModule(schema: AirSchema, options: ModuleOptions): Ai
     code += '};';
 
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', 'initializeExecutionTrace', code);
+    const field = buildField(schema, options.wasmOptions);
+    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', 'initializeTrace', code);
     return buildModule(
-        buildField(schema.field, options.wasmOptions),
-        schema.constants.map(c => c.value),
+        field,
+        buildConstants(schema, field),
         schema.constraints,
-        buildStaticRegisters(schema.staticRegisters),
+        buildStaticRegisters(schema),
         mainExport.initializer
     );
 }
@@ -78,22 +79,30 @@ function generateProcedureCode(procedure: Procedure): string {
     return code;
 }
 
-function buildField(field: FieldDescriptor, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
-    if (field.type === 'prime') {
+function buildField(schema: AirSchema, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
+    if (schema.field.type === 'prime') {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
-            ? createPrimeField(field.modulus, wasmOptions)
-            : createPrimeField(field.modulus, wasmOptions);
+            ? createPrimeField(schema.field.modulus, wasmOptions)
+            : createPrimeField(schema.field.modulus, wasmOptions);
     }
     else {
-        throw new Error(`field type '${field.type}' is not supported`);
+        throw new Error(`field type '${schema.field.type}' is not supported`);
     }
 }
 
-function buildStaticRegisters(registers: ReadonlyArray<StaticRegister>) {
+function buildConstants(schema: AirSchema, field: FiniteField): (bigint | Vector | Matrix)[] {
+    return schema.constants.map(c => {
+        if (c.isScalar) return c.value as bigint;
+        else if (c.isVector) return field.newVectorFrom(c.value as bigint[]);
+        else return field.newMatrixFrom(c.value as bigint[][]);
+    });
+}
+
+function buildStaticRegisters(schema: AirSchema) {
     const inputs = [], cyclic = [], masked = [];
 
-    for (let register of registers) {
+    for (let register of schema.staticRegisters) {
         if (register instanceof InputRegister) {
             inputs.push({
                 rank    : register.rank,

@@ -9,7 +9,7 @@ const compositionFactor = 0;
 const extensionFactor = 0;
 const constraints = [];
 const staticRegisters = {};
-const initializeExecutionTrace = undefined;
+const initializeTrace = undefined;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
 const applyTransition = function () { return []; };
@@ -39,7 +39,7 @@ function initProof(inputs) {
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace(seed) {
         const steps = traceLength - 1;
-        let rValues = initializeExecutionTrace(seed);
+        let rValues = initializeTrace(seed);
         if (rValues.length !== traceRegisterCount) {
             throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
         }
@@ -204,6 +204,7 @@ function initVerification(inputShapes, publicInputs) {
     function buildStaticRegisterEvaluator(register) {
         if (!register)
             return null;
+        // TODO: fix comments
         // determine number of cycles over the execution trace
         const cycleCount = BigInt(traceLength / register.values.length);
         // build the polynomial describing cyclic values
@@ -241,6 +242,7 @@ exports.initVerification = initVerification;
 // INPUT HANDLERS
 // ================================================================================================
 function digestInputs(inputs) {
+    // TODO: validate inputs
     let specs = [];
     // build input register descriptors
     const shapes = new Array(staticRegisters.inputs.length);
@@ -264,6 +266,7 @@ function digestInputs(inputs) {
 }
 exports.digestInputs = digestInputs;
 function digestPublicInputs(inputs, shapes) {
+    // TODO: validate shapes/inputs
     let specs = [], inputIdx = 0;
     shapes.forEach((shape, regIdx) => {
         const register = staticRegisters.inputs[regIdx];

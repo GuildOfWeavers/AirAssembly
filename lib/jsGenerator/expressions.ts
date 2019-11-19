@@ -78,33 +78,27 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
         return `f.newMatrixFrom([${rows.join(', ')}])`;
     }
 
-    // LOAD AND STORE
+    // LOAD EXPRESSION
     // --------------------------------------------------------------------------------------------
     loadExpression(e: LoadExpression, options: JsCodeOptions = {}): string {
-        // TODO: revisit
         let code = '';
-        if (e.binding instanceof LiteralValue) {
-            code = `g[${e.index}]`;
-        }
-        else if (e.binding instanceof Subroutine) {
-            code = `v${e.index}`;
-        }
-        else if (e.binding instanceof TraceSegment) {
-            if (e.binding.segment === 'static') {
-                code = 'f.newVectorFrom(k)';        // TODO
-            }
-            else if (e.binding.segment === 'trace') {
-                if (e.index === 0) {
-                    code = 'f.newVectorFrom(r)';    // TODO
-                }
-                else if (e.index === 1) {
-                    code = 'f.newVectorFrom(n)';    // TODO
-                }
+        if (e.binding instanceof TraceSegment) {
+            code = getRegisterBankReference(e);
+            if (!options.vectorAsArray) {
+                code = `f.newVectorFrom(${code})`;
             }
         }
+        else {
+            if (e.binding instanceof LiteralValue) {
+                code = `g[${e.index}]`;
+            }
+            else if (e.binding instanceof Subroutine) {
+                code = `v${e.index}`;
+            }
 
-        if (e.isVector && options.vectorAsArray) {
-            code = `${code}.toValues()`;
+            if (e.isVector && options.vectorAsArray) {
+                code = `${code}.toValues()`;
+            }
         }
         return code;
     }
@@ -115,4 +109,17 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
 const generator = new ExpressionCodeGenerator();
 export function toJsCode(e: Expression, options: JsCodeOptions = {}) {
     return generator.visit(e, options);
+}
+
+// HELPER FUNCTIONS
+// ================================================================================================
+function getRegisterBankReference(e: LoadExpression): string {
+    switch (`${e.source}:${e.index}`) {
+        case 'static:0' : { return 'k'; }
+        case `trace:0`  : { return 'r'; }
+        case `trace:1`  : { return 'n'; }
+        default: {
+            throw new Error(`load source '${e.source}:${e.index}' is invalid`);
+        }
+    }
 }

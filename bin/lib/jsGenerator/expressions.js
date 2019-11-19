@@ -61,32 +61,26 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
         const rows = e.elements.map(r => `[${r.map(v => this.visit(v)).join(', ')}]`);
         return `f.newMatrixFrom([${rows.join(', ')}])`;
     }
-    // LOAD AND STORE
+    // LOAD EXPRESSION
     // --------------------------------------------------------------------------------------------
     loadExpression(e, options = {}) {
-        // TODO: revisit
         let code = '';
-        if (e.binding instanceof expressions_1.LiteralValue) {
-            code = `g[${e.index}]`;
-        }
-        else if (e.binding instanceof procedures_1.Subroutine) {
-            code = `v${e.index}`;
-        }
-        else if (e.binding instanceof expressions_1.TraceSegment) {
-            if (e.binding.segment === 'static') {
-                code = 'f.newVectorFrom(k)'; // TODO
-            }
-            else if (e.binding.segment === 'trace') {
-                if (e.index === 0) {
-                    code = 'f.newVectorFrom(r)'; // TODO
-                }
-                else if (e.index === 1) {
-                    code = 'f.newVectorFrom(n)'; // TODO
-                }
+        if (e.binding instanceof expressions_1.TraceSegment) {
+            code = getRegisterBankReference(e);
+            if (!options.vectorAsArray) {
+                code = `f.newVectorFrom(${code})`;
             }
         }
-        if (e.isVector && options.vectorAsArray) {
-            code = `${code}.toValues()`;
+        else {
+            if (e.binding instanceof expressions_1.LiteralValue) {
+                code = `g[${e.index}]`;
+            }
+            else if (e.binding instanceof procedures_1.Subroutine) {
+                code = `v${e.index}`;
+            }
+            if (e.isVector && options.vectorAsArray) {
+                code = `${code}.toValues()`;
+            }
         }
         return code;
     }
@@ -98,4 +92,22 @@ function toJsCode(e, options = {}) {
     return generator.visit(e, options);
 }
 exports.toJsCode = toJsCode;
+// HELPER FUNCTIONS
+// ================================================================================================
+function getRegisterBankReference(e) {
+    switch (`${e.source}:${e.index}`) {
+        case 'static:0': {
+            return 'k';
+        }
+        case `trace:0`: {
+            return 'r';
+        }
+        case `trace:1`: {
+            return 'n';
+        }
+        default: {
+            throw new Error(`load source '${e.source}:${e.index}' is invalid`);
+        }
+    }
+}
 //# sourceMappingURL=expressions.js.map

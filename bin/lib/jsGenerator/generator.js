@@ -46,8 +46,9 @@ function instantiateModule(schema, options) {
     code += `initVerification\n`;
     code += '};';
     // create and execute module builder function
-    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', 'initializeExecutionTrace', code);
-    return buildModule(buildField(schema.field, options.wasmOptions), schema.constants.map(c => c.value), schema.constraints, buildStaticRegisters(schema.staticRegisters), mainExport.initializer);
+    const field = buildField(schema, options.wasmOptions);
+    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', 'initializeTrace', code);
+    return buildModule(field, buildConstants(schema, field), schema.constraints, buildStaticRegisters(schema), mainExport.initializer);
 }
 exports.instantiateModule = instantiateModule;
 // HELPER FUNCTIONS
@@ -62,20 +63,30 @@ function generateProcedureCode(procedure) {
     code += '\n}\n';
     return code;
 }
-function buildField(field, wasmOptions) {
-    if (field.type === 'prime') {
+function buildField(schema, wasmOptions) {
+    if (schema.field.type === 'prime') {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
-            ? galois_1.createPrimeField(field.modulus, wasmOptions)
-            : galois_1.createPrimeField(field.modulus, wasmOptions);
+            ? galois_1.createPrimeField(schema.field.modulus, wasmOptions)
+            : galois_1.createPrimeField(schema.field.modulus, wasmOptions);
     }
     else {
-        throw new Error(`field type '${field.type}' is not supported`);
+        throw new Error(`field type '${schema.field.type}' is not supported`);
     }
 }
-function buildStaticRegisters(registers) {
+function buildConstants(schema, field) {
+    return schema.constants.map(c => {
+        if (c.isScalar)
+            return c.value;
+        else if (c.isVector)
+            return field.newVectorFrom(c.value);
+        else
+            return field.newMatrixFrom(c.value);
+    });
+}
+function buildStaticRegisters(schema) {
     const inputs = [], cyclic = [], masked = [];
-    for (let register of registers) {
+    for (let register of schema.staticRegisters) {
         if (register instanceof registers_1.InputRegister) {
             inputs.push({
                 rank: register.rank,
