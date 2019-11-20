@@ -263,14 +263,14 @@ declare module '@guildofweavers/air-assembly' {
          * Creates proof object for the provided input values
          * @param inputs values for initializing input registers
          */
-        initProof(inputs: any[]): ProofObject;
+        initProof(inputs?: any[]): ProofObject;
 
         /**
          * Creates verification object for the specified input shapes and public inputs
          * @param inputShapes 
          * @param publicInputs values for initialize public input registers
          */
-        initVerification(inputShapes: InputShape[], publicInputs: any[]): VerificationObject;
+        initVerification(inputShapes?: InputShape[], publicInputs?: any[]): VerificationObject;
     }
 
     export interface InputDescriptor {

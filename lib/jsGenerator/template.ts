@@ -33,7 +33,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 
 // PROOF OBJECT GENERATOR
 // ================================================================================================
-export function initProof(inputs: any[]): ProofObject {
+export function initProof(inputs: any[] = []): ProofObject {
 
     // validate inputs
     const { traceLength, registerSpecs } = digestInputs(inputs);
@@ -229,7 +229,7 @@ export function initProof(inputs: any[]): ProofObject {
 
 // VERIFICATION OBJECT GENERATOR
 // ================================================================================================
-export function initVerification(inputShapes: number[][], publicInputs: any[]): VerificationObject {
+export function initVerification(inputShapes: number[][] = [], publicInputs: any[] = []): VerificationObject {
     
     const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
         
@@ -306,10 +306,11 @@ export function initVerification(inputShapes: number[][], publicInputs: any[]): 
     };
 }
 
-// INPUT HANDLERS
+// INPUT PROCESSING
 // ================================================================================================
 export function digestInputs(inputs: any[]) {
-    // TODO: validate inputs
+
+    validateInputs(inputs);
     let specs: RegisterEvaluatorSpecs[] = [];
 
     // build input register descriptors
@@ -337,9 +338,10 @@ export function digestInputs(inputs: any[]) {
 }
 
 export function digestPublicInputs(inputs: any[], shapes: number[][]) {
-    // TODO: validate shapes/inputs
-
+    
+    validatePublicInputs(inputs, shapes);
     let specs: (RegisterEvaluatorSpecs | undefined)[] = [], inputIdx = 0;
+
     shapes.forEach((shape, regIdx) => {
         const register = staticRegisters.inputs[regIdx];
         if (register.secret) {
@@ -371,6 +373,66 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
     return { traceLength, registerSpecs: specs };
 }
 
+// VALIDATORS
+// ================================================================================================
+export function validateInputs(inputs: any[]): void {
+    const expectedInputs = staticRegisters.inputs.length;
+    if (expectedInputs === 0) {
+        if (inputs.length > 0) throw new Error(`expected no inputs but received ${inputs.length} inputs`);
+        return;
+    }
+
+    if (!Array.isArray(inputs)) throw new Error(`invalid input object: '${inputs}'`);
+    else if (inputs.length !== expectedInputs) 
+        throw new Error(`expected ${expectedInputs} inputs but received ${inputs.length} inputs`);
+}
+
+export function validatePublicInputs(inputs: any[], shapes: number[][]): void {
+    const totalInputs = staticRegisters.inputs.length;
+    const publicInputs = staticRegisters.inputs.reduce((p, c) => c.secret ? p + 1 : p, 0);
+
+    if (publicInputs === 0) {
+        if (inputs.length > 0) throw new Error(`expected no public inputs but received ${inputs.length} inputs`);
+        return;
+    }
+
+    if (totalInputs === 0) {
+        if (shapes.length > 0) throw new Error(`expected no input shapes but received ${shapes.length} shapes`);
+        return;
+    }
+
+    if (!Array.isArray(inputs)) throw new Error(`invalid public input object: '${inputs}'`);
+    else if (inputs.length !== publicInputs) 
+        throw new Error(`expected ${publicInputs} public inputs but received ${inputs.length} inputs`);
+
+    if (!Array.isArray(shapes)) throw new Error(`invalid input shape object: '${shapes}'`);
+    else if (shapes.length !== totalInputs) 
+        throw new Error(`expected ${totalInputs} input shapes but received ${shapes.length} shapes`);
+}
+
+export function validateTracePolynomials(trace: Matrix, traceLength: number): void {
+    if (!trace) throw new TypeError('Trace polynomials is undefined');
+    if (!trace.rowCount || !trace.colCount) { // TODO: improve type checking
+        throw new TypeError('Trace polynomials must be provided as a matrix of coefficients');
+    }
+    if (trace.rowCount !== traceRegisterCount) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceRegisterCount} rows`);
+    }
+
+    if (trace.colCount !== traceLength) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
+    }
+}
+
+export function validateBinaryValues(values: bigint[], regIdx: number): void {
+    for (let i = 0; i < values.length; i++) {
+        let value = values[i];
+        if (value !== f.one && value !== f.zero) {
+            throw new Error(`invalid input for register ${regIdx}: value ${i} is non-binary`);
+        }
+    }
+}
+
 // HELPER FUNCTIONS
 // ================================================================================================
 export function interpolateRegisterValues(values: bigint[], domainOrRoot: Vector | bigint): Vector {
@@ -399,24 +461,12 @@ export function buildFillMask(values: bigint[], domainLength: number): bigint[] 
     return mask;
 }
 
-export function validateTracePolynomials(trace: Matrix, traceLength: number): void {
-    if (!trace) throw new TypeError('Trace polynomials is undefined');
-    if (!trace.rowCount || !trace.colCount) { // TODO: improve type checking
-        throw new TypeError('Trace polynomials must be provided as a matrix of coefficients');
-    }
-    if (trace.rowCount !== traceRegisterCount) {
-        throw new Error(`Trace polynomials matrix must contain exactly ${traceRegisterCount} rows`);
-    }
-
-    if (trace.colCount !== traceLength) {
-        throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
-    }
-}
-
 export function unrollRegisterValues(value: any[] | bigint, regIdx: number, rank: number, depth: number, shape: number[]): bigint[] {
     if (typeof value === 'bigint') {
         if (depth !== rank)
             throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        if (!f.isElement(value))
+            throw new Error(`input value ${value} for register ${regIdx} is not a valid field element`);
         return [value];
     }
     else {
@@ -465,10 +515,6 @@ export function computeTraceLength(shapes: number[][]): number {
     }
 
     return result;
-}
-
-export function validateBinaryValues(values: bigint[], regIdx: number): void {
-    // TODO: implement
 }
 
 export function isPowerOf2(value: number): boolean {

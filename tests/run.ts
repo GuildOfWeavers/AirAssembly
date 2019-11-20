@@ -34,7 +34,7 @@ const inputs = [
 
 const air = instantiate(schema);
 
-const pObject = air.initProof(inputs);
+const pObject = air.initProof();
 const trace = pObject.generateExecutionTrace();
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);
@@ -45,7 +45,7 @@ const qEvaluations = air.field.evalPolysAtRoots(qPolys, pObject.evaluationDomain
 
 const sEvaluations = pObject.secretRegisterTraces[0];
 
-const vObject = air.initVerification(pObject.inputShapes, inputs.slice(0, 2))
+const vObject = air.initVerification(pObject.inputShapes)
 
 const x = air.field.exp(vObject.rootOfUnity, 2n);
 const rValues = [pEvaluations.getValue(0, 2)];

@@ -16,7 +16,7 @@ const applyTransition = function () { return []; };
 const evaluateConstraints = function () { return []; };
 // PROOF OBJECT GENERATOR
 // ================================================================================================
-function initProof(inputs) {
+function initProof(inputs = []) {
     // validate inputs
     const { traceLength, registerSpecs } = digestInputs(inputs);
     // build evaluation domain
@@ -174,7 +174,7 @@ function initProof(inputs) {
 exports.initProof = initProof;
 // VERIFICATION OBJECT GENERATOR
 // ================================================================================================
-function initVerification(inputShapes, publicInputs) {
+function initVerification(inputShapes = [], publicInputs = []) {
     const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -239,10 +239,10 @@ function initVerification(inputShapes, publicInputs) {
     };
 }
 exports.initVerification = initVerification;
-// INPUT HANDLERS
+// INPUT PROCESSING
 // ================================================================================================
 function digestInputs(inputs) {
-    // TODO: validate inputs
+    validateInputs(inputs);
     let specs = [];
     // build input register descriptors
     const shapes = new Array(staticRegisters.inputs.length);
@@ -266,7 +266,7 @@ function digestInputs(inputs) {
 }
 exports.digestInputs = digestInputs;
 function digestPublicInputs(inputs, shapes) {
-    // TODO: validate shapes/inputs
+    validatePublicInputs(inputs, shapes);
     let specs = [], inputIdx = 0;
     shapes.forEach((shape, regIdx) => {
         const register = staticRegisters.inputs[regIdx];
@@ -296,6 +296,67 @@ function digestPublicInputs(inputs, shapes) {
     return { traceLength, registerSpecs: specs };
 }
 exports.digestPublicInputs = digestPublicInputs;
+// VALIDATORS
+// ================================================================================================
+function validateInputs(inputs) {
+    const expectedInputs = staticRegisters.inputs.length;
+    if (expectedInputs === 0) {
+        if (inputs.length > 0)
+            throw new Error(`expected no inputs but received ${inputs.length} inputs`);
+        return;
+    }
+    if (!Array.isArray(inputs))
+        throw new Error(`invalid input object: '${inputs}'`);
+    else if (inputs.length !== expectedInputs)
+        throw new Error(`expected ${expectedInputs} inputs but received ${inputs.length} inputs`);
+}
+exports.validateInputs = validateInputs;
+function validatePublicInputs(inputs, shapes) {
+    const totalInputs = staticRegisters.inputs.length;
+    const publicInputs = staticRegisters.inputs.reduce((p, c) => c.secret ? p + 1 : p, 0);
+    if (publicInputs === 0) {
+        if (inputs.length > 0)
+            throw new Error(`expected no public inputs but received ${inputs.length} inputs`);
+        return;
+    }
+    if (totalInputs === 0) {
+        if (shapes.length > 0)
+            throw new Error(`expected no input shapes but received ${shapes.length} shapes`);
+        return;
+    }
+    if (!Array.isArray(inputs))
+        throw new Error(`invalid public input object: '${inputs}'`);
+    else if (inputs.length !== publicInputs)
+        throw new Error(`expected ${publicInputs} public inputs but received ${inputs.length} inputs`);
+    if (!Array.isArray(shapes))
+        throw new Error(`invalid input shape object: '${shapes}'`);
+    else if (shapes.length !== totalInputs)
+        throw new Error(`expected ${totalInputs} input shapes but received ${shapes.length} shapes`);
+}
+exports.validatePublicInputs = validatePublicInputs;
+function validateTracePolynomials(trace, traceLength) {
+    if (!trace)
+        throw new TypeError('Trace polynomials is undefined');
+    if (!trace.rowCount || !trace.colCount) { // TODO: improve type checking
+        throw new TypeError('Trace polynomials must be provided as a matrix of coefficients');
+    }
+    if (trace.rowCount !== traceRegisterCount) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceRegisterCount} rows`);
+    }
+    if (trace.colCount !== traceLength) {
+        throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
+    }
+}
+exports.validateTracePolynomials = validateTracePolynomials;
+function validateBinaryValues(values, regIdx) {
+    for (let i = 0; i < values.length; i++) {
+        let value = values[i];
+        if (value !== f.one && value !== f.zero) {
+            throw new Error(`invalid input for register ${regIdx}: value ${i} is non-binary`);
+        }
+    }
+}
+exports.validateBinaryValues = validateBinaryValues;
 // HELPER FUNCTIONS
 // ================================================================================================
 function interpolateRegisterValues(values, domainOrRoot) {
@@ -324,24 +385,12 @@ function buildFillMask(values, domainLength) {
     return mask;
 }
 exports.buildFillMask = buildFillMask;
-function validateTracePolynomials(trace, traceLength) {
-    if (!trace)
-        throw new TypeError('Trace polynomials is undefined');
-    if (!trace.rowCount || !trace.colCount) { // TODO: improve type checking
-        throw new TypeError('Trace polynomials must be provided as a matrix of coefficients');
-    }
-    if (trace.rowCount !== traceRegisterCount) {
-        throw new Error(`Trace polynomials matrix must contain exactly ${traceRegisterCount} rows`);
-    }
-    if (trace.colCount !== traceLength) {
-        throw new Error(`Trace polynomials matrix must contain exactly ${traceLength} columns`);
-    }
-}
-exports.validateTracePolynomials = validateTracePolynomials;
 function unrollRegisterValues(value, regIdx, rank, depth, shape) {
     if (typeof value === 'bigint') {
         if (depth !== rank)
             throw new Error(`values provided for register ${regIdx} do not match the expected signature`);
+        if (!f.isElement(value))
+            throw new Error(`input value ${value} for register ${regIdx} is not a valid field element`);
         return [value];
     }
     else {
@@ -387,10 +436,6 @@ function computeTraceLength(shapes) {
     return result;
 }
 exports.computeTraceLength = computeTraceLength;
-function validateBinaryValues(values, regIdx) {
-    // TODO: implement
-}
-exports.validateBinaryValues = validateBinaryValues;
 function isPowerOf2(value) {
     return (value !== 0) && (value & (value - 1)) === 0;
 }
