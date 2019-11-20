@@ -21,13 +21,20 @@
   "engines": {
     "node": ">=12.7.x"
   },
+  "scripts": {
+    "clean": "rimraf bin",
+    "compile": "tsc -p .",
+    "copyfiles": "copyfiles ./package.json ./package-lock.json ./air-assembly.d.ts ./.npmignore ./README.md bin",
+    "build": "npm run clean && npm run copyfiles && npm run compile",
+    "publish": "npm publish bin --access=public"
+  },
   "devDependencies": {
     "@types/node": "12.7.x",
-    "del": "5.1.x",
-    "gulp": "4.0.x"
+    "copyfiles": "2.1.x",
+    "rimraf": "3.0.x"
   },
   "dependencies": {
-    "@guildofweavers/galois": "^0.4.20",
+    "@guildofweavers/galois": "0.4.x",
     "chevrotain": "6.5.x"
   }
 }
