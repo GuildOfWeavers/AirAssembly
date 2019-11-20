@@ -83,7 +83,7 @@ export class AirSchema implements IAirSchema {
         if (this.staticRegisterCount > 0) throw new Error(`static registers have already been set`);
         const danglingInputs = registers.getDanglingInputs();
         if (danglingInputs.length > 0)
-            throw new Error('dangling inputs'); // TODO: better message
+            throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
         registers.forEach(r => this._staticRegisters.push(r));
     }
 

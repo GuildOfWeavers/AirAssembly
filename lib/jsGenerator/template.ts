@@ -265,27 +265,25 @@ export function initVerification(inputShapes: number[][] = [], publicInputs: any
     function buildStaticRegisterEvaluator(register: RegisterEvaluatorSpecs | undefined): StaticRegisterEvaluator<bigint> | null {
         if (!register) return null;
 
-        // TODO: fix comments
+        // determine number of steps per value
+        const valueSpan = BigInt(traceLength / register.values.length);
 
-        // determine number of cycles over the execution trace
-        const cycleCount = BigInt(traceLength / register.values.length);
-
-        // build the polynomial describing cyclic values
-        const g = f.exp(rootOfUnity, BigInt(extensionFactor) * cycleCount);
+        // build the polynomial describing the values
+        const g = f.exp(rootOfUnity, BigInt(extensionFactor) * valueSpan);
         const poly = interpolateRegisterValues(register.values, g);
 
         if (register.type === 'cyclic') {
-            
-            // build and return the evaluator function
-            return (x) => f.evalPolyAt(poly, f.exp(x, cycleCount));
+            // build and return cyclic evaluator function
+            return (x) => f.evalPolyAt(poly, f.exp(x, valueSpan));
         }
         else {
+            // build mask polynomial
             const mask = buildFillMask(register.values, traceLength);
             const mCycleCountCount = BigInt(traceLength / mask.length);
             const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mCycleCountCount);
             const maskPoly = interpolateRegisterValues(mask, mg);
 
-            // build and return the evaluator function
+            // build and return the evaluator which combines value polynomial and mask polynomial
             return (x) => {
                 const v = f.evalPolyAt(poly, x);
                 const m = f.evalPolyAt(maskPoly, f.exp(x, mCycleCountCount));
@@ -507,7 +505,7 @@ export function computeTraceLength(shapes: number[][]): number {
                 result = traceLength;
             }
             else if (result !== traceLength) {
-                throw new Error(`trace length conflict`);   // TODO: better error message
+                throw new Error(`registers 0 and ${i} require traces of different lengths`);
             }
         }
     });

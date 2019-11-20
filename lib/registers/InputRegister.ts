@@ -19,7 +19,7 @@ export class InputRegister extends StaticRegister {
         if (scope !== 'public' && scope !== 'secret')
             throw new Error(`invalid input register scope '${scope}'`);
         else if (rank > 1 && parent === undefined)
-            throw new Error(`TODO`);
+            throw new Error(`invalid input register rank: register of rank ${rank} has no parent`);
 
         this.secret = (scope === 'secret');
         this.rank = rank;

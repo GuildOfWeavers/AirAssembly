@@ -19,8 +19,10 @@ export class ExpressionVisitor<T> {
         for (let prop of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
             let member = (this as any)[prop];
             if (typeof member !== `function` || prop === 'constructor') continue;
-            this.handlers.set(prop.toLocaleLowerCase(), member);
-            // TODO: check for duplicated names
+            const handlerName = prop.toLowerCase();
+            if (this.handlers.has(handlerName))
+                throw new Error(`expression handler '${handlerName}' is defined more than once`);
+            this.handlers.set(handlerName, member);
         }
     }
 

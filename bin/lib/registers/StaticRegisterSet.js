@@ -53,22 +53,34 @@ class StaticRegisterSet {
         this.inputs.push(register);
         this.registers.push(register);
     }
+    addMask(source, value) {
+        this.validateMaskSource(source, this.size);
+        if (this.registers[this.size - 1] instanceof CyclicRegister_1.CyclicRegister)
+            throw new Error(`mask registers cannot be preceded by cyclic registers`);
+        const register = new MaskRegister_1.MaskRegister(source, value);
+        this.registers.push(register);
+    }
     addCyclic(values) {
         if (!utils_1.isPowerOf2(values.length))
             throw new Error(`number of values in cyclic register ${this.size} is ${values.length}, but must be a power of 2`);
         const register = new CyclicRegister_1.CyclicRegister(values);
         this.registers.push(register);
     }
-    addMask(source, value) {
-        this.validateMaskSource(source, this.size);
-        const register = new MaskRegister_1.MaskRegister(source, value);
-        this.registers.push(register);
-    }
     // OTHER PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     getDanglingInputs() {
-        // TODO: implement
-        return [];
+        const registers = new Set(this.inputs);
+        const leaves = this.inputs.filter(r => r.isLeaf);
+        for (let leaf of leaves) {
+            let register = leaf;
+            while (register) {
+                registers.delete(register);
+                register = register.parent !== undefined ? this.inputs[register.parent] : undefined;
+            }
+        }
+        const result = [];
+        registers.forEach(r => result.push(this.inputs.indexOf(r)));
+        return result;
     }
     // PRIVATE METHODS
     // --------------------------------------------------------------------------------------------
