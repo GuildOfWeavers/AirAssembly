@@ -65,14 +65,14 @@ function generateProcedureCode(procedure) {
     return code;
 }
 function buildField(schema, wasmOptions) {
-    if (schema.field.type === 'prime') {
+    if (schema.field.extensionDegree === 1) {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
-            ? galois_1.createPrimeField(schema.field.modulus, wasmOptions)
-            : galois_1.createPrimeField(schema.field.modulus, wasmOptions);
+            ? galois_1.createPrimeField(schema.field.characteristic, wasmOptions)
+            : galois_1.createPrimeField(schema.field.characteristic, wasmOptions);
     }
     else {
-        throw new Error(`field type '${schema.field.type}' is not supported`);
+        throw new Error('non-prime fields are not supported');
     }
 }
 function buildConstants(schema, field) {

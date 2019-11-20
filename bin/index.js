@@ -22,6 +22,8 @@ const DEFAULT_LIMITS = {
 // ================================================================================================
 var exports_1 = require("./lib/exports");
 exports.ExportDeclaration = exports_1.ExportDeclaration;
+var errors_2 = require("./lib/errors");
+exports.AssemblyError = errors_2.AssemblyError;
 exports.expressions = {
     LiteralValue: expr.LiteralValue,
     BinaryOperation: expr.BinaryOperation,

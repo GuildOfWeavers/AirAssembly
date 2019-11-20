@@ -44,7 +44,7 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
     export class AirSchema {
 
-        readonly field                  : FieldDescriptor;
+        readonly field                  : FiniteField;
         readonly constants              : ReadonlyArray<expressions.LiteralValue>;
         readonly staticRegisters        : ReadonlyArray<registers.StaticRegister>;
         readonly transitionFunction     : Procedure;
@@ -63,11 +63,6 @@ declare module '@guildofweavers/air-assembly' {
         setExports(declarations: ExportDeclaration[]): void;
 
         validateLimits(limits: StarkLimits): void;
-    }
-
-    export interface FieldDescriptor {
-        readonly type       : 'prime';
-        readonly modulus    : bigint;
     }
 
     export type ProcedureName = 'transition' | 'evaluation';
@@ -267,7 +262,7 @@ declare module '@guildofweavers/air-assembly' {
 
         /**
          * Creates verification object for the specified input shapes and public inputs
-         * @param inputShapes 
+         * @param inputShapes TODO
          * @param publicInputs values for initialize public input registers
          */
         initVerification(inputShapes?: InputShape[], publicInputs?: any[]): VerificationObject;
@@ -327,7 +322,7 @@ declare module '@guildofweavers/air-assembly' {
 
     // ERRORS
     // --------------------------------------------------------------------------------------------
-    export class AirScriptError {
+    export class AssemblyError {
         readonly errors: any[];
         constructor(errors: any[]);
     }

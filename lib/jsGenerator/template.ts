@@ -279,14 +279,14 @@ export function initVerification(inputShapes: number[][] = [], publicInputs: any
         else {
             // build mask polynomial
             const mask = buildFillMask(register.values, traceLength);
-            const mCycleCountCount = BigInt(traceLength / mask.length);
-            const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mCycleCountCount);
+            const mValueSpan = BigInt(traceLength / mask.length);
+            const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mValueSpan);
             const maskPoly = interpolateRegisterValues(mask, mg);
 
             // build and return the evaluator which combines value polynomial and mask polynomial
             return (x) => {
                 const v = f.evalPolyAt(poly, x);
-                const m = f.evalPolyAt(maskPoly, f.exp(x, mCycleCountCount));
+                const m = f.evalPolyAt(maskPoly, f.exp(x, mValueSpan));
                 return f.mul(v, m);
             };
         }

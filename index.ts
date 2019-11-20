@@ -25,6 +25,7 @@ const DEFAULT_LIMITS: StarkLimits = {
 // RE-EXPORTS
 // ================================================================================================
 export { ExportDeclaration } from './lib/exports';
+export { AssemblyError } from './lib/errors';
 
 export const expressions = {
     LiteralValue        : expr.LiteralValue,

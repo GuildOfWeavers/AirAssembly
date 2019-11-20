@@ -1,6 +1,7 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema as IAirSchema, StarkLimits, FieldDescriptor, ConstraintDescriptor } from "@guildofweavers/air-assembly";
+import { AirSchema as IAirSchema, StarkLimits, ConstraintDescriptor } from "@guildofweavers/air-assembly";
+import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { LiteralValue, Dimensions } from "./expressions";
 import { Procedure } from "./procedures";
 import { analyzeProcedure } from "./analysis";
@@ -11,7 +12,7 @@ import { ExportDeclaration } from "./exports";
 // ================================================================================================
 export class AirSchema implements IAirSchema {
 
-    private _field?                 : FieldDescriptor;
+    private _field?                 : FiniteField;
 
     private _constants              : LiteralValue[];
     private _staticRegisters        : StaticRegister[];
@@ -33,7 +34,7 @@ export class AirSchema implements IAirSchema {
 
     // FIELD
     // --------------------------------------------------------------------------------------------
-    get field(): FieldDescriptor {
+    get field(): FiniteField {
         if (!this._field) throw new Error(`fields has not been set yet`);
         return this._field;
     }
@@ -41,7 +42,7 @@ export class AirSchema implements IAirSchema {
     setField(type: 'prime', modulus: bigint): void {
         if (this._field) throw new Error('field has already been set');
         if (type !== 'prime') throw new Error(`field type '${type}' is not supported`);
-        this._field = { type, modulus };
+        this._field = createPrimeField(modulus);
     }
 
     // CONSTANTS
@@ -57,6 +58,7 @@ export class AirSchema implements IAirSchema {
     setConstants(values: LiteralValue[]): void {
         if (this.constantCount > 0) throw new Error(`constants have already been set`);
         this._constants = values.slice();
+        // TODO: validate constant values
     }
 
     // STATIC REGISTERS
@@ -85,6 +87,7 @@ export class AirSchema implements IAirSchema {
         if (danglingInputs.length > 0)
             throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
         registers.forEach(r => this._staticRegisters.push(r));
+        // TODO: validate constant values
     }
 
     // TRANSITION FUNCTION
@@ -105,6 +108,7 @@ export class AirSchema implements IAirSchema {
         const staticWidth = this.staticRegisterCount;
         this._transitionFunction = new Procedure('transition', span, width, constants, locals, traceWidth, staticWidth);
         return this._transitionFunction;
+        // TODO: validate literal expressions
     }
 
     // TRANSITION CONSTRAINTS
@@ -142,6 +146,7 @@ export class AirSchema implements IAirSchema {
         const staticWidth = this.staticRegisterCount;
         this._constraintEvaluator = new Procedure('evaluation', span, width, constants, locals, traceWidth, staticWidth);
         return this._constraintEvaluator;
+        // TODO: validate literal expressions
     }
 
     // EXPORT DECLARATIONS
@@ -168,12 +173,13 @@ export class AirSchema implements IAirSchema {
         if (mainExport && mainExport.seed && mainExport.seed.length !== this.traceRegisterCount) {
             throw new Error(`initializer for main export must resolve to a vector of ${this.traceRegisterCount} elements`);
         }
+        // TODO: validate literal expressions
     }
 
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n  (field ${this.field.type} ${this.field.modulus})`;
+        let code = `\n  ${buildFieldExpression(this.field)}`;
         if (this.constantCount > 0)
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         if (this.staticRegisterCount > 0)
@@ -201,49 +207,12 @@ export class AirSchema implements IAirSchema {
 
 // HELPER FUNCTIONS
 // ================================================================================================
-/*
-function compressProcedure(locals: LocalVariable[], body: ProcedureBody): void {
-
-    // collect references to locals from all expressions
-    let expressions = [...body.statements, body.result];
-    const bindings = new Map<Expression, Expression[]>();
-    expressions.forEach(e => e.collectLoadOperations('local', bindings));
-
-    // if a store expression is referenced only once, substitute it by value
-    const retainedStatements: StoreExpression[] = [];
-    for (let i = 0; i < body.statements.length; i++) {
-        let statement = body.statements[i];
-        let dependents = bindings.get(statement);
-        if (!dependents) continue;
-        if (dependents.length === 1) {
-            let dependent = dependents[0];
-            expressions.slice(i).forEach(e => e.replace(dependent, statement.value));
-        }
-        else if (dependents.length > 1) {
-            retainedStatements.push(statement);
-        }
+function buildFieldExpression(field: FiniteField): string {
+    if (field.extensionDegree === 1) {
+        // this is a prime field
+        return `(field prime ${field.characteristic})`;
     }
-
-    // update body object and compress all remaining expressions
-    body.statements = retainedStatements;
-    expressions = [...body.statements, body.result];
-    expressions.forEach(e => e.compress());
-
-    // remove all unreferenced local variables
-    locals.forEach(v => v.clearBinding());
-    body.statements.forEach(s => locals[s.index].bind(s, s.index));
-
-    let shiftCount = 0;
-    for (let i = 0; i < locals.length; i++) {
-        let variable = locals[i];
-        if (!variable.isBound) {
-            locals.splice(i, 1);
-            shiftCount++;
-            i--;
-        }
-        else if (shiftCount > 0) {
-            expressions.forEach(e => e.updateAccessorIndex('local', i + shiftCount, i));
-        }
+    else {
+        throw new Error('non-prime fields are not supported');
     }
 }
-*/

@@ -81,14 +81,14 @@ function generateProcedureCode(procedure: Procedure): string {
 }
 
 function buildField(schema: AirSchema, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
-    if (schema.field.type === 'prime') {
+    if (schema.field.extensionDegree === 1) {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
-            ? createPrimeField(schema.field.modulus, wasmOptions)
-            : createPrimeField(schema.field.modulus, wasmOptions);
+            ? createPrimeField(schema.field.characteristic, wasmOptions)
+            : createPrimeField(schema.field.characteristic, wasmOptions);
     }
     else {
-        throw new Error(`field type '${schema.field.type}' is not supported`);
+        throw new Error('non-prime fields are not supported');
     }
 }
 
