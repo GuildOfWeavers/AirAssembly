@@ -86,7 +86,7 @@ function buildConstants(schema, field) {
     });
 }
 function buildStaticRegisters(schema) {
-    const inputs = [], cyclic = [], masked = [];
+    const inputs = [], masked = [], cyclic = [];
     for (let register of schema.staticRegisters) {
         if (register instanceof registers_1.InputRegister) {
             inputs.push({
@@ -97,13 +97,13 @@ function buildStaticRegisters(schema) {
                 steps: register.steps
             });
         }
-        else if (register instanceof registers_1.CyclicRegister) {
-            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
-        }
         else if (register instanceof registers_1.MaskRegister) {
             masked.push({ source: register.source, value: register.value });
         }
+        else if (register instanceof registers_1.CyclicRegister) {
+            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
+        }
     }
-    return { inputs, cyclic, masked };
+    return { inputs, masked, cyclic };
 }
 //# sourceMappingURL=generator.js.map

@@ -92,8 +92,8 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Static);
             const registers = new registers_1.StaticRegisterSet();
             this.MANY1(() => this.SUBRULE(this.inputRegister, { ARGS: [registers] }));
-            this.MANY2(() => this.SUBRULE(this.cyclicRegister, { ARGS: [registers] }));
-            this.MANY3(() => this.SUBRULE(this.maskRegister, { ARGS: [registers] }));
+            this.MANY2(() => this.SUBRULE(this.maskRegister, { ARGS: [registers] }));
+            this.MANY3(() => this.SUBRULE(this.cyclicRegister, { ARGS: [registers] }));
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => schema.setStaticRegisters(registers));
         });

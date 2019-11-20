@@ -21,8 +21,8 @@ const extensionFactor = 0;
 const constraints: ConstraintDescriptor[] = [];
 const staticRegisters: {
     inputs  : InputDescriptor[];
-    cyclic  : RegisterEvaluatorSpecs[];
     masked  : MaskRegisterDescriptor[];
+    cyclic  : RegisterEvaluatorSpecs[];
 } = {} as any;
 const initializeTrace: TraceInitializer = undefined as any;
 
@@ -322,15 +322,15 @@ export function digestInputs(inputs: any[]) {
         specs.push({ type: 'input', shape: shapes[i], values, secret: register.secret });
     });
 
-    // append cyclic register descriptors
-    specs = specs.concat(staticRegisters.cyclic);
-
     // build and append masked register descriptors
     staticRegisters.masked.forEach(register => specs.push({
         type    : 'mask',
         values  : new Array(specs[register.source].values.length).fill(register.value),
         secret  : false
     }));
+
+    // append cyclic register descriptors
+    specs = specs.concat(staticRegisters.cyclic);
 
     const traceLength = computeTraceLength(shapes);
 
@@ -355,9 +355,6 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
         }
     });
 
-    // append cyclic register descriptors
-    specs = specs.concat(staticRegisters.cyclic);
-
     // build and append masked register descriptors
     staticRegisters.masked.forEach(register => {
         const valueCount = shapes[register.source].reduce((p, c) => p * c, 1);
@@ -367,6 +364,9 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
             secret  : false
         });
     });
+
+    // append cyclic register descriptors
+    specs = specs.concat(staticRegisters.cyclic);
 
     const traceLength = computeTraceLength(shapes);
 
@@ -389,7 +389,7 @@ export function validateInputs(inputs: any[]): void {
 
 export function validatePublicInputs(inputs: any[], shapes: number[][]): void {
     const totalInputs = staticRegisters.inputs.length;
-    const publicInputs = staticRegisters.inputs.reduce((p, c) => c.secret ? p + 1 : p, 0);
+    const publicInputs = staticRegisters.inputs.reduce((p, c) => c.secret ? p : p + 1, 0);
 
     if (publicInputs === 0) {
         if (inputs.length > 0) throw new Error(`expected no public inputs but received ${inputs.length} inputs`);
@@ -436,17 +436,19 @@ export function validateBinaryValues(values: bigint[], regIdx: number): void {
 // HELPER FUNCTIONS
 // ================================================================================================
 export function interpolateRegisterValues(values: bigint[], domainOrRoot: Vector | bigint): Vector {
-    // TODO: handle cases with fewer than 4 values
     const ys = f.newVectorFrom(values);
+    let xs: Vector;
     if (typeof domainOrRoot === 'bigint') {
-        const xs = f.getPowerSeries(domainOrRoot, ys.length);
-        return f.interpolateRoots(xs, ys);
+        xs = f.getPowerSeries(domainOrRoot, ys.length);
     }
     else {
         const skip = domainOrRoot.length / values.length;
-        const xs = f.pluckVector(domainOrRoot, skip, ys.length);
-        return f.interpolateRoots(xs, ys);
+        xs = f.pluckVector(domainOrRoot, skip, ys.length);
     }
+
+    return (ys.length < 4)
+        ? f.interpolate(xs, ys)
+        : f.interpolateRoots(xs, ys);
 }
 
 export function buildSubdomain(domain: Vector, newLength: number): Vector {

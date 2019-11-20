@@ -7,34 +7,51 @@ const schema = compile(Buffer.from(`
     (const 
         (scalar 3))
     (static
+        (input secret vector (steps 8))
+        (mask (input 0) (value 1))
         (cycle 42 43 170 2209))
     (transition
         (span 1) (result vector 1)
-        (add 
-            (exp (load.trace 0) (load.const 0))
-            (get (load.static 0) 0)))
+        (local vector 1)
+        (store.local 0 
+			(add 
+				(exp (load.trace 0) (load.const 0))
+                (get (load.static 0) 2)))
+        (add
+            (mul
+                (load.local 0)
+				(sub (scalar 1) (get (load.static 0) 1)))
+			(get (load.static 0) 0)
+        )
+    )
     (evaluation
         (span 2) (result vector 1)
+		(local vector 1)
+        (store.local 0 
+			(add 
+				(exp (load.trace 0) (load.const 0))
+                (get (load.static 0) 2)))
         (sub
             (load.trace 1)
             (add
-                (exp (load.trace 0) (load.const 0))
-                (get (load.static 0) 0))))
-    (export main (init (vector 3)) (steps 32))
-    (export mimc_128 (steps 256)))
+				(mul
+					(load.local 0)
+					(sub (scalar 1) (get (load.static 0) 1)))
+				(get (load.static 0) 0))
+		)
+	)
+    (export main (init (vector 0)) (steps 8)))
 `));
 
 console.log(schema.toString());
 
 const inputs = [
-    [1n, 2n, 3n, 4n],                                   // public
-    [[1n, 2n], [3n, 4n], [5n, 6n], [7n, 8n]],           // public
-    [[11n, 12n], [13n, 14n], [15n, 16n], [17n, 18n]]    // secret
+    [3n, 4n, 5n, 6n]
 ];
 
 const air = instantiate(schema);
 
-const pObject = air.initProof();
+const pObject = air.initProof(inputs);
 const trace = pObject.generateExecutionTrace();
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);

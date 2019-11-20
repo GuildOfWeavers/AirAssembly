@@ -108,8 +108,8 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Static);
         const registers = new StaticRegisterSet();
         this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
-        this.MANY2(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
-        this.MANY3(() => this.SUBRULE(this.maskRegister,    { ARGS: [registers] }));
+        this.MANY2(() => this.SUBRULE(this.maskRegister,    { ARGS: [registers] }));
+        this.MANY3(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
         this.CONSUME(RParen);
         this.ACTION(() => schema.setStaticRegisters(registers));
     });

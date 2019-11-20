@@ -101,7 +101,7 @@ function buildConstants(schema: AirSchema, field: FiniteField): (bigint | Vector
 }
 
 function buildStaticRegisters(schema: AirSchema) {
-    const inputs = [], cyclic = [], masked = [];
+    const inputs = [], masked = [], cyclic = [];
 
     for (let register of schema.staticRegisters) {
         if (register instanceof InputRegister) {
@@ -113,13 +113,13 @@ function buildStaticRegisters(schema: AirSchema) {
                 steps   : register.steps
             });
         }
-        else if (register instanceof CyclicRegister) {
-            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
-        }
         else if (register instanceof MaskRegister) {
             masked.push({ source: register.source, value: register.value });
         }
+        else if (register instanceof CyclicRegister) {
+            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
+        }
     }
 
-    return { inputs, cyclic, masked };
+    return { inputs, masked, cyclic };
 }
