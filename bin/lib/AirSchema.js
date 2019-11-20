@@ -38,8 +38,7 @@ class AirSchema {
     setConstants(values) {
         if (this.constantCount > 0)
             throw new Error(`constants have already been set`);
-        this._constants = values.slice();
-        // TODO: validate constant values
+        values.forEach((v, i) => this._constants.push(this.validateConstant(v, i)));
     }
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
@@ -64,8 +63,7 @@ class AirSchema {
         const danglingInputs = registers.getDanglingInputs();
         if (danglingInputs.length > 0)
             throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
-        registers.forEach(r => this._staticRegisters.push(r));
-        // TODO: validate constant values
+        registers.forEach((r, i) => this._staticRegisters.push(this.validateStaticRegister(r, i)));
     }
     // TRANSITION FUNCTION
     // --------------------------------------------------------------------------------------------
@@ -80,12 +78,13 @@ class AirSchema {
     setTransitionFunction(span, width, locals) {
         if (this._transitionFunction)
             throw new Error(`transition function has already been set`);
+        if (!this._field)
+            throw new Error(`transition function cannot be set before field is set`);
         const constants = this._constants;
         const traceWidth = width;
         const staticWidth = this.staticRegisterCount;
-        this._transitionFunction = new procedures_1.Procedure('transition', span, width, constants, locals, traceWidth, staticWidth);
+        this._transitionFunction = new procedures_1.Procedure(this.field, 'transition', span, width, constants, locals, traceWidth, staticWidth);
         return this._transitionFunction;
-        // TODO: validate literal expressions
     }
     // TRANSITION CONSTRAINTS
     // --------------------------------------------------------------------------------------------
@@ -115,12 +114,13 @@ class AirSchema {
     setConstraintEvaluator(span, width, locals) {
         if (this._constraintEvaluator)
             throw new Error(`constraint evaluator has already been set`);
+        if (!this._field)
+            throw new Error(`constraint evaluator cannot be set before field is set`);
         const constants = this._constants;
         const traceWidth = this.traceRegisterCount;
         const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new procedures_1.Procedure('evaluation', span, width, constants, locals, traceWidth, staticWidth);
+        this._constraintEvaluator = new procedures_1.Procedure(this.field, 'evaluation', span, width, constants, locals, traceWidth, staticWidth);
         return this._constraintEvaluator;
-        // TODO: validate literal expressions
     }
     // EXPORT DECLARATIONS
     // --------------------------------------------------------------------------------------------
@@ -142,10 +142,11 @@ class AirSchema {
             this._exportDeclarations.set(declaration.name, declaration);
         }
         const mainExport = this.exports.get('main');
-        if (mainExport && mainExport.seed && mainExport.seed.length !== this.traceRegisterCount) {
-            throw new Error(`initializer for main export must resolve to a vector of ${this.traceRegisterCount} elements`);
+        if (mainExport && mainExport.seed) {
+            if (mainExport.seed.length !== this.traceRegisterCount)
+                throw new Error(`initializer for main export must resolve to a vector of ${this.traceRegisterCount} elements`);
+            this.validateMainExportSeed(mainExport.seed);
         }
-        // TODO: validate literal expressions
     }
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
@@ -171,6 +172,31 @@ class AirSchema {
             throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
         else if (this.maxConstraintDegree > limits.maxConstraintDegree)
             throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
+    }
+    validateConstant(constant, index) {
+        constant.elements.forEach(v => {
+            if (!this.field.isElement(v)) {
+                throw new Error(`value ${v} for constant ${index} is not a valid field element`);
+            }
+        });
+        return constant;
+    }
+    validateStaticRegister(register, index) {
+        if (!(register instanceof registers_1.CyclicRegister))
+            return register;
+        register.values.forEach(v => {
+            if (!this.field.isElement(v)) {
+                throw new Error(`value ${v} for static register ${index} is not a valid field element`);
+            }
+        });
+        return register;
+    }
+    validateMainExportSeed(seed) {
+        seed.forEach(v => {
+            if (!this.field.isElement(v)) {
+                throw new Error(`value ${v} in main export initializer is not a valid field element`);
+            }
+        });
     }
 }
 exports.AirSchema = AirSchema;

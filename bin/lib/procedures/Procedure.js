@@ -9,7 +9,8 @@ const LocalVariable_1 = require("./LocalVariable");
 class Procedure {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(name, span, width, constants, locals, traceWidth, staticWidth) {
+    constructor(field, name, span, width, constants, locals, traceWidth, staticWidth) {
+        this.field = field;
         this.name = name;
         this.span = validateSpan(name, span);
         this.constants = constants;
@@ -31,6 +32,7 @@ class Procedure {
             throw new Error(`${this.name} procedure result hasn't been set yet`);
         if (!value.isVector || value.dimensions[0] !== this.resultLength)
             throw new Error(`${this.name} procedure must resolve to a vector of ${this.resultLength} elements`);
+        this.validateExpression(value);
         this._result = value;
     }
     get locals() {
@@ -41,6 +43,7 @@ class Procedure {
     addSubroutine(expression, localVarIdx) {
         if (this._result)
             throw new Error(`cannot add subroutines to ${this.name} procedure after result has been set`);
+        this.validateExpression(expression);
         const variable = this.getLocalVariable(localVarIdx);
         const subroutine = new Subroutine_1.Subroutine(expression, localVarIdx);
         variable.bind(subroutine, localVarIdx);
@@ -132,6 +135,18 @@ class Procedure {
             throw new Error(`trace offset for ${this.name} procedure cannot be less than 0`);
         if (offset > (this.span - 1))
             throw new Error(`trace offset for ${this.name} procedure cannot be greater than ${(this.span - 1)}`);
+    }
+    validateExpression(expression) {
+        if (expression instanceof expressions_1.LiteralValue) {
+            expression.elements.forEach(v => {
+                if (!this.field.isElement(v)) {
+                    throw new Error(`value ${v} in ${this.name} procedure is not a valid field element`);
+                }
+            });
+        }
+        else {
+            expression.children.forEach(e => this.validateExpression(e));
+        }
     }
 }
 exports.Procedure = Procedure;

@@ -48,7 +48,19 @@ export class LiteralValue extends Expression {
         return true;
     }
 
-    // PUBLIC MEMBERS
+    get elements(): bigint[] {
+        if (this.isScalar) return [this.value as bigint];
+        else if (this.isVector) return this.value as bigint[];
+        else {
+            let elements: bigint[] = [];
+            for (let row of (this.value as bigint[][])) {
+                elements = elements.concat(row);
+            }
+            return elements;
+        }
+    }
+
+    // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString(): string {
         if (this.isScalar) {

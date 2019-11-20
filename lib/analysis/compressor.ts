@@ -70,7 +70,10 @@ class ExpressionCompressor extends ExpressionVisitor<Expression> {
 
 const compressor = new ExpressionCompressor();
 export function compressProcedure(proc: Procedure) {
-    const result = new Procedure(proc.name, proc.span, proc.resultLength, proc.constants, proc.locals as any, proc.traceRegisters.dimensions[0], proc.staticRegisters.dimensions[0]);
+    const result = new Procedure(proc.field, 
+        proc.name, proc.span, proc.resultLength, proc.constants, proc.locals as any,
+        proc.traceRegisters.dimensions[0],
+        proc.staticRegisters.dimensions[0]);
     proc.subroutines.forEach(s => result.addSubroutine(compressor.visit(s.expression), s.localVarIdx));
     result.setResult(compressor.visit(proc.result));
     return result;

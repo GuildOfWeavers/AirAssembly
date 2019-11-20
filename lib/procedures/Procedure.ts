@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure as IProcedure, ProcedureName } from '@guildofweavers/air-assembly';
+import { Procedure as IProcedure, ProcedureName, FiniteField } from '@guildofweavers/air-assembly';
 import { Expression, LoadExpression, LiteralValue, TraceSegment, ExpressionTransformer } from "../expressions";
 import { Dimensions, getLoadSource } from "../expressions/utils";
 import { Subroutine } from "./Subroutine";
@@ -10,6 +10,7 @@ import { LocalVariable } from "./LocalVariable";
 // ================================================================================================
 export class Procedure implements IProcedure {
 
+    readonly field              : FiniteField;
     readonly name               : ProcedureName;
     readonly span               : number;
     readonly resultLength       : number;
@@ -23,7 +24,10 @@ export class Procedure implements IProcedure {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(name: ProcedureName, span: number, width: number, constants: LiteralValue[], locals: Dimensions[], traceWidth: number, staticWidth: number) {
+    constructor(field: FiniteField, name: ProcedureName, span: number, width: number,
+        constants: LiteralValue[], locals: Dimensions[], traceWidth: number, staticWidth: number)
+    {
+        this.field = field;
         this.name = name;
         this.span = validateSpan(name, span);
         this.constants = constants;
@@ -46,6 +50,7 @@ export class Procedure implements IProcedure {
         if (this._result) throw new Error(`${this.name} procedure result hasn't been set yet`);
         if (!value.isVector || value.dimensions[0] !== this.resultLength)
             throw new Error(`${this.name} procedure must resolve to a vector of ${this.resultLength} elements`);
+        this.validateExpression(value);
         this._result = value;
     }
 
@@ -58,6 +63,7 @@ export class Procedure implements IProcedure {
     addSubroutine(expression: Expression, localVarIdx: number): void {
         if (this._result)
             throw new Error(`cannot add subroutines to ${this.name} procedure after result has been set`);
+        this.validateExpression(expression);
         const variable = this.getLocalVariable(localVarIdx);
         const subroutine = new Subroutine(expression, localVarIdx)
         variable.bind(subroutine, localVarIdx);
@@ -157,6 +163,19 @@ export class Procedure implements IProcedure {
             throw new Error(`trace offset for ${this.name} procedure cannot be less than 0`);
         if (offset > (this.span - 1))
             throw new Error(`trace offset for ${this.name} procedure cannot be greater than ${(this.span - 1)}`);
+    }
+
+    private validateExpression(expression: Expression): void {
+        if (expression instanceof LiteralValue) {
+            expression.elements.forEach(v => {
+                if (!this.field.isElement(v)) {
+                    throw new Error(`value ${v} in ${this.name} procedure is not a valid field element`);
+                }
+            });
+        }
+        else {
+            expression.children.forEach(e => this.validateExpression(e));
+        }
     }
 }
 

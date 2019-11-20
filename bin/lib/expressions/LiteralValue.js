@@ -42,7 +42,20 @@ class LiteralValue extends Expression_1.Expression {
     get isStatic() {
         return true;
     }
-    // PUBLIC MEMBERS
+    get elements() {
+        if (this.isScalar)
+            return [this.value];
+        else if (this.isVector)
+            return this.value;
+        else {
+            let elements = [];
+            for (let row of this.value) {
+                elements = elements.concat(row);
+            }
+            return elements;
+        }
+    }
+    // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
         if (this.isScalar) {
