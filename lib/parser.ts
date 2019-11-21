@@ -7,7 +7,7 @@ import { Procedure } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
-    Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Fshift, Bshift
+    Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -147,13 +147,10 @@ class AirParser extends EmbeddedActionsParser {
 
         const rotation = this.OPTION3(() => {
             this.CONSUME4(LParen);
-            const direction = this.OR3([
-                { ALT: () => this.CONSUME(Fshift) ?  1 : 0 },
-                { ALT: () => this.CONSUME(Bshift) ? -1 : 0 }
-            ]);
-            const slots = this.CONSUME(Literal).image;
+            this.CONSUME(Shift);
+            const slots = this.SUBRULE(this.signedIntegerLiteral);
             this.CONSUME4(RParen);
-            return this.ACTION(() => Number(slots) * direction);
+            return this.ACTION(() => slots);
         });
 
         this.CONSUME1(RParen);
@@ -367,6 +364,12 @@ class AirParser extends EmbeddedActionsParser {
     private integerLiteral = this.RULE<number>('integerLiteral', () => {
         const value = this.CONSUME(Literal).image;
         return this.ACTION(() => Number.parseInt(value, 10));
+    });
+
+    private signedIntegerLiteral = this.RULE<number>('signedIntegerLiteral', () => {
+        const sign = this.OPTION(() => this.CONSUME(Minus)) ? -1 : 1;
+        const value = this.CONSUME(Literal).image;
+        return this.ACTION(() => Number(value) * sign);
     });
 
     // EXPORTS

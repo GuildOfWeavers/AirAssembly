@@ -288,18 +288,17 @@ export function initVerification(inputShapes: number[][] = [], publicInputs: any
             const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mValueSpan);
             const maskPoly = interpolateRegisterValues(mask, mg);
 
-            const invert = register.invert;
-
             // build x coordinate rotator
             let xr = 0n;
             if (register.rotate) {
                 const p = register.rotate > 0 
-                    ? BigInt(evaluationDomainSize) - BigInt(register.rotate) * valueSpan   // TODO: test
-                    : BigInt(-register.rotate) * valueSpan;
+                    ? BigInt(evaluationDomainSize - register.rotate * extensionFactor)
+                    : BigInt(-register.rotate * extensionFactor);
                 xr = f.exp(rootOfUnity, p);
             }
-            
+
             // build and return the evaluator which combines value polynomial and mask polynomial
+            const invert = register.invert;
             return (x) => {
                 if (xr) x = f.mul(x, xr);
                 const v = f.evalPolyAt(poly, x);

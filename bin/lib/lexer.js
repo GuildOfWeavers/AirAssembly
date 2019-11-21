@@ -21,8 +21,7 @@ exports.Public = chevrotain_1.createToken({ name: "Public", pattern: /public/, l
 exports.Binary = chevrotain_1.createToken({ name: "Binary", pattern: /binary/, longer_alt: exports.Identifier });
 exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/, longer_alt: exports.Identifier });
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/, longer_alt: exports.Identifier });
-exports.Fshift = chevrotain_1.createToken({ name: "Fshift", pattern: /fshift/, longer_alt: exports.Identifier });
-exports.Bshift = chevrotain_1.createToken({ name: "Bshift", pattern: /bshift/, longer_alt: exports.Identifier });
+exports.Shift = chevrotain_1.createToken({ name: "Shift", pattern: /shift/, longer_alt: exports.Identifier });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/, longer_alt: exports.Identifier });
 exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/, longer_alt: exports.Identifier });
 exports.Inverted = chevrotain_1.createToken({ name: "Inverted", pattern: /inverted/, longer_alt: exports.Identifier });
@@ -64,6 +63,7 @@ exports.StoreOp = chevrotain_1.createToken({ name: "StoreLocal", pattern: /store
 // ================================================================================================
 exports.LParen = chevrotain_1.createToken({ name: "LParen", pattern: /\(/ });
 exports.RParen = chevrotain_1.createToken({ name: "RParen", pattern: /\)/ });
+exports.Minus = chevrotain_1.createToken({ name: "Minus", pattern: /-/ });
 // WHITESPACE
 // ================================================================================================
 exports.WhiteSpace = chevrotain_1.createToken({ name: "WhiteSpace", pattern: /[ \t\n\r]+/, group: chevrotain_1.Lexer.SKIPPED });
@@ -72,12 +72,12 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 // ================================================================================================
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
-    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Fshift, exports.Bshift,
+    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Shift,
     exports.Cycle, exports.Mask, exports.Inverted, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
     exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadLocal, exports.StoreOp,
-    exports.LParen, exports.RParen,
+    exports.LParen, exports.RParen, exports.Minus,
     exports.Literal, exports.Identifier
 ];
 // EXPORT LEXER INSTANCE

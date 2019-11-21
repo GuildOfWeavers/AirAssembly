@@ -6,7 +6,7 @@ const schema = compile(Buffer.from(`
     (const 
         (scalar 3))
     (static
-        (input secret vector (steps 8) (bshift 1))
+        (input secret vector (steps 16) (shift -1))
         (mask inverted (input 0))
         (cycle 42 43 170 2209))
     (transition
@@ -35,7 +35,7 @@ const schema = compile(Buffer.from(`
 				(get (load.static 0) 0))
 		)
 	)
-    (export main (init seed) (steps 8)))
+    (export main (init seed) (steps 16)))
 `));
 
 console.log(schema.toString());

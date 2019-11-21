@@ -23,8 +23,7 @@ export const Public     = createToken({ name: "Public",     pattern: /public/,  
 export const Binary     = createToken({ name: "Binary",     pattern: /binary/,      longer_alt: Identifier });
 export const Parent     = createToken({ name: "Parent",     pattern: /parent/,      longer_alt: Identifier });
 export const Steps      = createToken({ name: "Steps",      pattern: /steps/,       longer_alt: Identifier });
-export const Fshift     = createToken({ name: "Fshift",     pattern: /fshift/,      longer_alt: Identifier });
-export const Bshift     = createToken({ name: "Bshift",     pattern: /bshift/,      longer_alt: Identifier });
+export const Shift      = createToken({ name: "Shift",      pattern: /shift/,       longer_alt: Identifier });
 
 export const Cycle      = createToken({ name: "Cycle",      pattern: /cycle/,       longer_alt: Identifier });
 export const Mask       = createToken({ name: "Mask",       pattern: /mask/,        longer_alt: Identifier });
@@ -77,6 +76,7 @@ export const StoreOp    = createToken({ name: "StoreLocal", pattern: /store.loca
 // ================================================================================================
 export const LParen     = createToken({ name: "LParen",     pattern: /\(/       });
 export const RParen     = createToken({ name: "RParen",     pattern: /\)/       });
+export const Minus      = createToken({ name: "Minus",      pattern: /-/        });
 
 // WHITESPACE
 // ================================================================================================
@@ -88,7 +88,7 @@ export const Comment    = createToken({ name: "Comment",    pattern : /#.+/,    
 export const allTokens = [
     WhiteSpace, Comment,
     
-    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Fshift, Bshift,
+    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift,
     Cycle, Mask, Inverted, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,
@@ -96,7 +96,7 @@ export const allTokens = [
     Get, Slice, BinaryOp, Add, Sub, Mul, Div, Exp, Prod, UnaryOp, Neg, Inv,
     LoadOp, LoadConst, LoadTrace, LoadStatic, LoadLocal, StoreOp,
 
-    LParen, RParen,
+    LParen, RParen, Minus,
 
     Literal, Identifier
 ];

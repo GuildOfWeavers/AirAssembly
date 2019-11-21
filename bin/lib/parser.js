@@ -125,13 +125,10 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             });
             const rotation = this.OPTION3(() => {
                 this.CONSUME4(lexer_1.LParen);
-                const direction = this.OR3([
-                    { ALT: () => this.CONSUME(lexer_1.Fshift) ? 1 : 0 },
-                    { ALT: () => this.CONSUME(lexer_1.Bshift) ? -1 : 0 }
-                ]);
-                const slots = this.CONSUME(lexer_1.Literal).image;
+                this.CONSUME(lexer_1.Shift);
+                const slots = this.SUBRULE(this.signedIntegerLiteral);
                 this.CONSUME4(lexer_1.RParen);
-                return this.ACTION(() => Number(slots) * direction);
+                return this.ACTION(() => slots);
             });
             this.CONSUME1(lexer_1.RParen);
             this.ACTION(() => registers.addInput(scope, binary, typeOrParent, rotation, steps));
@@ -321,6 +318,11 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.integerLiteral = this.RULE('integerLiteral', () => {
             const value = this.CONSUME(lexer_1.Literal).image;
             return this.ACTION(() => Number.parseInt(value, 10));
+        });
+        this.signedIntegerLiteral = this.RULE('signedIntegerLiteral', () => {
+            const sign = this.OPTION(() => this.CONSUME(lexer_1.Minus)) ? -1 : 1;
+            const value = this.CONSUME(lexer_1.Literal).image;
+            return this.ACTION(() => Number(value) * sign);
         });
         // EXPORTS
         // --------------------------------------------------------------------------------------------
