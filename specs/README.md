@@ -128,38 +128,61 @@ Once defined, values of constants cannot be changed. To reference a constant in 
 ### Static registers
 Static registers section defines logic for generating static register traces. These traces are computed before the execution of the transition function, and cannot be changed by the transition function or the constraint evaluator. Static section expression has the following form:
 ```
-(static <input registers> <cyclic registers> <mask registers>)
+(static <input registers> <mask registers> <cyclic registers>)
 ```
 where:
 * `input registers` is a list of zero or more [input register](#Input-registers) declarations;
-* `cyclic registers` is a list of zero or more [cyclic register](#Cyclic-registers) declarations;
 * `mask registers` is a list of zero or more [mask register](#Mask-registers) declarations;
+* `cyclic registers` is a list of zero or more [cyclic register](#Cyclic-registers) declarations.
 
 For example, the following code block declares 3 registers - one of each type:
 ```
 (static
-    (input public vector (steps 8)))
-    (cycle 1 2 3 4)
-    (mask (input 0) (value 1)))
+    (input public vector (steps 8))
+    (mask (input 0))
+    (cycle 1 2 3 4))
 ```
 A detailed explanation of each type of static register is provided in the following sections.
 
 #### Input registers
 Input register declarations specify what inputs are required by the computation, and describes the logic needed to transform these inputs into register traces. Input register declaration expression has the following form:
 ```
-(input <scope> <binary?> <type> <steps?>)
+(input <scope> <binary?> <type> <steps?> <shift?>)
 ```
 where:
 * `scope` can be either `secret` or `public`. Values for `secret` input registers are assumed to be known only to the prover and need to be provided only at the proof generation time. Values for `public` input registers must be known to both, the prover and the verifier, and must be provided at the time of proof generation, as well as, at the time of proof verification.
 * An optional `binary` attribute indicates whether the input register accepts only binary values (ones and zeros).
 * Input `type` can be `scalar`, `vector`, or a reference to a parent register. `scalar` input registers expect a single value; `vector` input registers expect a list of at least one value, and the length of the list must be a power of 2. References to parent registers have the form `(parent <index>)`, where `index` is the index of the parent register. This allows forming of nested inputs (see [examples](#Nested-input-registers) for more info).
 * `steps` expression has the form `(steps <count>)`, where `count` specifies the number of steps by which a register trace should be expanded for each input value. The number of steps must be a power of 2. `steps` expression can be provided only for "leaf" input registers (see [examples](#Nested-input-registers) for more info).
+* An optional `shift` expression specifies the number of steps by which an input value should be shifted in the execution trace. The expression has the form `(shift <steps>)`, where `steps` is a signed integer indicating the number of steps to shift by (see [examples](#Single-input-register) for more info).
 
 Detailed examples of how different types of input registers are transformed into register traces are available [here](#Input-register-trace-generation), but here are a few simple example of input register declarations:
 ```
 (input public scalar (steps 8))
-(input secret vector)
+(input secret vector (shift -1))
 (input public binary (parent 1) (steps 8))
+```
+
+#### Mask registers
+Mask registers are static registers that replace ("mask") values in an input register. Mask register declaration has the following form:
+```
+(mask <inverted?> (input <register>))
+```
+where:
+* An optional `inverted` attribute specifies whether the mask should be inverted (see below).
+* `register` is an index of an input register which should be masked.
+
+For example, the code block below declares an input register and two mask registers, one of which is an inverted mask register:
+```
+(input public vector (steps 4))
+(mask (input 0))
+(mask inverted (input 0))
+```
+If we provide [1, 2, 3, 4] as input values for the first register, traces for the registers will look like so:
+```
+register 0: [1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]    # input register
+register 1: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]    # mask
+register 2: [0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1]    # inverted mask
 ```
 
 #### Cyclic registers
@@ -179,26 +202,6 @@ If the trace length is equal to 16 steps, register traces for these registers wi
 ```
 register 0: [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]
 register 1: [1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1]
-```
-
-#### Mask registers
-Mask registers are static registers that replace ("mask") values in an input register with a specified value. Mask register declaration has the following form:
-```
-(mask (input <register>) (value <value>))
-```
-where:
-* `register` is an index of an input register which should be masked;
-* `value` is a scalar value with which input values should be replaced.
-
-For example, the code block below declares an input register and a mask register that masks the input values in the first register with value `1`:
-```
-(input public vector (steps 4))
-(mask (input 0) (value 1))
-```
-If we provide [1, 2, 3, 4] as input values for the first register, traces for both registers will look like so:
-```
-register 0: [1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]
-register 1: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]
 ```
 
 ### Transition function
@@ -336,16 +339,11 @@ For example, if the execution trace has 4 dynamic trace registers, the `main` ex
 ```
 This will initialize the first row of dynamic register traces to all `0`'s.
 
-Trace initializer also has access to a special `seed` vector. Values for the `seed` vector are provided at the time of proof generation. The initializer can resolve to the `seed` vector directly like so:
+Trace initializer also resolve to a special `seed` vector like so:
 ```
 (export main (init seed) (steps 64))
 ```
-The initializer can also perform basic vector and arithmetic [operations](#Vector-operations) with the `seed` vector. For example, the initializer in the code block below resolves to a vector of 4 values where the first two values are taken from the `seed` vector, and the remaining two values are set to `0`:
-```
-(export main 
-    (init (vector (get seed 0) (get seed 1) 0 0))
-    (steps 64))
-```
+In such a case, values for the `seed` vector must be provided at the time of proof generation, and the length of the provided seed vector must equal to the number of dynamic trace registers.
 
 #### Interface exports
 When the name of an export is set to anything other than `main`, the export defines rules for how the module can be composed with other computations. In this case, only the `cycle length` expression is required to specify minimum possible trace cycle length.
@@ -570,9 +568,24 @@ If we want the register to accept a list of values (rather than just one value),
 Now, we can provide a list of values, and the trace columns will look like so:
 * Input [3] => `[3, 0, 0, 0]`
 * input [3, 4] => `[3, 0, 0, 0, 4, 0, 0, 0]`
-* Input [3, 4, 5, 6] => ` [3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0]`
+* Input [3, 4, 5, 6] => `[3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0]`
 
 Notice, how for each input value, trace length is extended by 4 steps.
+
+We can also control the position at which the input values show up in the trace using a `shift` expression like so:
+```
+(input public vector (steps 4) (shift 1))
+```
+Now, for input [3, 4, 5, 6] the register will evaluate to a trace column with values `[0 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0]`. Basically, the values are now rotated by 1 position to the right. It is also possible to rotate the values to the left by specifying a negative number in the shift expression.
+
+Here are a few more examples of shifting inputs [1, 2, 3, 4] by various magnitudes:
+```
+no shift   => [3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0]
+(shift 1)  => [0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0]
+(shift 2)  => [0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0]
+(shift -1) => [0, 0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 3]
+(shift -2) => [0, 0, 4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 3, 0]
+```
 
 ### Multiple independent input registers
 We can define multiple input registers, and in such cases the number of trace columns will equal to the number of declared registers. For example, the following code block defines two input registers, each expecting a list of values. The first register expands by 4 steps for each input value, while the second register expand by 8 steps for each input value.
