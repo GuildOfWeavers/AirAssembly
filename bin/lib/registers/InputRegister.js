@@ -8,7 +8,7 @@ const StaticRegister_1 = require("./StaticRegister");
 class InputRegister extends StaticRegister_1.StaticRegister {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(scope, rank, binary, parent, steps) {
+    constructor(scope, rank, binary, rotation, parent, steps) {
         super();
         if (scope !== 'public' && scope !== 'secret')
             throw new Error(`invalid input register scope '${scope}'`);
@@ -17,6 +17,7 @@ class InputRegister extends StaticRegister_1.StaticRegister {
         this.secret = (scope === 'secret');
         this.rank = rank;
         this.binary = binary;
+        this.rotation = rotation;
         this.parent = parent;
         this.steps = steps;
     }
@@ -34,8 +35,9 @@ class InputRegister extends StaticRegister_1.StaticRegister {
         const scope = this.secret ? 'secret' : 'public';
         const type = getTypeExpression(this.rank, this.parent);
         const binary = this.binary ? ` binary` : ``;
+        const rotation = getRotationExpression(this.rotation);
         const steps = (this.steps !== undefined) ? ` (steps ${this.steps})` : '';
-        return `(input ${scope}${binary} ${type}${steps})`;
+        return `(input ${scope}${binary} ${type}${steps}${rotation})`;
     }
 }
 exports.InputRegister = InputRegister;
@@ -46,8 +48,15 @@ function getTypeExpression(rank, parent) {
         return 'scalar';
     else if (rank === 1)
         return 'vector';
-    else {
+    else
         return `(parent ${parent})`;
-    }
+}
+function getRotationExpression(rotation) {
+    if (rotation === 0)
+        return '';
+    else if (rotation < 0)
+        return ` (bshift ${-rotation})`;
+    else
+        return ` (fshift ${rotation})`;
 }
 //# sourceMappingURL=InputRegister.js.map

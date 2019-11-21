@@ -6,7 +6,7 @@ const schema = compile(Buffer.from(`
     (const 
         (scalar 3))
     (static
-        (input secret vector (steps 8))
+        (input secret vector (steps 8) (bshift 1))
         (mask inverted (input 0))
         (cycle 42 43 170 2209))
     (transition
@@ -35,7 +35,7 @@ const schema = compile(Buffer.from(`
 				(get (load.static 0) 0))
 		)
 	)
-    (export main (init (vector 0)) (steps 8)))
+    (export main (init seed) (steps 8)))
 `));
 
 console.log(schema.toString());
@@ -47,7 +47,7 @@ const inputs = [
 const air = instantiate(schema);
 
 const pObject = air.initProof(inputs);
-const trace = pObject.generateExecutionTrace();
+const trace = pObject.generateExecutionTrace([3n]);
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);
 const cEvaluations = pObject.evaluateTracePolynomials(pPolys);

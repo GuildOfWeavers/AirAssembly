@@ -51,7 +51,7 @@ export class StaticRegisterSet implements registers.StaticRegisterSet {
 
     // UPDATE METHODS
     // --------------------------------------------------------------------------------------------
-    addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void {
+    addInput(scope: string, binary: boolean, typeOrParent: string | number, rotation: number, steps?: number): void {
         if (this.size > this.inputs.length)
             throw new Error(`input register cannot be preceded by other register types`);
 
@@ -65,7 +65,7 @@ export class StaticRegisterSet implements registers.StaticRegisterSet {
             rank = 1;
         }
     
-        const register = new InputRegister(scope, rank, binary, parentIdx, steps);
+        const register = new InputRegister(scope, rank, binary, rotation, parentIdx, steps);
         this.inputs.push(register);
         this.registers.push(register);
     }

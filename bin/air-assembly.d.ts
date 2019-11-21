@@ -104,11 +104,12 @@ declare module '@guildofweavers/air-assembly' {
         export abstract class StaticRegister { }
 
         export class InputRegister extends StaticRegister {
-            readonly secret : boolean;
-            readonly rank   : number;
-            readonly binary : boolean;
-            readonly parent?: number;
-            readonly steps? : number;
+            readonly secret     : boolean;
+            readonly rank       : number;
+            readonly binary     : boolean;
+            readonly rotation   : number;
+            readonly parent?    : number;
+            readonly steps?     : number;
 
             private constructor();
         }
@@ -272,6 +273,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly rank       : number;
         readonly secret     : boolean;
         readonly binary     : boolean;
+        readonly rotation   : number;
         readonly parent?    : number;
         readonly steps?     : number;
     }

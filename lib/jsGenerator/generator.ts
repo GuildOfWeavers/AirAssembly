@@ -112,6 +112,7 @@ function buildStaticRegisters(schema: AirSchema) {
                 parent  : register.parent,
                 secret  : register.secret,
                 binary  : register.binary,
+                rotation: register.rotation,
                 steps   : register.steps
             });
         }

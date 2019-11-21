@@ -34,7 +34,7 @@
     "rimraf": "3.0.x"
   },
   "dependencies": {
-    "@guildofweavers/galois": "0.4.x",
+    "@guildofweavers/galois": "^0.4.21",
     "chevrotain": "6.5.x"
   }
 }

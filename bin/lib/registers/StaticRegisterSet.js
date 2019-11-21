@@ -37,7 +37,7 @@ class StaticRegisterSet {
     }
     // UPDATE METHODS
     // --------------------------------------------------------------------------------------------
-    addInput(scope, binary, typeOrParent, steps) {
+    addInput(scope, binary, typeOrParent, rotation, steps) {
         if (this.size > this.inputs.length)
             throw new Error(`input register cannot be preceded by other register types`);
         let rank = 0, parentIdx;
@@ -49,7 +49,7 @@ class StaticRegisterSet {
         else if (typeOrParent === 'vector') {
             rank = 1;
         }
-        const register = new InputRegister_1.InputRegister(scope, rank, binary, parentIdx, steps);
+        const register = new InputRegister_1.InputRegister(scope, rank, binary, rotation, parentIdx, steps);
         this.inputs.push(register);
         this.registers.push(register);
     }

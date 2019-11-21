@@ -5,9 +5,9 @@ import { AirSchema } from "./AirSchema";
 import { StaticRegisterSet } from "./registers";
 import { Procedure } from "./procedures";
 import {
-    allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input,
-    Binary, Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp,
-    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed
+    allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
+    Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
+    Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Fshift, Bshift
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -145,8 +145,19 @@ class AirParser extends EmbeddedActionsParser {
             return steps;
         });
 
+        const rotation = this.OPTION3(() => {
+            this.CONSUME4(LParen);
+            const direction = this.OR3([
+                { ALT: () => this.CONSUME(Fshift) ?  1 : 0 },
+                { ALT: () => this.CONSUME(Bshift) ? -1 : 0 }
+            ]);
+            const slots = this.CONSUME(Literal).image;
+            this.CONSUME4(RParen);
+            return this.ACTION(() => Number(slots) * direction);
+        });
+
         this.CONSUME1(RParen);
-        this.ACTION(() => registers.addInput(scope, binary, typeOrParent, steps));
+        this.ACTION(() => registers.addInput(scope, binary, typeOrParent, rotation, steps));
     });
 
     private cyclicRegister = this.RULE('cyclicRegister', (registers: StaticRegisterSet) => {

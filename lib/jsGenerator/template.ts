@@ -199,8 +199,8 @@ export function initProof(inputs: any[] = []): ProofObject {
                 evaluations = f.addVectorElements(f.negVectorElements(evaluations), f.one);
             }
 
-            if (register.rotate !== 0) {
-                // TODO: rotate
+            if (register.rotate) {
+                evaluations = f.rotateVector(evaluations, register.rotate * factor);
             }
         }
 
@@ -290,8 +290,18 @@ export function initVerification(inputShapes: number[][] = [], publicInputs: any
 
             const invert = register.invert;
 
+            // build x coordinate rotator
+            let xr = 0n;
+            if (register.rotate) {
+                const p = register.rotate > 0 
+                    ? BigInt(evaluationDomainSize) - BigInt(register.rotate) * valueSpan   // TODO: test
+                    : BigInt(-register.rotate) * valueSpan;
+                xr = f.exp(rootOfUnity, p);
+            }
+            
             // build and return the evaluator which combines value polynomial and mask polynomial
             return (x) => {
+                if (xr) x = f.mul(x, xr);
                 const v = f.evalPolyAt(poly, x);
                 const m = f.evalPolyAt(maskPoly, f.exp(x, mValueSpan));
                 return invert ? f.sub(f.one, f.mul(v, m)) : f.mul(v, m);
@@ -324,7 +334,13 @@ export function digestInputs(inputs: any[]) {
         shapes[i] = (register.parent === undefined) ? [1] : shapes[register.parent].slice(0);
         let values = unrollRegisterValues(inputs[i], i, register.rank, 0, shapes[i]);
         if (register.binary) validateBinaryValues(values, i);
-        specs.push({ cyclic: false, values, secret: register.secret, invert: false, rotate: 0 });
+        specs.push({
+            cyclic  : false, 
+            values  : values,
+            secret  : register.secret,
+            invert  : false,
+            rotate  : register.rotation
+        });
     });
 
     // build and append masked register descriptors
@@ -333,7 +349,7 @@ export function digestInputs(inputs: any[]) {
         values  : new Array(specs[register.source].values.length).fill(f.one),
         secret  : false,
         invert  : register.inverted,
-        rotate  : 0
+        rotate  : staticRegisters.inputs[register.source].rotation
     }));
 
     // append cyclic register descriptors
@@ -357,7 +373,13 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
         else {
             let values = unrollRegisterValues(inputs[inputIdx], regIdx, register.rank, 0, shape);
             if (register.binary) validateBinaryValues(values, regIdx);
-            specs.push({ cyclic: false, values, secret: false, invert: false, rotate: 0 });
+            specs.push({
+                cyclic  : false,
+                values  : values,
+                secret  : false,
+                invert  : false,
+                rotate: register.rotation
+            });
             inputIdx++;
         }
     });
@@ -370,7 +392,7 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
             values  : new Array(valueCount).fill(f.one),
             secret  : false,
             invert  : register.inverted,
-            rotate  : 0
+            rotate  : staticRegisters.inputs[register.source].rotation
         });
     });
 

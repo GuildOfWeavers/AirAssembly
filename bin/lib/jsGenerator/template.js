@@ -146,8 +146,8 @@ function initProof(inputs = []) {
             if (register.invert) {
                 evaluations = f.addVectorElements(f.negVectorElements(evaluations), f.one);
             }
-            if (register.rotate !== 0) {
-                // TODO: rotate
+            if (register.rotate) {
+                evaluations = f.rotateVector(evaluations, register.rotate * factor);
             }
         }
         if (register.secret) {
@@ -224,8 +224,18 @@ function initVerification(inputShapes = [], publicInputs = []) {
             const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mValueSpan);
             const maskPoly = interpolateRegisterValues(mask, mg);
             const invert = register.invert;
+            // build x coordinate rotator
+            let xr = 0n;
+            if (register.rotate) {
+                const p = register.rotate > 0
+                    ? BigInt(evaluationDomainSize) - BigInt(register.rotate) * valueSpan // TODO: test
+                    : BigInt(-register.rotate) * valueSpan;
+                xr = f.exp(rootOfUnity, p);
+            }
             // build and return the evaluator which combines value polynomial and mask polynomial
             return (x) => {
+                if (xr)
+                    x = f.mul(x, xr);
                 const v = f.evalPolyAt(poly, x);
                 const m = f.evalPolyAt(maskPoly, f.exp(x, mValueSpan));
                 return invert ? f.sub(f.one, f.mul(v, m)) : f.mul(v, m);
@@ -256,7 +266,13 @@ function digestInputs(inputs) {
         let values = unrollRegisterValues(inputs[i], i, register.rank, 0, shapes[i]);
         if (register.binary)
             validateBinaryValues(values, i);
-        specs.push({ cyclic: false, values, secret: register.secret, invert: false, rotate: 0 });
+        specs.push({
+            cyclic: false,
+            values: values,
+            secret: register.secret,
+            invert: false,
+            rotate: register.rotation
+        });
     });
     // build and append masked register descriptors
     staticRegisters.masked.forEach(register => specs.push({
@@ -264,7 +280,7 @@ function digestInputs(inputs) {
         values: new Array(specs[register.source].values.length).fill(f.one),
         secret: false,
         invert: register.inverted,
-        rotate: 0
+        rotate: staticRegisters.inputs[register.source].rotation
     }));
     // append cyclic register descriptors
     specs = specs.concat(staticRegisters.cyclic);
@@ -284,7 +300,13 @@ function digestPublicInputs(inputs, shapes) {
             let values = unrollRegisterValues(inputs[inputIdx], regIdx, register.rank, 0, shape);
             if (register.binary)
                 validateBinaryValues(values, regIdx);
-            specs.push({ cyclic: false, values, secret: false, invert: false, rotate: 0 });
+            specs.push({
+                cyclic: false,
+                values: values,
+                secret: false,
+                invert: false,
+                rotate: register.rotation
+            });
             inputIdx++;
         }
     });
@@ -296,7 +318,7 @@ function digestPublicInputs(inputs, shapes) {
             values: new Array(valueCount).fill(f.one),
             secret: false,
             invert: register.inverted,
-            rotate: 0
+            rotate: staticRegisters.inputs[register.source].rotation
         });
     });
     // append cyclic register descriptors
