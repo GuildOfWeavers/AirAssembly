@@ -375,7 +375,7 @@ where:
 For example:
 ```
 (vector 1 2 3 4)
-(vector 1 (vector 2 3) (add 2 2))
+(vector 1 (vector 2 3) (add (scalar 2) (scalar 2)))
 ```
 Both of the above expressions resolve to a vector with elements `[1, 2, 3, 4]`.
 
