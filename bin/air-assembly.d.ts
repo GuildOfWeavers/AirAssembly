@@ -120,8 +120,8 @@ declare module '@guildofweavers/air-assembly' {
         }
     
         export class MaskRegister extends StaticRegister {
-            readonly source : number;
-            readonly value  : bigint;
+            readonly source     : number;
+            readonly inverted   : boolean;
 
             private constructor();
         }
@@ -137,7 +137,7 @@ declare module '@guildofweavers/air-assembly' {
     
             addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
             addCyclic(values: bigint[]): void;
-            addMask(source: number, value: bigint): void;
+            addMask(source: number, inverted: boolean): void;
     
             get(index: number): StaticRegister;
             map<T>(callback: (register: StaticRegister, index: number) => T): T[];
@@ -348,16 +348,16 @@ declare module '@guildofweavers/air-assembly' {
         (r: bigint[], n: bigint[], k: bigint[]): bigint[];
     }
 
-    export type StaticRegisterType = 'input' | 'cyclic' | 'mask';
     export interface RegisterEvaluatorSpecs {
-        readonly type   : StaticRegisterType;
-        readonly shape? : number[];
-        readonly values : bigint[];
-        readonly secret : boolean;
+        readonly values     : bigint[];
+        readonly cyclic     : boolean;
+        readonly secret?    : boolean;
+        readonly invert?    : boolean;
+        readonly rotate?    : number;
     }
 
     export interface MaskRegisterDescriptor {
-        readonly source : number;
-        readonly value  : bigint;
+        readonly source     : number;
+        readonly inverted   : boolean;
     }
 }

@@ -23,7 +23,7 @@ exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/, l
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/, longer_alt: exports.Identifier });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/, longer_alt: exports.Identifier });
 exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/, longer_alt: exports.Identifier });
-exports.Value = chevrotain_1.createToken({ name: "Value", pattern: /value/, longer_alt: exports.Identifier });
+exports.Inverted = chevrotain_1.createToken({ name: "Inverted", pattern: /inverted/, longer_alt: exports.Identifier });
 exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/, longer_alt: exports.Identifier });
 exports.Evaluation = chevrotain_1.createToken({ name: "Evaluation", pattern: /evaluation/, longer_alt: exports.Identifier });
 exports.Span = chevrotain_1.createToken({ name: "Span", pattern: /span/, longer_alt: exports.Identifier });
@@ -71,7 +71,7 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
     exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps,
-    exports.Cycle, exports.Mask, exports.Value, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
+    exports.Cycle, exports.Mask, exports.Inverted, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
     exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadLocal, exports.StoreOp,

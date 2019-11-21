@@ -8,15 +8,15 @@ const StaticRegister_1 = require("./StaticRegister");
 class MaskRegister extends StaticRegister_1.StaticRegister {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(source, value) {
+    constructor(source, inverted) {
         super();
         this.source = source;
-        this.value = value;
+        this.inverted = inverted;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        return `(mask (input ${this.source}) (value ${this.value}))`;
+        return `(mask (input ${this.source}))`;
     }
 }
 exports.MaskRegister = MaskRegister;

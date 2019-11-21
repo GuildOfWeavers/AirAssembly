@@ -1,5 +1,6 @@
 // IMPORTS
 // ================================================================================================
+import { registers } from '@guildofweavers/air-assembly';
 import { StaticRegister } from "./StaticRegister";
 import { InputRegister } from "./InputRegister";
 import { CyclicRegister } from "./CyclicRegister";
@@ -8,7 +9,7 @@ import { isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class StaticRegisterSet {
+export class StaticRegisterSet implements registers.StaticRegisterSet {
 
     readonly inputs     : InputRegister[];
     readonly registers  : StaticRegister[];
@@ -69,11 +70,11 @@ export class StaticRegisterSet {
         this.registers.push(register);
     }
 
-    addMask(source: number, value: bigint): void {
+    addMask(source: number, inverted: boolean): void {
         this.validateMaskSource(source, this.size);
         if (this.registers[this.size - 1] instanceof CyclicRegister)
             throw new Error(`mask registers cannot be preceded by cyclic registers`);
-        const register = new MaskRegister(source, value);
+        const register = new MaskRegister(source, inverted);
         this.registers.push(register);
     }
 

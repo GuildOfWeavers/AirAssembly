@@ -7,19 +7,19 @@ import { StaticRegister } from "./StaticRegister";
 export class MaskRegister extends StaticRegister {
 
     readonly source     : number;
-    readonly value      : bigint;
+    readonly inverted   : boolean;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(source: number, value: bigint) {
+    constructor(source: number, inverted: boolean) {
         super();
         this.source = source;
-        this.value = value;
+        this.inverted = inverted;
     }
 
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString(): string {
-        return `(mask (input ${this.source}) (value ${this.value}))`;
+        return `(mask (input ${this.source}))`;
     }
 }

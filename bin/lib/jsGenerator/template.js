@@ -18,7 +18,7 @@ const evaluateConstraints = function () { return []; };
 // ================================================================================================
 function initProof(inputs = []) {
     // validate inputs
-    const { traceLength, registerSpecs } = digestInputs(inputs);
+    const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
     // build evaluation domain
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -33,8 +33,6 @@ function initProof(inputs = []) {
     const secretRegisterTraces = [];
     // build static register evaluators
     const kRegisters = registerSpecs.map(r => buildStaticRegisterEvaluator(r));
-    // extract shapes from input register specs
-    const inputShapes = registerSpecs.filter(r => r.type === 'input').map(r => r.shape);
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace(seed) {
@@ -130,7 +128,7 @@ function initProof(inputs = []) {
         const factor = register.secret ? extensionFactor : compositionFactor;
         const poly = interpolateRegisterValues(register.values, domain);
         let evaluations;
-        if (register.type === 'cyclic') {
+        if (register.cyclic) {
             const subdomain = buildSubdomain(domain, register.values.length * factor);
             evaluations = f.evalPolyAtRoots(poly, subdomain);
         }
@@ -145,6 +143,12 @@ function initProof(inputs = []) {
                 mEvaluations = f.duplicateVector(mEvaluations, i);
             }
             evaluations = f.mulVectorElements(evaluations, mEvaluations);
+            if (register.invert) {
+                evaluations = f.addVectorElements(f.negVectorElements(evaluations), f.one);
+            }
+            if (register.rotate !== 0) {
+                // TODO: rotate
+            }
         }
         if (register.secret) {
             secretRegisterTraces.push(evaluations);
@@ -209,7 +213,7 @@ function initVerification(inputShapes = [], publicInputs = []) {
         // build the polynomial describing the values
         const g = f.exp(rootOfUnity, BigInt(extensionFactor) * valueSpan);
         const poly = interpolateRegisterValues(register.values, g);
-        if (register.type === 'cyclic') {
+        if (register.cyclic) {
             // build and return cyclic evaluator function
             return (x) => f.evalPolyAt(poly, f.exp(x, valueSpan));
         }
@@ -219,11 +223,12 @@ function initVerification(inputShapes = [], publicInputs = []) {
             const mValueSpan = BigInt(traceLength / mask.length);
             const mg = f.exp(rootOfUnity, BigInt(extensionFactor) * mValueSpan);
             const maskPoly = interpolateRegisterValues(mask, mg);
+            const invert = register.invert;
             // build and return the evaluator which combines value polynomial and mask polynomial
             return (x) => {
                 const v = f.evalPolyAt(poly, x);
                 const m = f.evalPolyAt(maskPoly, f.exp(x, mValueSpan));
-                return f.mul(v, m);
+                return invert ? f.sub(f.one, f.mul(v, m)) : f.mul(v, m);
             };
         }
     }
@@ -251,18 +256,20 @@ function digestInputs(inputs) {
         let values = unrollRegisterValues(inputs[i], i, register.rank, 0, shapes[i]);
         if (register.binary)
             validateBinaryValues(values, i);
-        specs.push({ type: 'input', shape: shapes[i], values, secret: register.secret });
+        specs.push({ cyclic: false, values, secret: register.secret, invert: false, rotate: 0 });
     });
     // build and append masked register descriptors
     staticRegisters.masked.forEach(register => specs.push({
-        type: 'mask',
-        values: new Array(specs[register.source].values.length).fill(register.value),
-        secret: false
+        cyclic: false,
+        values: new Array(specs[register.source].values.length).fill(f.one),
+        secret: false,
+        invert: register.inverted,
+        rotate: 0
     }));
     // append cyclic register descriptors
     specs = specs.concat(staticRegisters.cyclic);
     const traceLength = computeTraceLength(shapes);
-    return { traceLength, registerSpecs: specs };
+    return { traceLength, registerSpecs: specs, inputShapes: shapes };
 }
 exports.digestInputs = digestInputs;
 function digestPublicInputs(inputs, shapes) {
@@ -277,7 +284,7 @@ function digestPublicInputs(inputs, shapes) {
             let values = unrollRegisterValues(inputs[inputIdx], regIdx, register.rank, 0, shape);
             if (register.binary)
                 validateBinaryValues(values, regIdx);
-            specs.push({ type: 'input', shape, values, secret: false });
+            specs.push({ cyclic: false, values, secret: false, invert: false, rotate: 0 });
             inputIdx++;
         }
     });
@@ -285,9 +292,11 @@ function digestPublicInputs(inputs, shapes) {
     staticRegisters.masked.forEach(register => {
         const valueCount = shapes[register.source].reduce((p, c) => p * c, 1);
         specs.push({
-            type: 'mask',
-            values: new Array(valueCount).fill(register.value),
-            secret: false
+            cyclic: false,
+            values: new Array(valueCount).fill(f.one),
+            secret: false,
+            invert: register.inverted,
+            rotate: 0
         });
     });
     // append cyclic register descriptors

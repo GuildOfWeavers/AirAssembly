@@ -26,7 +26,7 @@ export const Steps      = createToken({ name: "Steps",      pattern: /steps/,   
 
 export const Cycle      = createToken({ name: "Cycle",      pattern: /cycle/,       longer_alt: Identifier });
 export const Mask       = createToken({ name: "Mask",       pattern: /mask/,        longer_alt: Identifier });
-export const Value      = createToken({ name: "Value",      pattern: /value/,       longer_alt: Identifier });
+export const Inverted   = createToken({ name: "Inverted",   pattern: /inverted/,    longer_alt: Identifier });
 
 export const Transition = createToken({ name: "Transition", pattern: /transition/,  longer_alt: Identifier });
 export const Evaluation = createToken({ name: "Evaluation", pattern: /evaluation/,  longer_alt: Identifier });
@@ -87,7 +87,7 @@ export const allTokens = [
     WhiteSpace, Comment,
     
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps,
-    Cycle, Mask, Value, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
+    Cycle, Mask, Inverted, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,
 

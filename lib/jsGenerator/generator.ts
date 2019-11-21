@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
-import { AirModule, ModuleOptions } from "@guildofweavers/air-assembly";
+import { AirModule, ModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
 import { AirSchema } from '../AirSchema';
 import { Procedure } from '../procedures';
 import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
@@ -101,7 +101,9 @@ function buildConstants(schema: AirSchema, field: FiniteField): (bigint | Vector
 }
 
 function buildStaticRegisters(schema: AirSchema) {
-    const inputs = [], masked = [], cyclic = [];
+    const inputs: InputDescriptor[] = [];
+    const masked: MaskRegisterDescriptor[] = [];
+    const cyclic: RegisterEvaluatorSpecs[] = [];
 
     for (let register of schema.staticRegisters) {
         if (register instanceof InputRegister) {
@@ -114,10 +116,10 @@ function buildStaticRegisters(schema: AirSchema) {
             });
         }
         else if (register instanceof MaskRegister) {
-            masked.push({ source: register.source, value: register.value });
+            masked.push({ source: register.source, inverted: register.inverted });
         }
         else if (register instanceof CyclicRegister) {
-            cyclic.push({ type: 'cyclic', values: register.values, secret: false });
+            cyclic.push({ cyclic: true, values: register.values });
         }
     }
 

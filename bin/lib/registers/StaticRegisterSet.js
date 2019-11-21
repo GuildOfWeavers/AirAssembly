@@ -53,11 +53,11 @@ class StaticRegisterSet {
         this.inputs.push(register);
         this.registers.push(register);
     }
-    addMask(source, value) {
+    addMask(source, inverted) {
         this.validateMaskSource(source, this.size);
         if (this.registers[this.size - 1] instanceof CyclicRegister_1.CyclicRegister)
             throw new Error(`mask registers cannot be preceded by cyclic registers`);
-        const register = new MaskRegister_1.MaskRegister(source, value);
+        const register = new MaskRegister_1.MaskRegister(source, inverted);
         this.registers.push(register);
     }
     addCyclic(values) {

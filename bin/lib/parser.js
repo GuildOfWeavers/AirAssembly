@@ -137,16 +137,13 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.maskRegister = this.RULE('maskRegister', (registers) => {
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Mask);
+            const inverted = this.OPTION(() => this.CONSUME(lexer_1.Inverted)) ? true : false;
             this.CONSUME2(lexer_1.LParen);
             this.CONSUME(lexer_1.Input);
-            const source = this.SUBRULE(this.integerLiteral);
+            const source = this.CONSUME(lexer_1.Literal).image;
             this.CONSUME2(lexer_1.RParen);
-            this.CONSUME3(lexer_1.LParen);
-            this.CONSUME(lexer_1.Value);
-            const value = this.CONSUME2(lexer_1.Literal).image;
-            this.CONSUME3(lexer_1.RParen);
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => registers.addMask(source, BigInt(value)));
+            this.ACTION(() => registers.addMask(Number(source), inverted));
         });
         // PROCEDURES
         // --------------------------------------------------------------------------------------------

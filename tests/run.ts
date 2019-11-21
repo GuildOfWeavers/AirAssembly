@@ -1,5 +1,4 @@
 import { compile, instantiate, analyze } from '../index';
-import { compressProcedure } from '../lib/analysis/compressor';
 
 const schema = compile(Buffer.from(`
 (module
@@ -8,7 +7,7 @@ const schema = compile(Buffer.from(`
         (scalar 3))
     (static
         (input secret vector (steps 8))
-        (mask (input 0) (value 1))
+        (mask inverted (input 0))
         (cycle 42 43 170 2209))
     (transition
         (span 1) (result vector 1)
@@ -18,9 +17,7 @@ const schema = compile(Buffer.from(`
 				(exp (load.trace 0) (load.const 0))
                 (get (load.static 0) 2)))
         (add
-            (mul
-                (load.local 0)
-				(sub (scalar 1) (get (load.static 0) 1)))
+            (mul (load.local 0)	(get (load.static 0) 1))
 			(get (load.static 0) 0)
         )
     )
@@ -34,9 +31,7 @@ const schema = compile(Buffer.from(`
         (sub
             (load.trace 1)
             (add
-				(mul
-					(load.local 0)
-					(sub (scalar 1) (get (load.static 0) 1)))
+				(mul (load.local 0)	(get (load.static 0) 1))
 				(get (load.static 0) 0))
 		)
 	)

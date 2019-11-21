@@ -7,7 +7,7 @@ import { Procedure } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input,
     Binary, Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp,
-    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent, Mask, Value, Export, Identifier, Main, Init, Seed
+    Transition, Evaluation, Secret, Public, Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -161,16 +161,13 @@ class AirParser extends EmbeddedActionsParser {
     private maskRegister = this.RULE('maskRegister', (registers: StaticRegisterSet) => {
         this.CONSUME1(LParen);
         this.CONSUME(Mask);
+        const inverted = this.OPTION(() => this.CONSUME(Inverted)) ? true : false;
         this.CONSUME2(LParen);
         this.CONSUME(Input);
-        const source = this.SUBRULE(this.integerLiteral);
+        const source = this.CONSUME(Literal).image;
         this.CONSUME2(RParen);
-        this.CONSUME3(LParen);
-        this.CONSUME(Value);
-        const value = this.CONSUME2(Literal).image;
-        this.CONSUME3(RParen);
         this.CONSUME1(RParen);
-        this.ACTION(() => registers.addMask(source, BigInt(value)));
+        this.ACTION(() => registers.addMask(Number(source), inverted));
     });
 
     // PROCEDURES
