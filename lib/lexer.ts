@@ -5,7 +5,8 @@ import { lexerErrorMessageProvider } from "./errors";
 
 // LITERALS AND IDENTIFIERS
 // ================================================================================================
-export const Literal    = createToken({ name: "Literal",    pattern: /0|[1-9]\d*/   });
+export const HexLiteral = createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/  });
+export const Literal    = createToken({ name: "Literal",    pattern: /0|[1-9]\d*/,  longer_alt: HexLiteral });
 export const Identifier = createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/  });
 
 // KEYWORDS
@@ -26,6 +27,9 @@ export const Steps      = createToken({ name: "Steps",      pattern: /steps/,   
 export const Shift      = createToken({ name: "Shift",      pattern: /shift/,       longer_alt: Identifier });
 
 export const Cycle      = createToken({ name: "Cycle",      pattern: /cycle/,       longer_alt: Identifier });
+export const Prng       = createToken({ name: "Prng",       pattern: /prng/,        longer_alt: Identifier });
+export const Sha256     = createToken({ name: "Sha256",     pattern: /sha256/,      longer_alt: Identifier });
+
 export const Mask       = createToken({ name: "Mask",       pattern: /mask/,        longer_alt: Identifier });
 export const Inverted   = createToken({ name: "Inverted",   pattern: /inverted/,    longer_alt: Identifier });
 
@@ -88,8 +92,8 @@ export const Comment    = createToken({ name: "Comment",    pattern : /#.+/,    
 export const allTokens = [
     WhiteSpace, Comment,
     
-    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift,
-    Cycle, Mask, Inverted, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
+    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift, Cycle,
+    Prng, Sha256, Mask, Inverted, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,
 
@@ -98,7 +102,7 @@ export const allTokens = [
 
     LParen, RParen, Minus,
 
-    Literal, Identifier
+    HexLiteral, Literal, Identifier
 ];
 
 // EXPORT LEXER INSTANCE

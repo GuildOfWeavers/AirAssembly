@@ -11,7 +11,7 @@ const source = `
     (const 
         (scalar 3))
     (static
-        (cycle 42 43 170 2209))
+        (cycle (prng sha256 0x4d694d43 32)))
     (transition
         (span 1) (result vector 1)
         (add 

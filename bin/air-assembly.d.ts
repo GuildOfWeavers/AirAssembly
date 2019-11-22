@@ -115,9 +115,20 @@ declare module '@guildofweavers/air-assembly' {
         }
     
         export class CyclicRegister extends StaticRegister {
-            readonly values : ReadonlyArray<bigint>;
-
+            
             private constructor();
+
+            getValues(field: FiniteField): bigint[];
+        }
+
+        export class PrngValues {
+            readonly method : 'sha256';
+            readonly seed   : Buffer;
+            readonly count  : number;
+
+            constructor(method: string, seed: bigint, count: number);
+
+            getValues(field: FiniteField): bigint[];
         }
     
         export class MaskRegister extends StaticRegister {

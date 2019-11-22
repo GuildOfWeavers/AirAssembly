@@ -30,7 +30,7 @@ const source = `
     (const 
         (scalar 3))
     (static
-        (cycle 42 43 170 2209))
+        (cycle (prng sha256 0x4d694d43 64)))
     (transition
         (span 1) (result vector 1)
         (add 
@@ -43,8 +43,7 @@ const source = `
             (add
                 (exp (load.trace 0) (load.const 0))
                 (get (load.static 0) 0))))
-    (export main (init seed) (steps 32)))
-`;
+    (export main (init seed) (steps 32)))`;
 
 // instantiate AirModule object
 const schema = compile(Buffer.from(source));
@@ -61,7 +60,7 @@ const constraintEvaluations = pObject.evaluateTransitionConstraints(tracePolys);
 
 ## API
 
-Complete API definitions can be found in [air-assembly.d.ts](/air-assembly.d.ts). Here is a quick overview of the provided functionality.
+Complete API definitions can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts). Here is a quick overview of the provided functionality.
 
 ### Top-level functions
 The library exposes a small set of functions that can be used to compile AirAssembly source code, instantiate AirModules, and perform basic analysis of the underlying AIR. These functions are:
@@ -85,7 +84,7 @@ When instantiating an `AirModule` object, an `AirModuleOptions` object can be pr
 | extensionFactor     | Number by which the execution trace is to be "stretched." Must be a power of 2 at least 2x of the highest constraint degree. This property is optional, the default is smallest power of 2 that is greater than 2x of the highest constraint degree. |
 
 #### Stark limits
-`AirSchema` and `AirModule` objects can be validated against the following set of limits:
+`StarkLimits` object defines limits against which `AirSchema` and `AirModule` objects are validated. `StarkLimits` objects can contain any of the following properties:
 
 | Property            | Description |
 | ------------------- | ----------- |
@@ -96,8 +95,23 @@ When instantiating an `AirModule` object, an `AirModuleOptions` object can be pr
 | maxConstraintDegree | Highest allowed degree of transition constraints; defaults to 16 |
 
 ### Generating execution trace
+```TypeScript
+const schema = compile(Buffer.from(source));
+const air = instantiate(schema, { extensionFactor: 16 });
+const pObject = air.initProof();
+const trace = pObject.generateExecutionTrace([3n]);
+```
+
+1. compile AirAssembly source code into AirSchema
+2. instantiate AirModule from the schema, and specify extension factor to be used
+3. initialize proof object
+4. use proof object to generate execution trace passing 3 as a seed value
 
 ### Evaluating transition constraints
+```TypeScript
+const tracePolys = air.field.interpolateRoots(pObject.executionDomain, trace);
+const constraintEvaluations = pObject.evaluateTransitionConstraints(tracePolys);
+```
 
 ### Air Schema
 

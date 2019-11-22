@@ -6,7 +6,8 @@ const chevrotain_1 = require("chevrotain");
 const errors_1 = require("./errors");
 // LITERALS AND IDENTIFIERS
 // ================================================================================================
-exports.Literal = chevrotain_1.createToken({ name: "Literal", pattern: /0|[1-9]\d*/ });
+exports.HexLiteral = chevrotain_1.createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/ });
+exports.Literal = chevrotain_1.createToken({ name: "Literal", pattern: /0|[1-9]\d*/, longer_alt: exports.HexLiteral });
 exports.Identifier = chevrotain_1.createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/ });
 // KEYWORDS
 // ================================================================================================
@@ -23,6 +24,8 @@ exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/, l
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/, longer_alt: exports.Identifier });
 exports.Shift = chevrotain_1.createToken({ name: "Shift", pattern: /shift/, longer_alt: exports.Identifier });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/, longer_alt: exports.Identifier });
+exports.Prng = chevrotain_1.createToken({ name: "Prng", pattern: /prng/, longer_alt: exports.Identifier });
+exports.Sha256 = chevrotain_1.createToken({ name: "Sha256", pattern: /sha256/, longer_alt: exports.Identifier });
 exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/, longer_alt: exports.Identifier });
 exports.Inverted = chevrotain_1.createToken({ name: "Inverted", pattern: /inverted/, longer_alt: exports.Identifier });
 exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/, longer_alt: exports.Identifier });
@@ -72,13 +75,13 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 // ================================================================================================
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
-    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Shift,
-    exports.Cycle, exports.Mask, exports.Inverted, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
+    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Shift, exports.Cycle,
+    exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
     exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadLocal, exports.StoreOp,
     exports.LParen, exports.RParen, exports.Minus,
-    exports.Literal, exports.Identifier
+    exports.HexLiteral, exports.Literal, exports.Identifier
 ];
 // EXPORT LEXER INSTANCE
 // ================================================================================================

@@ -6,7 +6,7 @@ import { LocalVariable } from "../procedures/LocalVariable";
 
 // PROCEDURE COMPRESSOR
 // ================================================================================================
-export function compressProcedure(procedure: Procedure) {
+export function compressProcedure(procedure: Procedure): Procedure {
 
     let expressions = [...procedure.subroutines.map(s => s.expression), procedure.result];
     const subroutineReferences = new Map<Subroutine, LoadExpression[]>();

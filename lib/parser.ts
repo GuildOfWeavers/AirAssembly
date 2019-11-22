@@ -2,12 +2,13 @@
 // ================================================================================================
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
-import { StaticRegisterSet } from "./registers";
+import { StaticRegisterSet, PrngSequence } from "./registers";
 import { Procedure } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
-    Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus
+    Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus,
+    Prng, Sha256, HexLiteral
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -70,27 +71,25 @@ class AirParser extends EmbeddedActionsParser {
     });
 
     private literalVector = this.RULE<LiteralValue>('literalVector', () => {
-        const values: string[] = [];
         this.CONSUME(LParen);
         this.CONSUME(Vector);
-        this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
+        const values = this.SUBRULE(this.elementSequence);
         this.CONSUME(RParen);
-        return this.ACTION(() => new LiteralValue(values.map(v => BigInt(v))));
+        return this.ACTION(() => new LiteralValue(values));
     });
 
     private literalMatrix = this.RULE<LiteralValue>('literalMatrix', () => {
-        const rows: string[][] = [];
+        const rows: bigint[][] = [];
         this.CONSUME1(LParen);
         this.CONSUME(Matrix);
         this.AT_LEAST_ONE1(() => {
-            const row: string[] = [];
             this.CONSUME2(LParen);
-            this.AT_LEAST_ONE2(() => row.push(this.CONSUME(Literal).image));
+            const row = this.SUBRULE(this.elementSequence);
             this.CONSUME2(RParen);
             rows.push(row);
         });
         this.CONSUME1(RParen);
-        return this.ACTION(() => new LiteralValue(rows.map(r => r.map(v => BigInt(v)))));
+        return this.ACTION(() => new LiteralValue(rows));
     });
     
     private literalScalar = this.RULE<LiteralValue>('literalScalar', () => {
@@ -158,12 +157,14 @@ class AirParser extends EmbeddedActionsParser {
     });
 
     private cyclicRegister = this.RULE('cyclicRegister', (registers: StaticRegisterSet) => {
-        const values: string[] = [];
         this.CONSUME(LParen);
         this.CONSUME(Cycle);
-        this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
+        const values = this.OR([
+            { ALT: () => this.SUBRULE(this.prngSequence)    },
+            { ALT: () => this.SUBRULE(this.elementSequence) }
+        ]);
         this.CONSUME(RParen);
-        this.ACTION(() => registers.addCyclic(values.map(v => BigInt(v))));
+        this.ACTION(() => registers.addCyclic(values));
     });
 
     private maskRegister = this.RULE('maskRegister', (registers: StaticRegisterSet) => {
@@ -176,6 +177,16 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME2(RParen);
         this.CONSUME1(RParen);
         this.ACTION(() => registers.addMask(Number(source), inverted));
+    });
+
+    private prngSequence = this.RULE<PrngSequence>('prngExpression', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Prng);
+        const method = this.CONSUME(Sha256).image;
+        const seed = this.CONSUME(HexLiteral).image;
+        const count = this.CONSUME(Literal).image;
+        this.CONSUME(RParen);
+        return this.ACTION(() => new PrngSequence(method, BigInt(seed), Number(count)));
     });
 
     // PROCEDURES
@@ -363,13 +374,19 @@ class AirParser extends EmbeddedActionsParser {
     // --------------------------------------------------------------------------------------------
     private integerLiteral = this.RULE<number>('integerLiteral', () => {
         const value = this.CONSUME(Literal).image;
-        return this.ACTION(() => Number.parseInt(value, 10));
+        return this.ACTION(() => Number(value));
     });
 
     private signedIntegerLiteral = this.RULE<number>('signedIntegerLiteral', () => {
         const sign = this.OPTION(() => this.CONSUME(Minus)) ? -1 : 1;
         const value = this.CONSUME(Literal).image;
         return this.ACTION(() => Number(value) * sign);
+    });
+
+    private elementSequence = this.RULE<bigint[]>('elementSequence', () => {
+        const values: string[] = [];
+        this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
+        return this.ACTION(() => values.map(v => BigInt(v)));
     });
 
     // EXPORTS

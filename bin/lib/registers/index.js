@@ -10,4 +10,6 @@ var InputRegister_1 = require("./InputRegister");
 exports.InputRegister = InputRegister_1.InputRegister;
 var MaskRegister_1 = require("./MaskRegister");
 exports.MaskRegister = MaskRegister_1.MaskRegister;
+var PrngSequence_1 = require("./PrngSequence");
+exports.PrngSequence = PrngSequence_1.PrngSequence;
 //# sourceMappingURL=index.js.map

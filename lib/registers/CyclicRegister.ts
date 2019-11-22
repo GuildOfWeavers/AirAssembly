@@ -1,25 +1,37 @@
 // IMPORTS
 // ================================================================================================
 import { StaticRegister } from "./StaticRegister";
+import { FiniteField } from "@guildofweavers/galois";
+import { PrngSequence } from "./PrngSequence";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class CyclicRegister extends StaticRegister {
 
-    readonly values: bigint[];
+    readonly values: bigint[] | PrngSequence;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(values: bigint[]) {
+    constructor(values: bigint[] | PrngSequence) {
         super();    
-        // make sure the length of values is at least 4; this is needed for FFT interpolation
-        while (values.length < 4) values = values.concat(values);
         this.values = values;
     }
 
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    getValues(field: FiniteField): bigint[] {
+        if (this.values instanceof PrngSequence) {
+            return this.values.getValues(field);
+        }
+        else {
+            return this.values;
+        }
+    }
+
     toString(): string {
-        return `(cycle ${this.values.join(' ')})`;
+        const values = (this.values instanceof PrngSequence)
+            ? this.values.toString()
+            : this.values.join(' ');
+        return `(cycle ${values})`;
     }
 }

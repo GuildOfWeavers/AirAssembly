@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const StaticRegister_1 = require("./StaticRegister");
+const PrngSequence_1 = require("./PrngSequence");
 // CLASS DEFINITION
 // ================================================================================================
 class CyclicRegister extends StaticRegister_1.StaticRegister {
@@ -10,15 +11,23 @@ class CyclicRegister extends StaticRegister_1.StaticRegister {
     // --------------------------------------------------------------------------------------------
     constructor(values) {
         super();
-        // make sure the length of values is at least 4; this is needed for FFT interpolation
-        while (values.length < 4)
-            values = values.concat(values);
         this.values = values;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    getValues(field) {
+        if (this.values instanceof PrngSequence_1.PrngSequence) {
+            return this.values.getValues(field);
+        }
+        else {
+            return this.values;
+        }
+    }
     toString() {
-        return `(cycle ${this.values.join(' ')})`;
+        const values = (this.values instanceof PrngSequence_1.PrngSequence)
+            ? this.values.toString()
+            : this.values.join(' ');
+        return `(cycle ${values})`;
     }
 }
 exports.CyclicRegister = CyclicRegister;

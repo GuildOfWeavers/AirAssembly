@@ -12,7 +12,7 @@ const source = `
     (static
         (input secret vector (steps 16) (shift -1))
         (mask inverted (input 0))
-        (cycle 42 43 170 2209))
+        (cycle (prng sha256 0x4d694d43 16)))
     (transition
         (span 1) (result vector 1)
         (local vector 1)

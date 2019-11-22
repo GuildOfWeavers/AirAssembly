@@ -214,7 +214,7 @@ export class AirSchema implements IAirSchema {
 
     private validateStaticRegister(register: StaticRegister, index: number): StaticRegister {
         if (!(register instanceof CyclicRegister)) return register;
-        register.values.forEach(v => {
+        register.getValues(this.field).forEach(v => {
             if (!this.field.isElement(v)) {
                 throw new Error(`value ${v} for static register ${index} is not a valid field element`);
             }

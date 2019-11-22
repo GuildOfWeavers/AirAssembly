@@ -6,6 +6,7 @@ import { InputRegister } from "./InputRegister";
 import { CyclicRegister } from "./CyclicRegister";
 import { MaskRegister } from "./MaskRegister";
 import { isPowerOf2 } from "../utils";
+import { PrngSequence } from './PrngSequence';
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -78,7 +79,7 @@ export class StaticRegisterSet implements registers.StaticRegisterSet {
         this.registers.push(register);
     }
 
-    addCyclic(values: bigint[]): void {
+    addCyclic(values: bigint[] | PrngSequence): void {
         if (!isPowerOf2(values.length))
             throw new Error(`number of values in cyclic register ${this.size} is ${values.length}, but must be a power of 2`);
         const register = new CyclicRegister(values);

@@ -57,26 +57,24 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.ACTION(() => schema.setConstants(values));
         });
         this.literalVector = this.RULE('literalVector', () => {
-            const values = [];
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Vector);
-            this.AT_LEAST_ONE(() => values.push(this.CONSUME(lexer_1.Literal).image));
+            const values = this.SUBRULE(this.elementSequence);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.LiteralValue(values.map(v => BigInt(v))));
+            return this.ACTION(() => new expressions_1.LiteralValue(values));
         });
         this.literalMatrix = this.RULE('literalMatrix', () => {
             const rows = [];
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Matrix);
             this.AT_LEAST_ONE1(() => {
-                const row = [];
                 this.CONSUME2(lexer_1.LParen);
-                this.AT_LEAST_ONE2(() => row.push(this.CONSUME(lexer_1.Literal).image));
+                const row = this.SUBRULE(this.elementSequence);
                 this.CONSUME2(lexer_1.RParen);
                 rows.push(row);
             });
             this.CONSUME1(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.LiteralValue(rows.map(r => r.map(v => BigInt(v)))));
+            return this.ACTION(() => new expressions_1.LiteralValue(rows));
         });
         this.literalScalar = this.RULE('literalScalar', () => {
             this.CONSUME(lexer_1.LParen);
@@ -134,12 +132,14 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.ACTION(() => registers.addInput(scope, binary, typeOrParent, rotation, steps));
         });
         this.cyclicRegister = this.RULE('cyclicRegister', (registers) => {
-            const values = [];
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Cycle);
-            this.AT_LEAST_ONE(() => values.push(this.CONSUME(lexer_1.Literal).image));
+            const values = this.OR([
+                { ALT: () => this.SUBRULE(this.prngSequence) },
+                { ALT: () => this.SUBRULE(this.elementSequence) }
+            ]);
             this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => registers.addCyclic(values.map(v => BigInt(v))));
+            this.ACTION(() => registers.addCyclic(values));
         });
         this.maskRegister = this.RULE('maskRegister', (registers) => {
             this.CONSUME1(lexer_1.LParen);
@@ -151,6 +151,15 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME2(lexer_1.RParen);
             this.CONSUME1(lexer_1.RParen);
             this.ACTION(() => registers.addMask(Number(source), inverted));
+        });
+        this.prngSequence = this.RULE('prngExpression', () => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Prng);
+            const method = this.CONSUME(lexer_1.Sha256).image;
+            const seed = this.CONSUME(lexer_1.HexLiteral).image;
+            const count = this.CONSUME(lexer_1.Literal).image;
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => new registers_1.PrngSequence(method, BigInt(seed), Number(count)));
         });
         // PROCEDURES
         // --------------------------------------------------------------------------------------------
@@ -317,12 +326,17 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         // --------------------------------------------------------------------------------------------
         this.integerLiteral = this.RULE('integerLiteral', () => {
             const value = this.CONSUME(lexer_1.Literal).image;
-            return this.ACTION(() => Number.parseInt(value, 10));
+            return this.ACTION(() => Number(value));
         });
         this.signedIntegerLiteral = this.RULE('signedIntegerLiteral', () => {
             const sign = this.OPTION(() => this.CONSUME(lexer_1.Minus)) ? -1 : 1;
             const value = this.CONSUME(lexer_1.Literal).image;
             return this.ACTION(() => Number(value) * sign);
+        });
+        this.elementSequence = this.RULE('elementSequence', () => {
+            const values = [];
+            this.AT_LEAST_ONE(() => values.push(this.CONSUME(lexer_1.Literal).image));
+            return this.ACTION(() => values.map(v => BigInt(v)));
         });
         // EXPORTS
         // --------------------------------------------------------------------------------------------

@@ -120,7 +120,7 @@ function buildStaticRegisters(schema: AirSchema) {
             masked.push({ source: register.source, inverted: register.inverted });
         }
         else if (register instanceof CyclicRegister) {
-            cyclic.push({ cyclic: true, values: register.values });
+            cyclic.push({ cyclic: true, values: register.getValues(schema.field) });
         }
     }
 
