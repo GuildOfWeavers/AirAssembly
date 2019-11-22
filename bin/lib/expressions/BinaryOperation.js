@@ -59,7 +59,7 @@ function checkExponent(exp) {
     if (!exp.isStatic)
         throw new Error(`cannot raise to non-constant power`);
 }
-function getProductDimensions(rhs, lhs) {
+function getProductDimensions(lhs, rhs) {
     const d1 = lhs.dimensions;
     const d2 = rhs.dimensions;
     if (lhs.isVector && rhs.isVector) {
