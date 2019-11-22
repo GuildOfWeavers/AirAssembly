@@ -9,7 +9,7 @@ class ExpressionAnalyzer extends expressions_1.ExpressionVisitor {
     // LITERALS
     // --------------------------------------------------------------------------------------------
     literalValue(e) {
-        return 0n;
+        return dimensionsToDegree(e.dimensions, 0n);
     }
     // OPERATIONS
     // --------------------------------------------------------------------------------------------
@@ -67,9 +67,9 @@ class ExpressionAnalyzer extends expressions_1.ExpressionVisitor {
     // --------------------------------------------------------------------------------------------
     loadExpression(e, ctx) {
         if (e.source === 'const')
-            return ctx.degree.const[0];
+            return ctx.degree.const[e.index];
         else if (e.source === 'local')
-            return ctx.degree.local[0];
+            return ctx.degree.local[e.index];
         else if (e.source === 'static')
             return ctx.degree.static;
         else

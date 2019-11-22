@@ -95,7 +95,7 @@ declare module '@guildofweavers/air-assembly' {
         constructor(name: string, cycleLength: number, initializer?: expressions.LiteralValue | 'seed');
     }
 
-    export type TraceInitializer = (seed?: bigint[]) => bigint[];
+    export type TraceInitializer = (field: FiniteField, seed?: bigint[]) => bigint[];
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------

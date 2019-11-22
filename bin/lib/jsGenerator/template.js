@@ -37,7 +37,7 @@ function initProof(inputs = []) {
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace(seed) {
         const steps = traceLength - 1;
-        let rValues = initializeTrace(seed);
+        let rValues = initializeTrace(f, seed);
         if (rValues.length !== traceRegisterCount) {
             throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
         }

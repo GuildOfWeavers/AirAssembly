@@ -25,11 +25,15 @@ class ExportDeclaration {
                 this.seed = seedValue;
             }
             else {
-                this.initializer = (seed) => {
+                this.initializer = (field, seed) => {
                     if (!seed)
                         throw new Error(`field to initialize execution trace: seed is undefined`);
                     if (!Array.isArray(seed))
                         throw new Error(`failed to initialize execution trace: seed is not an array`);
+                    seed.forEach((v, i) => {
+                        if (!field.isElement(v))
+                            throw new Error(`seed value '${v}' at position ${i} is not a valid field element`);
+                    });
                     return seed;
                 };
             }

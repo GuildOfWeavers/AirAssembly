@@ -28,7 +28,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
     // LITERALS
     // --------------------------------------------------------------------------------------------
     literalValue(e: LiteralValue): Degree {
-        return 0n;
+        return dimensionsToDegree(e.dimensions, 0n);
     }
 
     // OPERATIONS
@@ -92,8 +92,8 @@ class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
     // LOAD AND STORE
     // --------------------------------------------------------------------------------------------
     loadExpression(e: LoadExpression, ctx: AnalysisContext): Degree {
-        if (e.source === 'const') return ctx.degree.const[0];
-        else if (e.source === 'local') return ctx.degree.local[0];
+        if (e.source === 'const') return ctx.degree.const[e.index];
+        else if (e.source === 'local') return ctx.degree.local[e.index];
         else if (e.source === 'static') return ctx.degree.static;
         else return ctx.degree.trace;
     }
