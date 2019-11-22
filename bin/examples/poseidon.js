@@ -88,6 +88,6 @@ const pObject = air.initProof(inputs);
 const trace = pObject.generateExecutionTrace([inputs[0][0], inputs[0][1], 0n]);
 // generate constraint evaluation table
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
-const cEvaluations = pObject.evaluateTracePolynomials(pPolys);
+const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
 console.log('done!');
 //# sourceMappingURL=poseidon.js.map

@@ -50,7 +50,7 @@ const pObject = air.initProof(inputs);
 const trace = pObject.generateExecutionTrace([3n]);
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);
-const cEvaluations = pObject.evaluateTracePolynomials(pPolys);
+const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
 
 const qPolys = air.field.interpolateRoots(pObject.compositionDomain, cEvaluations);
 const qEvaluations = air.field.evalPolysAtRoots(qPolys, pObject.evaluationDomain);

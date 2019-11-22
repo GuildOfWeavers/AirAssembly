@@ -39,6 +39,6 @@ const trace = pObject.generateExecutionTrace([3n]);
 
 // generate constraint evaluation table
 const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
-const cEvaluations = pObject.evaluateTracePolynomials(pPolys);
+const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
 
 console.log('done!');

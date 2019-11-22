@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
-import { AirModule, ModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
+import { AirModule, AirModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
 import { AirSchema } from '../AirSchema';
 import { Procedure } from '../procedures';
 import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
@@ -18,7 +18,7 @@ const procedureSignatures = {
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
-export function instantiateModule(schema: AirSchema, options: ModuleOptions): AirModule {
+export function instantiateModule(schema: AirSchema, options: AirModuleOptions): AirModule {
     let code = `'use strict';\n\n`;
 
     const mainExport = schema.exports.get('main');

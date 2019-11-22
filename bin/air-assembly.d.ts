@@ -15,7 +15,7 @@ declare module '@guildofweavers/air-assembly' {
         /** Maximum number of state registers; defaults to 64 */
         maxTraceRegisters: number;
 
-        /** Maximum number of all static registers; defaults to 64 */
+        /** Maximum number of static registers; defaults to 64 */
         maxStaticRegisters: number;
 
         /** Maximum number of transition constraints; defaults to 1024 */
@@ -25,7 +25,7 @@ declare module '@guildofweavers/air-assembly' {
         maxConstraintDegree: number;
     }
 
-    export interface ModuleOptions {
+    export interface AirModuleOptions {
         limits          : Partial<StarkLimits>;
         wasmOptions     : Partial<WasmOptions> | boolean;
         extensionFactor : number;
@@ -38,7 +38,7 @@ declare module '@guildofweavers/air-assembly' {
 
     export function analyze(schema: AirSchema): SchemaAnalysisResult;
 
-    export function instantiate(schema: AirSchema, options?: Partial<ModuleOptions>): AirModule;
+    export function instantiate(schema: AirSchema, options?: Partial<AirModuleOptions>): AirModule;
 
     // AIR SCHEMA
     // --------------------------------------------------------------------------------------------
@@ -319,7 +319,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly secretRegisterTraces: Vector[];
 
         generateExecutionTrace(seed?: bigint[]): Matrix;
-        evaluateTracePolynomials(polynomials: Matrix): Matrix;
+        evaluateTransitionConstraints(polynomials: Matrix): Matrix;
     }
 
     // ERRORS

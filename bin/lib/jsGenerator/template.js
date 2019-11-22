@@ -70,7 +70,7 @@ function initProof(inputs = []) {
     }
     // CONSTRAINT EVALUATOR
     // --------------------------------------------------------------------------------------------
-    function evaluateTracePolynomials(polynomials) {
+    function evaluateTransitionConstraints(polynomials) {
         const constraintCount = constraints.length;
         // make sure trace polynomials are valid
         validateTracePolynomials(polynomials, traceLength);
@@ -171,7 +171,7 @@ function initProof(inputs = []) {
         evaluationDomain: evaluationDomain,
         compositionDomain: compositionDomain,
         generateExecutionTrace: generateExecutionTrace,
-        evaluateTracePolynomials: evaluateTracePolynomials,
+        evaluateTransitionConstraints: evaluateTransitionConstraints,
         secretRegisterTraces: secretRegisterTraces
     };
 }

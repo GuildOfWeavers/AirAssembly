@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirModule, StarkLimits, ModuleOptions, SchemaAnalysisResult } from '@guildofweavers/air-assembly';
+import { AirModule, StarkLimits, AirModuleOptions, SchemaAnalysisResult } from '@guildofweavers/air-assembly';
 import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
 import { lexer } from './lib/lexer';
@@ -90,7 +90,7 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
     return schema;
 }
 
-export function instantiate(schema: AirSchema, options: Partial<ModuleOptions> = {}): AirModule {
+export function instantiate(schema: AirSchema, options: Partial<AirModuleOptions> = {}): AirModule {
     const compositionFactor = getCompositionFactor(schema);
     const vOptions = validateModuleOptions(options, compositionFactor);
     const module = instantiateModule(schema, vOptions);
@@ -105,7 +105,7 @@ export function analyze(schema: AirSchema): SchemaAnalysisResult {
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function validateModuleOptions(options: Partial<ModuleOptions>, compositionFactor: number): ModuleOptions {
+function validateModuleOptions(options: Partial<AirModuleOptions>, compositionFactor: number): AirModuleOptions {
 
     const minExtensionFactor = compositionFactor * 2;
     const extensionFactor = options.extensionFactor || minExtensionFactor;

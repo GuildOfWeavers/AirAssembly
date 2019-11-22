@@ -102,7 +102,7 @@ export function initProof(inputs: any[] = []): ProofObject {
 
     // CONSTRAINT EVALUATOR
     // --------------------------------------------------------------------------------------------
-    function evaluateTracePolynomials(polynomials: Matrix): Matrix {
+    function evaluateTransitionConstraints(polynomials: Matrix): Matrix {
 
         const constraintCount = constraints.length;
 
@@ -227,7 +227,7 @@ export function initProof(inputs: any[] = []): ProofObject {
         evaluationDomain            : evaluationDomain,
         compositionDomain           : compositionDomain,
         generateExecutionTrace      : generateExecutionTrace,
-        evaluateTracePolynomials    : evaluateTracePolynomials,
+        evaluateTransitionConstraints    : evaluateTransitionConstraints,
         secretRegisterTraces        : secretRegisterTraces
     };
 }
