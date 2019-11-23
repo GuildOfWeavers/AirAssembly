@@ -19,7 +19,7 @@ class PrngSequence {
     // --------------------------------------------------------------------------------------------
     getValues(field) {
         if (!this._values) {
-            this._values = generateValues(field, this.method, this.seed.toString('hex'), this.length);
+            this._values = generateValues(field, this.method, this.seed, this.length);
         }
         return this._values;
     }
@@ -32,9 +32,11 @@ exports.PrngSequence = PrngSequence;
 // ================================================================================================
 function generateValues(field, method, seed, count) {
     const values = [];
+    const vSeed = Buffer.concat([Buffer.from([0, 0]), seed]);
     if (method === 'sha256') {
         for (let i = 0; i < count; i++) {
-            let value = crypto.createHash('sha256').update(`${seed}${i}`).digest();
+            vSeed.writeUInt16BE(i + 1, 0);
+            let value = crypto.createHash('sha256').update(vSeed).digest();
             values[i] = field.add(BigInt(`0x${value.toString('hex')}`), 0n);
         }
     }

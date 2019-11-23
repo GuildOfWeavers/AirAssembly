@@ -63,6 +63,8 @@ class StaticRegisterSet {
     addCyclic(values) {
         if (!utils_1.isPowerOf2(values.length))
             throw new Error(`number of values in cyclic register ${this.size} is ${values.length}, but must be a power of 2`);
+        if (values.length < 2)
+            throw new Error(`number of values in cyclic register must be greater than 1`);
         const register = new CyclicRegister_1.CyclicRegister(values);
         this.registers.push(register);
     }

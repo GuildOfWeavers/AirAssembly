@@ -26,7 +26,7 @@ export class PrngSequence {
     // --------------------------------------------------------------------------------------------
     getValues(field: FiniteField): bigint[] {
         if (!this._values) {
-            this._values = generateValues(field, this.method, this.seed.toString('hex'), this.length);
+            this._values = generateValues(field, this.method, this.seed, this.length);
         }
         return this._values;
     }
@@ -38,11 +38,13 @@ export class PrngSequence {
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function generateValues(field: FiniteField, method: string, seed: string, count: number): bigint[] {
+function generateValues(field: FiniteField, method: string, seed: Buffer, count: number): bigint[] {
     const values: bigint[] = [];
+    const vSeed = Buffer.concat([Buffer.from([0, 0]), seed]);
     if (method === 'sha256') {
         for (let i = 0; i < count; i++) {
-            let value = crypto.createHash('sha256').update(`${seed}${i}`).digest();
+            vSeed.writeUInt16BE(i + 1, 0);
+            let value = crypto.createHash('sha256').update(vSeed).digest();
             values[i] = field.add(BigInt(`0x${value.toString('hex')}`), 0n);
         }
     }
