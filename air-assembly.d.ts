@@ -309,11 +309,11 @@ declare module '@guildofweavers/air-assembly' {
         /**
          * Evaluates transition constraints at the specified point
          * @param x Point in the evaluation domain at which to evaluate constraints
-         * @param rValues Values of mutable registers at the current step
-         * @param nValues Values of mutable registers at the next step
-         * @param hValues Values of hidden registers at the current step
+         * @param rValues Values of trace registers at the current step
+         * @param nValues Values of trace registers at the next step
+         * @param sValues Values of secret registers at the current step
          */
-        evaluateConstraintsAt(x: bigint, rValues: bigint[], nValues: bigint[], hValues: bigint[]): bigint[];
+        evaluateConstraintsAt(x: bigint, rValues: bigint[], nValues: bigint[], sValues: bigint[]): bigint[];
     }
 
     export interface ProofObject extends AirObject {

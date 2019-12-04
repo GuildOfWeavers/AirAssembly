@@ -1,5 +1,5 @@
 # AirAssembly
-This library contains specifications and JavaScript runtime for AirAssembly - a language for encoding Algebraic Intermediate Representation (AIR) of computations. AIR is a representation used in [zk-STARKs](https://eprint.iacr.org/2018/046) to construct succinct proofs of computation.
+This library contains specifications and JavaScript runtime for AirAssembly - a language for encoding Algebraic Intermediate Representation (AIR) of computations. AIR is a representation used in [zk-STARKs](https://eprint.iacr.org/2018/046) to construct succinct proofs of computational integrity.
 
 AirAssembly is a low-level language and is intended to be a compilation target for other, higher-level, languages (e.g. [AirScript](https://github.com/GuildOfWeavers/AirScript)). It uses a simple s-expression-based syntax to specify:
 
@@ -11,7 +11,7 @@ AirAssembly is a low-level language and is intended to be a compilation target f
 Full specifications for AirAssembly can be found [here](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs).
 
 ## Usage
-This library is not intended for standalone use, but is rather meant to be included as a component into STARK provers (e.g. [genSTARK](https://github.com/GuildOfWeavers/genSTARK)). Nevertheless, you can install it separately like so:
+This library is not intended for standalone use, but is rather meant to be a component used in STARK provers (e.g. [genSTARK](https://github.com/GuildOfWeavers/genSTARK)). Nevertheless, you can install it separately like so:
 
 ```bash
 $ npm install @guildofweavers/air-assembly --save
@@ -81,31 +81,39 @@ When instantiating an `AirModule` object, an `AirModuleOptions` object can be pr
 | ------------------- | ----------- |
 | limits              | [Limits](#Stark-limits) to be imposed on the instantiated module. If not provided, default limit values will be used. |
 | wasmOptions         | Options for finite fields which can take advantage of [WebAssembly optimization](https://github.com/GuildOfWeavers/galois#wasm-optimization). This property can also be set to a boolean value to turn the optimization on or off. |
-| extensionFactor     | Number by which the execution trace is to be "stretched." Must be a power of 2 at least 2x of the highest constraint degree. This property is optional, the default is smallest power of 2 that is greater than 2x of the highest constraint degree. |
+| extensionFactor     | Number by which the execution trace is to be "stretched." Must be a power of 2 at least 2x of the highest constraint degree. This property is optional, the default is the smallest power of 2 that is greater than 2x of the highest constraint degree. |
 
 #### Stark limits
 `StarkLimits` object defines limits against which `AirSchema` and `AirModule` objects are validated. `StarkLimits` objects can contain any of the following properties:
 
 | Property            | Description |
 | ------------------- | ----------- |
-| maxTraceLength      | Maximum number of steps in an execution trace; defaults to 2^20 |
+| maxTraceLength      | Maximum number of steps in an execution trace; defaults to 2<sup>20</sup> |
 | maxTraceRegisters   | Maximum number of state registers; defaults to 64 |
 | maxStaticRegisters  | Maximum number of static registers; defaults to 64 |
 | maxConstraintCount  | Maximum number of transition constraints; defaults to 1024 |
 | maxConstraintDegree | Highest allowed degree of transition constraints; defaults to 16 |
 
 ### Generating execution trace
+To generate an execution trace for a computation defined by AirAssembly source code, the following steps should be taken:
+
+1. AirAssembly source code needs to be compiled into AirSchema using top-level `compile()` function.
+2. The resulting AirSchema is then passed to the top-level `instantiate()` function to generate an AirModule.
+3. This AirModule is then used to create a proof object using `initProof()` method. 
+4. And finally, the proof object is used to generate the execution trace by invoking `generateExecutionTrace()` method.
+
+The code block bellow illustrates these steps:
+
 ```TypeScript
 const schema = compile(Buffer.from(source));
 const air = instantiate(schema, { extensionFactor: 16 });
 const pObject = air.initProof();
 const trace = pObject.generateExecutionTrace([3n]);
 ```
-
-1. compile AirAssembly source code into AirSchema
-2. instantiate AirModule from the schema, and specify extension factor to be used
-3. initialize proof object
-4. use proof object to generate execution trace passing 3 as a seed value
+In the above:
+* `source` is a variable with a string containing AirAssembly source code similar to the one one shown in the [usage](#Usage) section.
+* When we instantiate an AirModule, we set the extension factor to `16`.
+* When we generate the execution trace, we seed the execution trace table with value `3`. That is, the value of our one and only state register at step 0 will be set to `3`.
 
 ### Evaluating transition constraints
 ```TypeScript
@@ -130,17 +138,61 @@ const constraintEvaluations = pObject.evaluateTransitionConstraints(tracePolys);
 
 | Property            | Description |
 | ------------------- | ----------- |
-| field               | |
-| traceRegisterCount  |
-| staticRegisterCount |
-| inputDescriptors    |
-| constraints         |
-| maxConstraintDegree |
-| extensionFactor     |
+| field               | [Finite field](https://github.com/GuildOfWeavers/galois#api) object used for all arithmetic operations in the AirModule. |
+| traceRegisterCount  | Number of state registers in the execution trace. |
+| staticRegisterCount | Number of static registers in the execution trace. |
+| inputDescriptors    | |
+| constraints         | |
+| maxConstraintDegree | Highest degree of transition constraints. |
+| extensionFactor     | Execution trace extension factor. |
 
 * **initProof**(inputs: `any[]`): `ProofObject`
 * **initVerification**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `VerificationObject`
 
 #### Proof object
+A `ProofObject` contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `ProofObject` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace.
+
+* **generateExecutionTrace**(seed?: `bigint[]`): `Matrix`</br>
+  Generates an execution trace for the computation described by the parent AirModule. If the computation references a seed vector in the main export expression, then a `seed` parameter must be provided. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where every row corresponds to a dynamic register, and every column corresponds to step in a computation. For example, if our computation has a single register and runs for 32 steps, the returned matrix will contain a single row with 32 columns.
+
+* **evaluateTransitionConstraints**(polynomials: `Matrix`): `Matrix`
+
+All proof objects also contain the following properties:
+
+| Property             | Description |
+| -------------------- | ----------- |
+| field                | Reference to the [finite field](https://github.com/GuildOfWeavers/galois#api) object of the parent AirModule. |
+| rootOfUnit           | |
+| traceLength          | |
+| extensionFactor      | |
+| inputShapes          | |
+| executionDomain      | Domain of the execution trace. |
+| evaluationDomain     | Domain of the low-degree extended execution trace. |
+| compositionDomain    | Domain of the low-degree extended composition polynomial |
+| secretRegisterTraces | Values of secret registers evaluated over evaluation domain |
 
 #### Verification object
+A `VerificationObject` contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `VerificationObject` can be used to evaluate transition constraints at a specific point of an evaluation domain using `evaluateConstraintsAt()` method. It is assumed that an external STARK verifier will parse a STARK proof and will read decommitments to trace register states from it before invoking `evaluateConstraintsAt()` method. The method has the following signature:
+
+**evaluateConstraintsAt**(x: `bigint`, rValues: `bigint[]`, nValues: `bigint[]`, sValues: `bigint[]`): `bigint[]`
+
+where:
+* `x` is the point of the evaluation domain corresponding to the current step of the computation.
+* `rValues` is an array of dynamic register values at the current step of the computation.
+* `nValues` is an array of dynamic register values at the next step of the computation.
+* `sValues` is an array of secret register values at the current step of the computation.
+
+The method returns an array of constraint evaluations at point `x`. For example, if the computation is defined by a single transition constraint, an array with one value will be returned.
+
+All verification objects also contain the following properties:
+
+| Property             | Description |
+| -------------------- | ----------- |
+| field                | Reference to the [finite field](https://github.com/GuildOfWeavers/galois#api) object of the AirModule which describes the computation. |
+| rootOfUnit           | Primitive root of unity of the evaluation domain for the instance of the computation. |
+| traceLength          | Length of the execution trace for the instance of the computation. |
+| extensionFactor      | Extension factor of the execution trace. |
+| inputShapes          | Shapes of all input registers for the instance of the computation. |
+
+# License
+[MIT](/LICENSE) © 2019 Guild of Weavers
