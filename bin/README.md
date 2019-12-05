@@ -99,8 +99,8 @@ To generate an execution trace for a computation defined by AirAssembly source c
 
 1. AirAssembly source code needs to be compiled into AirSchema using top-level `compile()` function.
 2. The resulting AirSchema is then passed to the top-level `instantiate()` function to generate an AirModule.
-3. This AirModule is then used to create a proof object using `initProof()` method. 
-4. And finally, the proof object is used to generate the execution trace by invoking `generateExecutionTrace()` method.
+3. This AirModule is then used to create a [Prover](#Prover) object using `createProver()` method.
+4. And finally, the Prover is used to generate the execution trace by invoking `generateExecutionTrace()` method.
 
 The code block bellow illustrates these steps:
 
@@ -122,45 +122,50 @@ const constraintEvaluations = pObject.evaluateTransitionConstraints(tracePolys);
 ```
 
 ### Air Schema
+An `AirSchema` object contains a semantic representation of AirAssembly source code. This representation makes it easy to analyze the source code, and serves as the basis for generating [AirModules](#Air-module). An `AirSchema` object can be created by compiling AirAssembly code with the top-level `compile()` function.
+
+`AirSchema` has the following properties:
 
 | Property            | Description |
 | ------------------- | ----------- |
-| field               | |
-| constants           | |
-| staticRegisters     | |
-| transitionFunction  | |
-| constraintEvaluator | |
-| constraints         | |
-| maxConstraintDegree | |
-| exports             | |
+| field               | A [finite field](https://github.com/GuildOfWeavers/galois#api) object instantiated for the [field](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#field-declaration) specified for the computation. |
+| constants           | An array of `LiteralValue` expressions describing [constants](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constant-declarations) defined for the computation. |
+| staticRegisters     | An array of `StaticRegister` objects describing [static registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#static-registers) defined for the computation. |
+| transitionFunction  | A `Procedure` object describing [transition function](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#transition-function) expression defined for the computation. |
+| constraintEvaluator | A `Procedure` object describing [transition constraint evaluator](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constraint-evaluator) expression defined for the computation. |
+| constraints         | An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints (e.g. constraint degree). |
+| maxConstraintDegree | An integer value specifying the highest degree of transition constraints defined for the computation. |
+| exports             | A map of [export declarations](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#Export-declarations), where the key is the name of the export, and the value is an `ExportDeclaration` object.  |
+
+Note: definitions for `LiteralValue`, `StaticRegister` and other objects mentioned above can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts) file.
 
 ### Air Module
+An `AirModule` object contains JavaScript code needed to create [Prover](#Prover) and [Verifier](#Verifier) objects. These objects can then be used to generate execution trace and evaluate transition constraints for a computation. An `AirModule` can be instantiated from an `AirSchema` by using the top-level `instantiate()` function.
+
+`AirModule` has the following properties:
 
 | Property            | Description |
 | ------------------- | ----------- |
-| field               | [Finite field](https://github.com/GuildOfWeavers/galois#api) object used for all arithmetic operations in the AirModule. |
+| field               | A [finite field](https://github.com/GuildOfWeavers/galois#api) object used for all arithmetic operations of the computation. |
 | traceRegisterCount  | Number of state registers in the execution trace. |
 | staticRegisterCount | Number of static registers in the execution trace. |
-| inputDescriptors    | |
-| constraints         | |
-| maxConstraintDegree | Highest degree of transition constraints. |
-| extensionFactor     | Execution trace extension factor. |
+| inputDescriptors    | An array of [input descriptor](#Input-descriptor) objects describing inputs required by the computation. |
+| constraints         | An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints (e.g. constraint degree). |
+| maxConstraintDegree | An integer value specifying the highest degree of transition constraints defined for the computation. |
+| extensionFactor     | An integer value specifying how much the execution trace is to be "stretched." |
 
-* **initProof**(inputs: `any[]`): `ProofObject`
-* **initVerification**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `VerificationObject`
+`AirModule` exposes the following methods:
 
-#### Proof object
-A `ProofObject` contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `ProofObject` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace. To create a `ProofObject`, use `initProof()` method of [AirModule](#Air-Module) object.
+* **createProver**(inputs?: `any[]`): `Prover`</br>
+  Instantiates a [Prover](#Prover) object for a specific instance of the computation. This `prover` can then be used to generate execution trace table and constraint evaluation table for the computation. The `inputs` parameter must be provided only if the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers). In such a case, the shape of input objects must be in line with the shapes specified by the computation's input descriptors.
 
-`ProofObject` exposes the following methods:
+* **createVerifier**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `Verifier`</br>
+  Instantiates a [Verifier](#Verifier) object for a specific instance of the computation. This `verifier` can then be used to evaluate transition constraints at a given point of the evaluation domain of the computation. If the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers), `inputShapes` parameter must be provided to specify the shapes of consumed inputs. If any of the input registers are public, `publicInputs` parameter must also be provided to specify the actual values of all public inputs consumed by the computation.
 
-* **generateExecutionTrace**(seed?: `bigint[]`): `Matrix`</br>
-  Generates an execution trace for a computation. The `seed` parameter must be provided only if the seed vector is used in the main export expression of the computation's AirAssembly definition. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
+#### Prover
+A `Prover` object contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `Prover` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace. To create a `Prover`, use `createProver()` method of [AirModule](#Air-Module) object.
 
-* **evaluateTransitionConstraints**(tracePolys: `Matrix`): `Matrix`</br>
-  Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a  transition constraint evaluated over the composition domain.
-
-`ProofObject` has the following properties:
+`Prover` has the following properties:
 
 | Property             | Description |
 | -------------------- | ----------- |
@@ -174,19 +179,18 @@ A `ProofObject` contains properties and methods needed to help generate a proof 
 | compositionDomain    | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the low-degree extended composition polynomial. The length of the composition domain is equal to `traceLength * compositionFactor`, where `compositionFactor` is set to be the smallest power of 2 greater than or equal to the highest constraint degree of the computation. For example, if highest constraint degree is `3`, the `compositionFactor` will be set to `2`. |
 | secretRegisterTraces | Values of secret input registers evaluated over the evaluation domain. |
 
-#### Verification object
-A `VerificationObject` contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `VerificationObject` can be used to evaluate transition constraints at a specific point of an evaluation domain. To create a `VerificationObject`, use `initVerification()` method of [AirModule](#Air-Module) object.
+`Prover` exposes the following methods:
 
-`VerificationObject` exposes the following methods:
+* **generateExecutionTrace**(seed?: `bigint[]`): `Matrix`</br>
+  Generates an execution trace for a computation. The `seed` parameter must be provided only if the seed vector is used in the main export expression of the computation's AirAssembly definition. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
 
-* **evaluateConstraintsAt**(x: `bigint`, rValues: `bigint[]`, nValues: `bigint[]`, sValues: `bigint[]`): `bigint[]`</br>
-  Returns an array of values resulting from evaluating transition constraints at point `x`. For example, if the computation is defined by a single transition constraint, an array with one value will be returned. The meaning of the parameters is as follows:
-  * `x` is the point of the evaluation domain corresponding to the current step of the computation.
-  * `rValues` is an array of dynamic register values at the current step of the computation.
-  * `nValues` is an array of dynamic register values at the next step of the computation.
-  * `sValues` is an array of secret register values at the current step of the computation.
+* **evaluateTransitionConstraints**(tracePolys: `Matrix`): `Matrix`</br>
+  Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a  transition constraint evaluated over the composition domain.
 
-`VerificationObject` has the following properties:
+#### Verifier
+A `Verifier` object contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `Verifier` can be used to evaluate transition constraints at a specific point of an evaluation domain. To create a `Verifier`, use `createVerifier()` method of [AirModule](#Air-Module) object.
+
+`Verifier` has the following properties:
 
 | Property             | Description |
 | -------------------- | ----------- |
@@ -195,6 +199,27 @@ A `VerificationObject` contains properties and methods needed to help verify a p
 | traceLength          | Length of the execution trace for the instance of the computation. |
 | extensionFactor      | Extension factor of the execution trace. |
 | inputShapes          | Shapes of all input registers for the instance of the computation. |
+
+`Verifier` exposes the following methods:
+
+* **evaluateConstraintsAt**(x: `bigint`, rValues: `bigint[]`, nValues: `bigint[]`, sValues: `bigint[]`): `bigint[]`</br>
+  Returns an array of values resulting from evaluating transition constraints at point `x`. For example, if the computation is defined by a single transition constraint, an array with one value will be returned. The meaning of the parameters is as follows:
+  * `x` is the point of the evaluation domain corresponding to the current step of the computation.
+  * `rValues` is an array of dynamic register values at the current step of the computation.
+  * `nValues` is an array of dynamic register values at the next step of the computation.
+  * `sValues` is an array of secret register values at the current step of the computation.
+
+#### Input descriptor
+An `InputDescriptor` object contains information about an [input register](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers) defined for the computation. `InputDescriptor` has the following properties:
+
+| Property   | Description |
+| -----------| ----------- |
+| rank       | An integer value indicating the position of the register in the input dependency tree. For example, rank of a register without parents is `0`, rank of a register with a single ancestor is `1`, rank of register with 2 ancestors is `2` etc. |
+| secret     | A boolean value indicating wither the inputs for the register are public or secret. |
+| binary     | A boolean value indicating whether the register can accept only binary values (ones and zeros). |
+| offset     | A signed integer value specifying the number of steps by which an input value is to be shifted in the execution trace. |
+| parent     | An integer value specifying an index of the parent input register. If the register has no parents, this property will be `undefined`. |
+| steps      | An integer value specifying the number of steps by which a register trace is to be expanded for each input value. For non-leaf registers, this property will be `undefined`. |
 
 # License
 [MIT](/LICENSE) © 2019 Guild of Weavers
