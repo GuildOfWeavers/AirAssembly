@@ -54,7 +54,7 @@ const pObject = air.initProof();
 const trace = pObject.generateExecutionTrace([3n]);
 
 // generate constraint evaluation table
-const tracePolys = air.field.interpolateRoots(pObject.executionDomain, trace);
+const tracePolys = air.field.interpolateRoots(pObject.compositionDomain, trace);
 const constraintEvaluations = pObject.evaluateTransitionConstraints(tracePolys);
 ```
 
@@ -150,41 +150,43 @@ const constraintEvaluations = pObject.evaluateTransitionConstraints(tracePolys);
 * **initVerification**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `VerificationObject`
 
 #### Proof object
-A `ProofObject` contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `ProofObject` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace.
+A `ProofObject` contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `ProofObject` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace. To create a `ProofObject`, use `initProof()` method of [AirModule](#Air-Module) object.
+
+`ProofObject` exposes the following methods:
 
 * **generateExecutionTrace**(seed?: `bigint[]`): `Matrix`</br>
-  Generates an execution trace for the computation described by the parent AirModule. If the computation references a seed vector in the main export expression, then a `seed` parameter must be provided. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where every row corresponds to a dynamic register, and every column corresponds to step in a computation. For example, if our computation has a single register and runs for 32 steps, the returned matrix will contain a single row with 32 columns.
+  Generates an execution trace for a computation. The `seed` parameter must be provided only if the seed vector is used in the main export expression of the computation's AirAssembly definition. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
 
-* **evaluateTransitionConstraints**(polynomials: `Matrix`): `Matrix`
+* **evaluateTransitionConstraints**(tracePolys: `Matrix`): `Matrix`</br>
+  Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a  transition constraint evaluated over the composition domain.
 
-All proof objects also contain the following properties:
+`ProofObject` has the following properties:
 
 | Property             | Description |
 | -------------------- | ----------- |
-| field                | Reference to the [finite field](https://github.com/GuildOfWeavers/galois#api) object of the parent AirModule. |
-| rootOfUnit           | |
-| traceLength          | |
-| extensionFactor      | |
-| inputShapes          | |
-| executionDomain      | Domain of the execution trace. |
-| evaluationDomain     | Domain of the low-degree extended execution trace. |
-| compositionDomain    | Domain of the low-degree extended composition polynomial |
-| secretRegisterTraces | Values of secret registers evaluated over evaluation domain |
+| field                | Reference to the [finite field](https://github.com/GuildOfWeavers/galois#api) object of the AirModule which describes the computation. |
+| rootOfUnit           | Primitive root of unity of the evaluation domain for the instance of the computation. |
+| traceLength          | Length of the execution trace for the instance of the computation. |
+| extensionFactor      | Extension factor of the execution trace. |
+| inputShapes          | Shapes of all input registers for the instance of the computation. |
+| executionDomain      | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the execution trace. |.
+| evaluationDomain     | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the low-degree extended execution trace. The length of the evaluation domain is equal to `traceLength * extensionFactor`. |
+| compositionDomain    | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the low-degree extended composition polynomial. The length of the composition domain is equal to `traceLength * compositionFactor`, where `compositionFactor` is set to be the smallest power of 2 greater than or equal to the highest constraint degree of the computation. For example, if highest constraint degree is `3`, the `compositionFactor` will be set to `2`. |
+| secretRegisterTraces | Values of secret input registers evaluated over the evaluation domain. |
 
 #### Verification object
-A `VerificationObject` contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `VerificationObject` can be used to evaluate transition constraints at a specific point of an evaluation domain using `evaluateConstraintsAt()` method. It is assumed that an external STARK verifier will parse a STARK proof and will read decommitments to trace register states from it before invoking `evaluateConstraintsAt()` method. The method has the following signature:
+A `VerificationObject` contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `VerificationObject` can be used to evaluate transition constraints at a specific point of an evaluation domain. To create a `VerificationObject`, use `initVerification()` method of [AirModule](#Air-Module) object.
 
-**evaluateConstraintsAt**(x: `bigint`, rValues: `bigint[]`, nValues: `bigint[]`, sValues: `bigint[]`): `bigint[]`
+`VerificationObject` exposes the following methods:
 
-where:
-* `x` is the point of the evaluation domain corresponding to the current step of the computation.
-* `rValues` is an array of dynamic register values at the current step of the computation.
-* `nValues` is an array of dynamic register values at the next step of the computation.
-* `sValues` is an array of secret register values at the current step of the computation.
+* **evaluateConstraintsAt**(x: `bigint`, rValues: `bigint[]`, nValues: `bigint[]`, sValues: `bigint[]`): `bigint[]`</br>
+  Returns an array of values resulting from evaluating transition constraints at point `x`. For example, if the computation is defined by a single transition constraint, an array with one value will be returned. The meaning of the parameters is as follows:
+  * `x` is the point of the evaluation domain corresponding to the current step of the computation.
+  * `rValues` is an array of dynamic register values at the current step of the computation.
+  * `nValues` is an array of dynamic register values at the next step of the computation.
+  * `sValues` is an array of secret register values at the current step of the computation.
 
-The method returns an array of constraint evaluations at point `x`. For example, if the computation is defined by a single transition constraint, an array with one value will be returned.
-
-All verification objects also contain the following properties:
+`VerificationObject` has the following properties:
 
 | Property             | Description |
 | -------------------- | ----------- |
