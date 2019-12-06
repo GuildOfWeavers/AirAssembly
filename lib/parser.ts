@@ -144,7 +144,7 @@ class AirParser extends EmbeddedActionsParser {
             return steps;
         });
 
-        const rotation = this.OPTION3(() => {
+        const offset = this.OPTION3(() => {
             this.CONSUME4(LParen);
             this.CONSUME(Shift);
             const slots = this.SUBRULE(this.signedIntegerLiteral);
@@ -153,7 +153,7 @@ class AirParser extends EmbeddedActionsParser {
         });
 
         this.CONSUME1(RParen);
-        this.ACTION(() => registers.addInput(scope, binary, typeOrParent, rotation, steps));
+        this.ACTION(() => registers.addInput(scope, binary, typeOrParent, offset, steps));
     });
 
     private cyclicRegister = this.RULE('cyclicRegister', (registers: StaticRegisterSet) => {

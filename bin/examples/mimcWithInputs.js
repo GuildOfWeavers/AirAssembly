@@ -51,10 +51,10 @@ const inputs = [
 const schema = index_1.compile(Buffer.from(source));
 const air = index_1.instantiate(schema);
 // generate trace table
-const pObject = air.initProof(inputs);
-const trace = pObject.generateExecutionTrace([inputs[0][0]]);
+const prover = air.createProver(inputs);
+const trace = prover.generateExecutionTrace([inputs[0][0]]);
 // generate constraint evaluation table
-const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
-const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
+const pPolys = air.field.interpolateRoots(prover.executionDomain, trace);
+const cEvaluations = prover.evaluateTransitionConstraints(pPolys);
 console.log('done!');
 //# sourceMappingURL=mimcWithInputs.js.map

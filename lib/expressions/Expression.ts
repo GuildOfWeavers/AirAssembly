@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { expressions } from '@guildofweavers/air-assembly';
+import { Expression as IExpression } from '@guildofweavers/air-assembly';
 import { Dimensions } from "./utils";
 
 // INTERFACES
@@ -15,7 +15,7 @@ export interface ExpressionTransformer {
 
 // CLASS DEFINITION
 // ================================================================================================
-export abstract class Expression implements expressions.Expression {
+export abstract class Expression implements IExpression {
 
     readonly dimensions : Dimensions;
     readonly children   : Expression[];

@@ -34,14 +34,14 @@ const schema = compile(Buffer.from(source));
 const air = instantiate(schema, { extensionFactor: 16 });
 
 // generate trace table
-const prover = air.initProof();
+const prover = air.createProver();
 const trace = prover.generateExecutionTrace([3n]);
 
 // generate constraint evaluation table
 const pPolys = air.field.interpolateRoots(prover.executionDomain, trace);
 const cEvaluations = prover.evaluateTransitionConstraints(pPolys);
 
-const verifier = air.initVerification(prover.inputShapes)
+const verifier = air.createVerifier(prover.inputShapes)
 
 const x = air.field.exp(verifier.rootOfUnity, 16n);
 const rValues = [trace.getValue(0, 1)];

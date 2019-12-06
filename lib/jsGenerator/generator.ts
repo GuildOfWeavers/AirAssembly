@@ -50,8 +50,8 @@ export function instantiateModule(schema: AirSchema, options: AirModuleOptions):
     code += `constraints: constraints,\n`;
     code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
-    code += `initProof,\n`;
-    code += `initVerification\n`;
+    code += `createProver,\n`;
+    code += `createVerifier\n`;
     code += '};';
 
     // create and execute module builder function
@@ -112,7 +112,7 @@ function buildStaticRegisters(schema: AirSchema) {
                 parent  : register.parent,
                 secret  : register.secret,
                 binary  : register.binary,
-                rotation: register.rotation,
+                offset  : register.offset,
                 steps   : register.steps
             });
         }

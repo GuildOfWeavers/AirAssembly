@@ -14,9 +14,9 @@ const initializeTrace = undefined;
 // ================================================================================================
 const applyTransition = function () { return []; };
 const evaluateConstraints = function () { return []; };
-// PROOF OBJECT GENERATOR
+// PROVER GENERATOR
 // ================================================================================================
-function initProof(inputs = []) {
+function createProver(inputs = []) {
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
     // build evaluation domain
@@ -175,10 +175,10 @@ function initProof(inputs = []) {
         secretRegisterTraces: secretRegisterTraces
     };
 }
-exports.initProof = initProof;
-// VERIFICATION OBJECT GENERATOR
+exports.createProver = createProver;
+// VERIFIER GENERATOR
 // ================================================================================================
-function initVerification(inputShapes = [], publicInputs = []) {
+function createVerifier(inputShapes = [], publicInputs = []) {
     const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -253,7 +253,7 @@ function initVerification(inputShapes = [], publicInputs = []) {
         evaluateConstraintsAt: evaluateConstraintsAt
     };
 }
-exports.initVerification = initVerification;
+exports.createVerifier = createVerifier;
 // INPUT PROCESSING
 // ================================================================================================
 function digestInputs(inputs) {
@@ -271,7 +271,7 @@ function digestInputs(inputs) {
             values: values,
             secret: register.secret,
             invert: false,
-            rotate: register.rotation
+            rotate: register.offset
         });
     });
     // build and append masked register descriptors
@@ -280,7 +280,7 @@ function digestInputs(inputs) {
         values: new Array(specs[register.source].values.length).fill(f.one),
         secret: false,
         invert: register.inverted,
-        rotate: staticRegisters.inputs[register.source].rotation
+        rotate: staticRegisters.inputs[register.source].offset
     }));
     // append cyclic register descriptors
     specs = specs.concat(staticRegisters.cyclic);
@@ -305,7 +305,7 @@ function digestPublicInputs(inputs, shapes) {
                 values: values,
                 secret: false,
                 invert: false,
-                rotate: register.rotation
+                rotate: register.offset
             });
             inputIdx++;
         }
@@ -318,7 +318,7 @@ function digestPublicInputs(inputs, shapes) {
             values: new Array(valueCount).fill(f.one),
             secret: false,
             invert: register.inverted,
-            rotate: staticRegisters.inputs[register.source].rotation
+            rotate: staticRegisters.inputs[register.source].offset
         });
     });
     // append cyclic register descriptors

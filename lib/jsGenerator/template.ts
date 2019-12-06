@@ -2,7 +2,7 @@
 // ================================================================================================
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, RegisterEvaluatorSpecs,
-    ProofObject, VerificationObject, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor,
+    Prover, Verifier, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor,
     TraceInitializer
 } from "@guildofweavers/air-assembly";
 
@@ -31,9 +31,9 @@ const initializeTrace: TraceInitializer = undefined as any;
 const applyTransition: TransitionFunction = function () { return []; }
 const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 
-// PROOF OBJECT GENERATOR
+// PROVER GENERATOR
 // ================================================================================================
-export function initProof(inputs: any[] = []): ProofObject {
+export function createProver(inputs: any[] = []): Prover {
 
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
@@ -232,9 +232,9 @@ export function initProof(inputs: any[] = []): ProofObject {
     };
 }
 
-// VERIFICATION OBJECT GENERATOR
+// VERIFIER GENERATOR
 // ================================================================================================
-export function initVerification(inputShapes: number[][] = [], publicInputs: any[] = []): VerificationObject {
+export function createVerifier(inputShapes: number[][] = [], publicInputs: any[] = []): Verifier {
     
     const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
         
@@ -338,7 +338,7 @@ export function digestInputs(inputs: any[]) {
             values  : values,
             secret  : register.secret,
             invert  : false,
-            rotate  : register.rotation
+            rotate  : register.offset
         });
     });
 
@@ -348,7 +348,7 @@ export function digestInputs(inputs: any[]) {
         values  : new Array(specs[register.source].values.length).fill(f.one),
         secret  : false,
         invert  : register.inverted,
-        rotate  : staticRegisters.inputs[register.source].rotation
+        rotate  : staticRegisters.inputs[register.source].offset
     }));
 
     // append cyclic register descriptors
@@ -377,7 +377,7 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
                 values  : values,
                 secret  : false,
                 invert  : false,
-                rotate: register.rotation
+                rotate  : register.offset
             });
             inputIdx++;
         }
@@ -391,7 +391,7 @@ export function digestPublicInputs(inputs: any[], shapes: number[][]) {
             values  : new Array(valueCount).fill(f.one),
             secret  : false,
             invert  : register.inverted,
-            rotate  : staticRegisters.inputs[register.source].rotation
+            rotate  : staticRegisters.inputs[register.source].offset
         });
     });
 

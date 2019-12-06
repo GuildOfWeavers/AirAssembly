@@ -208,7 +208,7 @@ An `AirSchema` object contains a semantic representation of AirAssembly source c
 | constraintEvaluator | A `Procedure` object describing [transition constraint evaluator](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constraint-evaluator) expression defined for the computation. |
 | constraints         | An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints (e.g. constraint degree). |
 | maxConstraintDegree | An integer value specifying the highest degree of transition constraints defined for the computation. |
-| exports             | A map of [export declarations](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#Export-declarations), where the key is the name of the export, and the value is an `ExportDeclaration` object.  |
+| exports             | A map of [export declarations](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#Export-declarations), where the key is the name of the export, and the value is an `ExportDeclaration` object. |
 
 Note: definitions for `LiteralValue`, `StaticRegister` and other objects mentioned above can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts) file.
 
@@ -258,7 +258,7 @@ A `Prover` object contains properties and methods needed to help generate a proo
   Generates an execution trace for a computation. The `seed` parameter must be provided only if the seed vector is used in the main export expression of the computation's AirAssembly definition. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
 
 * **evaluateTransitionConstraints**(tracePolys: `Matrix`): `Matrix`</br>
-  Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a  transition constraint evaluated over the composition domain.
+  Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a transition constraint evaluated over the composition domain.
 
 #### Verifier
 A `Verifier` object contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `Verifier` can be used to evaluate transition constraints at a specific point of an evaluation domain. To create a `Verifier`, use `createVerifier()` method of [AirModule](#Air-Module) object.

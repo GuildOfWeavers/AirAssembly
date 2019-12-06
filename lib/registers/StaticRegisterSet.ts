@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { registers } from '@guildofweavers/air-assembly';
+import { StaticRegisterSet as IStaticRegisterSet } from '@guildofweavers/air-assembly';
 import { StaticRegister } from "./StaticRegister";
 import { InputRegister } from "./InputRegister";
 import { CyclicRegister } from "./CyclicRegister";
@@ -10,7 +10,7 @@ import { PrngSequence } from './PrngSequence';
 
 // CLASS DEFINITION
 // ================================================================================================
-export class StaticRegisterSet implements registers.StaticRegisterSet {
+export class StaticRegisterSet implements IStaticRegisterSet {
 
     readonly inputs     : InputRegister[];
     readonly registers  : StaticRegister[];

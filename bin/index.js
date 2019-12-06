@@ -6,8 +6,6 @@ const parser_1 = require("./lib/parser");
 const jsGenerator_1 = require("./lib/jsGenerator");
 const analysis_1 = require("./lib/analysis");
 const errors_1 = require("./lib/errors");
-const expr = require("./lib/expressions");
-const reg = require("./lib/registers");
 const utils_1 = require("./lib/utils");
 // MODULE VARIABLES
 // ================================================================================================
@@ -20,27 +18,25 @@ const DEFAULT_LIMITS = {
 };
 // RE-EXPORTS
 // ================================================================================================
+var expressions_1 = require("./lib/expressions");
+exports.LiteralValue = expressions_1.LiteralValue;
+exports.BinaryOperation = expressions_1.BinaryOperation;
+exports.UnaryOperation = expressions_1.UnaryOperation;
+exports.MakeVector = expressions_1.MakeVector;
+exports.GetVectorElement = expressions_1.GetVectorElement;
+exports.SliceVector = expressions_1.SliceVector;
+exports.MakeMatrix = expressions_1.MakeMatrix;
+exports.LoadExpression = expressions_1.LoadExpression;
+var registers_1 = require("./lib/registers");
+exports.StaticRegister = registers_1.StaticRegister;
+exports.InputRegister = registers_1.InputRegister;
+exports.CyclicRegister = registers_1.CyclicRegister;
+exports.MaskRegister = registers_1.MaskRegister;
+exports.StaticRegisterSet = registers_1.StaticRegisterSet;
 var exports_1 = require("./lib/exports");
 exports.ExportDeclaration = exports_1.ExportDeclaration;
 var errors_2 = require("./lib/errors");
 exports.AssemblyError = errors_2.AssemblyError;
-exports.expressions = {
-    LiteralValue: expr.LiteralValue,
-    BinaryOperation: expr.BinaryOperation,
-    UnaryOperation: expr.UnaryOperation,
-    MakeVector: expr.MakeVector,
-    GetVectorElement: expr.GetVectorElement,
-    SliceVector: expr.SliceVector,
-    MakeMatrix: expr.MakeMatrix,
-    LoadExpression: expr.LoadExpression
-};
-exports.registers = {
-    StaticRegister: reg.StaticRegister,
-    InputRegister: reg.InputRegister,
-    CyclicRegister: reg.CyclicRegister,
-    MaskRegister: reg.MaskRegister,
-    StaticRegisterSet: reg.StaticRegisterSet
-};
 // PUBLIC FUNCTIONS
 // ================================================================================================
 function compile(sourceOrPath, limits) {
@@ -69,12 +65,9 @@ function compile(sourceOrPath, limits) {
     if (parser_1.parser.errors.length > 0) {
         throw new errors_1.AssemblyError(parser_1.parser.errors);
     }
-    // validate limits
-    try {
-        schema.validateLimits({ ...DEFAULT_LIMITS, ...limits });
-    }
-    catch (error) {
-        throw new errors_1.AssemblyError([error]);
+    // if limits are specified, validate the schema against them
+    if (limits !== undefined) {
+        validateLimits(schema, { ...DEFAULT_LIMITS, ...limits });
     }
     return schema;
 }
@@ -82,6 +75,7 @@ exports.compile = compile;
 function instantiate(schema, options = {}) {
     const compositionFactor = utils_1.getCompositionFactor(schema);
     const vOptions = validateModuleOptions(options, compositionFactor);
+    validateLimits(schema, vOptions.limits);
     const module = jsGenerator_1.instantiateModule(schema, vOptions);
     return module;
 }
@@ -108,5 +102,13 @@ function validateModuleOptions(options, compositionFactor) {
         wasmOptions: options.wasmOptions || false,
         extensionFactor: extensionFactor
     };
+}
+function validateLimits(schema, limits) {
+    try {
+        schema.validateLimits(limits);
+    }
+    catch (error) {
+        throw new errors_1.AssemblyError([error]);
+    }
 }
 //# sourceMappingURL=index.js.map

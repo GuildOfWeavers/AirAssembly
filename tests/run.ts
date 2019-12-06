@@ -46,25 +46,25 @@ const inputs = [
 
 const air = instantiate(schema);
 
-const pObject = air.initProof(inputs);
-const trace = pObject.generateExecutionTrace([3n]);
-const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
-const pEvaluations = air.field.evalPolysAtRoots(pPolys, pObject.evaluationDomain);
-const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
+const prover = air.createProver(inputs);
+const trace = prover.generateExecutionTrace([3n]);
+const pPolys = air.field.interpolateRoots(prover.executionDomain, trace);
+const pEvaluations = air.field.evalPolysAtRoots(pPolys, prover.evaluationDomain);
+const cEvaluations = prover.evaluateTransitionConstraints(pPolys);
 
-const qPolys = air.field.interpolateRoots(pObject.compositionDomain, cEvaluations);
-const qEvaluations = air.field.evalPolysAtRoots(qPolys, pObject.evaluationDomain);
+const qPolys = air.field.interpolateRoots(prover.compositionDomain, cEvaluations);
+const qEvaluations = air.field.evalPolysAtRoots(qPolys, prover.evaluationDomain);
 
-const sEvaluations = pObject.secretRegisterTraces[0];
+const sEvaluations = prover.secretRegisterTraces[0];
 
-const vObject = air.initVerification(pObject.inputShapes)
+const verifier = air.createVerifier(prover.inputShapes)
 
-const x = air.field.exp(vObject.rootOfUnity, 2n);
+const x = air.field.exp(verifier.rootOfUnity, 2n);
 const rValues = [pEvaluations.getValue(0, 2)];
 const nValues = [pEvaluations.getValue(0, 10)];
 const hValues = sEvaluations ? [sEvaluations.getValue(2)] : [];
 
-const qValues = vObject.evaluateConstraintsAt(x, rValues, nValues, hValues);
+const qValues = verifier.evaluateConstraintsAt(x, rValues, nValues, hValues);
 
 console.log(qEvaluations.getValue(0, 2) === qValues[0]);
 

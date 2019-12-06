@@ -8,8 +8,6 @@ import { parser } from './lib/parser';
 import { instantiateModule } from './lib/jsGenerator';
 import { analyzeProcedure } from './lib/analysis';
 import { AssemblyError } from './lib/errors';
-import * as expr from './lib/expressions';
-import * as reg from './lib/registers';
 import { getCompositionFactor, isPowerOf2 } from './lib/utils';
 
 // MODULE VARIABLES
@@ -24,27 +22,13 @@ const DEFAULT_LIMITS: StarkLimits = {
 
 // RE-EXPORTS
 // ================================================================================================
+export {
+    LiteralValue, BinaryOperation, UnaryOperation, MakeVector, GetVectorElement, SliceVector, MakeMatrix,
+    LoadExpression
+} from './lib/expressions';
+export { StaticRegister, InputRegister, CyclicRegister, MaskRegister, StaticRegisterSet } from './lib/registers';
 export { ExportDeclaration } from './lib/exports';
 export { AssemblyError } from './lib/errors';
-
-export const expressions = {
-    LiteralValue        : expr.LiteralValue,
-    BinaryOperation     : expr.BinaryOperation,
-    UnaryOperation      : expr.UnaryOperation,
-    MakeVector          : expr.MakeVector,
-    GetVectorElement    : expr.GetVectorElement,
-    SliceVector         : expr.SliceVector,
-    MakeMatrix          : expr.MakeMatrix,
-    LoadExpression      : expr.LoadExpression
-};
-
-export const registers = {
-    StaticRegister      : reg.StaticRegister,
-    InputRegister       : reg.InputRegister,
-    CyclicRegister      : reg.CyclicRegister,
-    MaskRegister        : reg.MaskRegister,
-    StaticRegisterSet   : reg.StaticRegisterSet
-};
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
@@ -79,12 +63,9 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
         throw new AssemblyError(parser.errors);
     }
 
-    // validate limits
-    try {
-        schema.validateLimits({ ...DEFAULT_LIMITS, ...limits });
-    }
-    catch (error) {
-        throw new AssemblyError([error]);
+    // if limits are specified, validate the schema against them
+    if (limits !== undefined) {
+        validateLimits(schema, { ...DEFAULT_LIMITS, ...limits });
     }
 
     return schema;
@@ -93,6 +74,7 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
 export function instantiate(schema: AirSchema, options: Partial<AirModuleOptions> = {}): AirModule {
     const compositionFactor = getCompositionFactor(schema);
     const vOptions = validateModuleOptions(options, compositionFactor);
+    validateLimits(schema, vOptions.limits as StarkLimits);
     const module = instantiateModule(schema, vOptions);
     return module;
 }
@@ -121,4 +103,13 @@ function validateModuleOptions(options: Partial<AirModuleOptions>, compositionFa
         wasmOptions     : options.wasmOptions || false,
         extensionFactor : extensionFactor
     };
+}
+
+function validateLimits(schema: AirSchema, limits: StarkLimits): void {
+    try {
+        schema.validateLimits(limits);
+    }
+    catch (error) {
+        throw new AssemblyError([error]);
+    }
 }

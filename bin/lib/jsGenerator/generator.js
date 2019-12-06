@@ -42,8 +42,8 @@ function instantiateModule(schema, options) {
     code += `constraints: constraints,\n`;
     code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
-    code += `initProof,\n`;
-    code += `initVerification\n`;
+    code += `createProver,\n`;
+    code += `createVerifier\n`;
     code += '};';
     // create and execute module builder function
     const field = buildField(schema, options.wasmOptions);
@@ -96,7 +96,7 @@ function buildStaticRegisters(schema) {
                 parent: register.parent,
                 secret: register.secret,
                 binary: register.binary,
-                rotation: register.rotation,
+                offset: register.offset,
                 steps: register.steps
             });
         }

@@ -90,11 +90,11 @@ const stats = analyze(schema);
 const air = instantiate(schema);
 
 // generate trace table
-const pObject = air.initProof(inputs);
-const trace = pObject.generateExecutionTrace([inputs[0][0], inputs[1][0], 0n]);
+const prover = air.createProver(inputs);
+const trace = prover.generateExecutionTrace([inputs[0][0], inputs[1][0], 0n]);
 
 // generate constraint evaluation table
-const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
-const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
+const pPolys = air.field.interpolateRoots(prover.executionDomain, trace);
+const cEvaluations = prover.evaluateTransitionConstraints(pPolys);
 
 console.log('done!');

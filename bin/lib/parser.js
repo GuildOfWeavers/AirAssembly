@@ -121,7 +121,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 this.CONSUME3(lexer_1.RParen);
                 return steps;
             });
-            const rotation = this.OPTION3(() => {
+            const offset = this.OPTION3(() => {
                 this.CONSUME4(lexer_1.LParen);
                 this.CONSUME(lexer_1.Shift);
                 const slots = this.SUBRULE(this.signedIntegerLiteral);
@@ -129,7 +129,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 return this.ACTION(() => slots);
             });
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => registers.addInput(scope, binary, typeOrParent, rotation, steps));
+            this.ACTION(() => registers.addInput(scope, binary, typeOrParent, offset, steps));
         });
         this.cyclicRegister = this.RULE('cyclicRegister', (registers) => {
             this.CONSUME(lexer_1.LParen);
