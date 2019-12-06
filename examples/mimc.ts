@@ -31,14 +31,23 @@ const source = `
 
 // instantiate AirModule object
 const schema = compile(Buffer.from(source));
-const air = instantiate(schema);
+const air = instantiate(schema, { extensionFactor: 16 });
 
 // generate trace table
-const pObject = air.initProof();
-const trace = pObject.generateExecutionTrace([3n]);
+const prover = air.initProof();
+const trace = prover.generateExecutionTrace([3n]);
 
 // generate constraint evaluation table
-const pPolys = air.field.interpolateRoots(pObject.executionDomain, trace);
-const cEvaluations = pObject.evaluateTransitionConstraints(pPolys);
+const pPolys = air.field.interpolateRoots(prover.executionDomain, trace);
+const cEvaluations = prover.evaluateTransitionConstraints(pPolys);
+
+const verifier = air.initVerification(prover.inputShapes)
+
+const x = air.field.exp(verifier.rootOfUnity, 16n);
+const rValues = [trace.getValue(0, 1)];
+const nValues = [trace.getValue(0, 2)];
+
+const qValues = verifier.evaluateConstraintsAt(x, rValues, nValues, []);
+console.log(qValues);
 
 console.log('done!');

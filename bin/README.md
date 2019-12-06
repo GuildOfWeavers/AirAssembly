@@ -143,10 +143,8 @@ const tracePolys = air.field.interpolateRoots(prover.executionDomain, trace);
 const constraintEvaluations = prover.evaluateTransitionConstraints(tracePolys);
 ```
 In the above:
-* AirModule's `field` object is used to interpolate the execution trace. The [interpolateRoots()](https://github.com/GuildOfWeavers/galois#polynomial-evaluation-and-interpolation) method takes a vector of x values as the first parameter, and a matrix of y values as the second parameter (the matrix is expected to have a distinct set of values in each row). The output is a matrix where each row contains an interpolated polynomial.
-* `evaluateTransitionConstraints()` method outputs a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a transition constraint evaluated over the composition domain.
-
-**Notice:** The constraints are evaluated over the composition domain  (not evaluation domain). The evaluations can be extended to the full evaluation domain by interpolating them over the composition domain, and then evaluating the resulting polynomials over the evaluation domain. But in practice, to improve efficiency, the evaluations are first merged into a single vector via random linear combination, and then this single vector is extended to the full evaluation domain.
+* AirModule's `field` object is used to interpolate the execution trace. The [interpolateRoots()](https://github.com/GuildOfWeavers/galois#polynomial-evaluation-and-interpolation) method takes a vector of `x` values as the first parameter, and a matrix of `y` values as the second parameter (the matrix is expected to have a distinct set of `y` values in each row). The output is a matrix where each row contains an interpolated polynomial.
+* `evaluateTransitionConstraints()` method returns a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a transition constraint evaluated over the composition domain.
 
 For example, evaluating constraints for AirAssembly code from the [usage](#Usage) section, will produce a matrix with a single row containing the following values:
 ```
@@ -170,16 +168,31 @@ For example, evaluating constraints for AirAssembly code from the [usage](#Usage
 ]
 ```
 
-#### Evaluating transition constraints as a verifier
-When verifying a STARK proof, transition constraints need to be evaluated at a small subset of points. This can be done by invoking `Verifier.evaluateConstraintsAt()` method.
+**Note:** The constraints are evaluated over the composition domain (not evaluation domain). The evaluations can be extended to the full evaluation domain by interpolating them over the composition domain, and then evaluating the resulting polynomials over the evaluation domain. But in practice, to improve performance, the evaluations are first merged into a single vector via random linear combination, and then this single vector is extended to the full evaluation domain.
 
+#### Evaluating transition constraints as a verifier
+When verifying a STARK proof, transition constraints need to be evaluated at a small subset of points. This can be done by invoking `Verifier.evaluateConstraintsAt()` method which evaluates constraints at a single point of evaluation domain. To evaluate constraints at a single point, the following steps should be executed:
+
+1. Compile AirAssembly source code into [AirSchema](#Air-Schema) using the top-level `compile()` function.
+2. Pass the resulting `AirSchema` to the top-level `instantiate()` function to create an [AirModule](#Air-Module).
+3. Create a [Verifier](#Verifier) object by invoking `AirModule.createVerifier()` method. If the computation contains input registers, input shapes for these registers must be passed to the `createVerifier()` method. If any of the input registers are public, input values for these registers must also be passed to the method.
+4. Evaluate constraints by invoking `Verifier.evaluateConstraintsAt()` method and passing to it an x-coordinate of the desired point from the evaluation domain, as well as corresponding values of register traces.
+
+The code block bellow illustrates these steps:
 ```TypeScript
 const schema = compile(Buffer.from(source));
 const air = instantiate(schema, { extensionFactor: 16 });
 const verifier = air.createVerifier();
-const rValues = [3n], nValues = [1539309651n];
+const x = air.field.exp(verifier.rootOfUnity, 16n);
+const rValues = [1539309651n], nValues = [3863242857n];
 const evaluations = verifier.evaluateConstraintsAt(x, rValues, nValues, []);
 ```
+In the above:
+* `source` is a string variable containing AirAssembly source code similar to the one shown in the [usage](#Usage) section.
+* The `AirModule` is instantiated using default limits but setting extension factor to `16`.
+* No input shapes or inputs are passed to the `createVerifier()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
+* `x` is set to the 17th value in of the execution domain, while `rValues` and `nValues` contain register traces for 2nd and 3rd steps of the computation. This is because when the extension factor is `16`, the 2nd value of the execution trace aligns with the 17th value of the evaluation domain.
+* After the code is executed, the `evaluations` variable will be an array with a single value `0`. This is because applying transition function to value `1539309651` (current state of the execution trace) results in `3863242857`, which is the next state of the execution trace.
 
 ### Air Schema
 An `AirSchema` object contains a semantic representation of AirAssembly source code. This representation makes it easy to analyze the source code, and serves as the basis for generating [AirModules](#Air-module). An `AirSchema` object can be created by compiling AirAssembly code with the top-level `compile()` function.
