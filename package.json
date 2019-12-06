@@ -12,7 +12,8 @@
   "keywords": [
     "stark",
     "zero-knowledge",
-    "cryptography"
+    "cryptography",
+    "arithmetization"
   ],
   "repository": {
     "type": "git",
@@ -34,7 +35,7 @@
     "rimraf": "3.0.x"
   },
   "dependencies": {
-    "@guildofweavers/galois": "^0.4.21",
+    "@guildofweavers/galois": "0.4.x",
     "chevrotain": "6.5.x"
   }
 }
