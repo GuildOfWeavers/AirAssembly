@@ -166,6 +166,7 @@ function createProver(inputs = []) {
         rootOfUnity: rootOfUnity,
         traceLength: traceLength,
         extensionFactor: extensionFactor,
+        constraints: constraints,
         inputShapes: inputShapes,
         executionDomain: executionDomain,
         evaluationDomain: evaluationDomain,
@@ -249,6 +250,7 @@ function createVerifier(inputShapes = [], publicInputs = []) {
         rootOfUnity: rootOfUnity,
         traceLength: traceLength,
         extensionFactor: extensionFactor,
+        constraints: constraints,
         inputShapes: inputShapes,
         evaluateConstraintsAt: evaluateConstraintsAt
     };

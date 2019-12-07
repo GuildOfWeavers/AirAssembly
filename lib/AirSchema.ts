@@ -70,6 +70,16 @@ export class AirSchema implements IAirSchema {
         return this._staticRegisters;
     }
 
+    get secretInputCount(): number {
+        let result = 0;
+        for (let register of this.staticRegisters) {
+            if (register instanceof InputRegister && register.secret) {
+                result++;
+            }
+        }
+        return result;
+    }
+
     get maxInputCycle(): number {
         let result = 0;
         for (let register of this.staticRegisters) {

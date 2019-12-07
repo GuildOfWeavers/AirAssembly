@@ -86,13 +86,16 @@ declare module '@guildofweavers/air-assembly' {
         /** An array of StaticRegister objects describing static registers defined for the computation. */
         readonly staticRegisters: ReadonlyArray<StaticRegister>;
 
+        /** Number of secret input registers defined for the computation */
+        readonly secretInputCount: number;
+
         /** A Procedure object describing transition function expression defined for the computation. */
         readonly transitionFunction: Procedure;
 
         /** A Procedure object describing transition constraint evaluator expression defined for the computation. */
         readonly constraintEvaluator: Procedure;
 
-        /** An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints. */
+        /** An array of constraint descriptors with metadata for the defined transition constraints */
         readonly constraints: ConstraintDescriptor[];
 
         /** An integer value specifying the highest degree of transition constraints defined for the computation. */
@@ -309,10 +312,13 @@ declare module '@guildofweavers/air-assembly' {
         /** Number of static registers in the execution trace. */
         readonly staticRegisterCount: number;
 
-        /** An array of InputDescriptor objects describing inputs required by the computation. */
+        /** An array of input descriptors with metadata for inputs required by the computation. */
         readonly inputDescriptors: InputDescriptor[];
 
-        /** An array of ConstraintDescriptor objects containing metadata for each of the defined transition constraints */
+        /** Number of secret input registers defined for the computation */
+        readonly secretInputCount: number;
+
+        /** An array of constraint descriptors with metadata for the defined transition constraints */
         readonly constraints: ConstraintDescriptor[];
 
         /** The highest degree of transition constraints defined for the computation. */
@@ -393,6 +399,9 @@ declare module '@guildofweavers/air-assembly' {
 
         /** Extension factor of the execution trace. */
         readonly extensionFactor: number;
+
+        /** An array of constraint descriptors with metadata for the defined transition constraints */
+        readonly constraints: ConstraintDescriptor[];
 
         /** Shapes of all input registers for the instance of the computation. */
         readonly inputShapes: InputShape[];

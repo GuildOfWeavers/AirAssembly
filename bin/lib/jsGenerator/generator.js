@@ -39,6 +39,7 @@ function instantiateModule(schema, options) {
     code += `traceRegisterCount: traceRegisterCount,\n`;
     code += `staticRegisterCount: ${schema.staticRegisterCount},\n`;
     code += `inputDescriptors: staticRegisters.inputs,\n`;
+    code += `secretInputCount: ${schema.secretInputCount},\n`;
     code += `constraints: constraints,\n`;
     code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;

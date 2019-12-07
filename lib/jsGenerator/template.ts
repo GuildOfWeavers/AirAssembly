@@ -218,17 +218,18 @@ export function createProver(inputs: any[] = []): Prover {
     // PROOF OBJECT
     // --------------------------------------------------------------------------------------------
     return {
-        field                       : f,
-        rootOfUnity                 : rootOfUnity,
-        traceLength                 : traceLength,
-        extensionFactor             : extensionFactor,
-        inputShapes                 : inputShapes,
-        executionDomain             : executionDomain,
-        evaluationDomain            : evaluationDomain,
-        compositionDomain           : compositionDomain,
-        generateExecutionTrace      : generateExecutionTrace,
-        evaluateTransitionConstraints    : evaluateTransitionConstraints,
-        secretRegisterTraces        : secretRegisterTraces
+        field                           : f,
+        rootOfUnity                     : rootOfUnity,
+        traceLength                     : traceLength,
+        extensionFactor                 : extensionFactor,
+        constraints                     : constraints,
+        inputShapes                     : inputShapes,
+        executionDomain                 : executionDomain,
+        evaluationDomain                : evaluationDomain,
+        compositionDomain               : compositionDomain,
+        generateExecutionTrace          : generateExecutionTrace,
+        evaluateTransitionConstraints   : evaluateTransitionConstraints,
+        secretRegisterTraces            : secretRegisterTraces
     };
 }
 
@@ -315,6 +316,7 @@ export function createVerifier(inputShapes: number[][] = [], publicInputs: any[]
         rootOfUnity                 : rootOfUnity,
         traceLength                 : traceLength,
         extensionFactor             : extensionFactor,
+        constraints                 : constraints,
         inputShapes                 : inputShapes,
         evaluateConstraintsAt       : evaluateConstraintsAt
     };

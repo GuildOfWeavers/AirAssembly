@@ -48,6 +48,15 @@ class AirSchema {
     get staticRegisters() {
         return this._staticRegisters;
     }
+    get secretInputCount() {
+        let result = 0;
+        for (let register of this.staticRegisters) {
+            if (register instanceof registers_1.InputRegister && register.secret) {
+                result++;
+            }
+        }
+        return result;
+    }
     get maxInputCycle() {
         let result = 0;
         for (let register of this.staticRegisters) {

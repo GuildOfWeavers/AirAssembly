@@ -204,6 +204,7 @@ An `AirSchema` object contains a semantic representation of AirAssembly source c
 | field               | A [finite field](https://github.com/GuildOfWeavers/galois#api) object instantiated for the [field](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#field-declaration) specified for the computation. |
 | constants           | An array of `LiteralValue` expressions describing [constants](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constant-declarations) defined for the computation. |
 | staticRegisters     | An array of `StaticRegister` objects describing [static registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#static-registers) defined for the computation. |
+| secretInputCount    | An integer value specifying number of secret [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers) defined for the computation. |
 | transitionFunction  | A `Procedure` object describing [transition function](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#transition-function) expression defined for the computation. |
 | constraintEvaluator | A `Procedure` object describing [transition constraint evaluator](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constraint-evaluator) expression defined for the computation. |
 | constraints         | An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints (e.g. constraint degree). |
@@ -223,6 +224,7 @@ An `AirModule` object contains JavaScript code needed to create [Prover](#Prover
 | traceRegisterCount  | Number of state registers in the execution trace. |
 | staticRegisterCount | Number of static registers in the execution trace. |
 | inputDescriptors    | An array of [input descriptor](#Input-descriptor) objects describing inputs required by the computation. |
+| secretInputCount    | An integer value specifying number of secret [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers) defined for the computation. |
 | constraints         | An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints (e.g. constraint degree). |
 | maxConstraintDegree | An integer value specifying the highest degree of transition constraints defined for the computation. |
 | extensionFactor     | An integer value specifying how much the execution trace is to be "stretched." |
@@ -246,6 +248,7 @@ A `Prover` object contains properties and methods needed to help generate a proo
 | rootOfUnit           | Primitive root of unity of the evaluation domain for the instance of the computation. |
 | traceLength          | Length of the execution trace for the instance of the computation. |
 | extensionFactor      | Extension factor of the execution trace. |
+| constraints          | An array of constraint descriptors with metadata for the defined transition constraints. |
 | inputShapes          | Shapes of all input registers for the instance of the computation. |
 | executionDomain      | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the execution trace. |.
 | evaluationDomain     | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the low-degree extended execution trace. The length of the evaluation domain is equal to `traceLength * extensionFactor`. |
@@ -271,6 +274,7 @@ A `Verifier` object contains properties and methods needed to help verify a proo
 | rootOfUnit           | Primitive root of unity of the evaluation domain for the instance of the computation. |
 | traceLength          | Length of the execution trace for the instance of the computation. |
 | extensionFactor      | Extension factor of the execution trace. |
+| constraints          | An array of constraint descriptors with metadata for the defined transition constraints. |
 | inputShapes          | Shapes of all input registers for the instance of the computation. |
 
 `Verifier` exposes the following methods:
