@@ -1,4 +1,4 @@
-import { compile, instantiate, analyze } from '../index';
+import { compile, instantiate, analyze, prng } from '../index';
 
 const schema = compile(Buffer.from(`
 (module
@@ -67,5 +67,7 @@ const hValues = sEvaluations ? [sEvaluations.getValue(2)] : [];
 const qValues = verifier.evaluateConstraintsAt(x, rValues, nValues, hValues);
 
 console.log(qEvaluations.getValue(0, 2) === qValues[0]);
+
+const ptest = prng.sha256(Buffer.from('4d694d43', 'hex'), 32, air.field);
 
 console.log('done!');

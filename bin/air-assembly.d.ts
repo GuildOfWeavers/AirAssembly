@@ -448,6 +448,13 @@ declare module '@guildofweavers/air-assembly' {
         evaluateTransitionConstraints(tracePolys: Matrix): Matrix;
     }
 
+    // PRNG
+    // --------------------------------------------------------------------------------------------
+    export type PrngFunction = (seed: Buffer, count: number, field: FiniteField) => bigint[];
+    export const prng: {
+        sha256: PrngFunction;
+    };
+
     // ERRORS
     // --------------------------------------------------------------------------------------------
     export class AssemblyError {

@@ -37,6 +37,9 @@ var exports_1 = require("./lib/exports");
 exports.ExportDeclaration = exports_1.ExportDeclaration;
 var errors_2 = require("./lib/errors");
 exports.AssemblyError = errors_2.AssemblyError;
+exports.prng = {
+    sha256: utils_1.sha256prng
+};
 // PUBLIC FUNCTIONS
 // ================================================================================================
 function compile(sourceOrPath, limits) {

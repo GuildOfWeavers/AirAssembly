@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// IMPORTS
-// ================================================================================================
-const crypto = require("crypto");
+const utils_1 = require("../utils");
 // CLASS DEFINITION
 // ================================================================================================
 class PrngSequence {
@@ -19,7 +17,7 @@ class PrngSequence {
     // --------------------------------------------------------------------------------------------
     getValues(field) {
         if (!this._values) {
-            this._values = generateValues(field, this.method, this.seed, this.length);
+            this._values = utils_1.sha256prng(this.seed, this.length, field);
         }
         return this._values;
     }
@@ -28,21 +26,4 @@ class PrngSequence {
     }
 }
 exports.PrngSequence = PrngSequence;
-// HELPER FUNCTIONS
-// ================================================================================================
-function generateValues(field, method, seed, count) {
-    const values = [];
-    const vSeed = Buffer.concat([Buffer.from([0, 0]), seed]);
-    if (method === 'sha256') {
-        for (let i = 0; i < count; i++) {
-            vSeed.writeUInt16BE(i + 1, 0);
-            let value = crypto.createHash('sha256').update(vSeed).digest();
-            values[i] = field.add(BigInt(`0x${value.toString('hex')}`), 0n);
-        }
-    }
-    else {
-        throw new Error(`'${method}' is not a valid prng method`);
-    }
-    return values;
-}
 //# sourceMappingURL=PrngSequence.js.map

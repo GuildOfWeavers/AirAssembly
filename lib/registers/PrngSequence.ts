@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
-import * as crypto from 'crypto';
 import { FiniteField } from '@guildofweavers/galois';
+import { sha256prng } from '../utils';
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -26,7 +26,7 @@ export class PrngSequence {
     // --------------------------------------------------------------------------------------------
     getValues(field: FiniteField): bigint[] {
         if (!this._values) {
-            this._values = generateValues(field, this.method, this.seed, this.length);
+            this._values = sha256prng(this.seed, this.length, field);
         }
         return this._values;
     }
@@ -34,23 +34,4 @@ export class PrngSequence {
     toString(): string {
         return `(prng ${this.method} 0x${this.seed.toString('hex')} ${this.length})`;
     }
-}
-
-// HELPER FUNCTIONS
-// ================================================================================================
-function generateValues(field: FiniteField, method: string, seed: Buffer, count: number): bigint[] {
-    const values: bigint[] = [];
-    const vSeed = Buffer.concat([Buffer.from([0, 0]), seed]);
-    if (method === 'sha256') {
-        for (let i = 0; i < count; i++) {
-            vSeed.writeUInt16BE(i + 1, 0);
-            let value = crypto.createHash('sha256').update(vSeed).digest();
-            values[i] = field.add(BigInt(`0x${value.toString('hex')}`), 0n);
-        }
-    }
-    else {
-        throw new Error(`'${method}' is not a valid prng method`);
-    }
-
-    return values;
 }

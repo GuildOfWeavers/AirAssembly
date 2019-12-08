@@ -8,7 +8,7 @@ import { parser } from './lib/parser';
 import { instantiateModule } from './lib/jsGenerator';
 import { analyzeProcedure } from './lib/analysis';
 import { AssemblyError } from './lib/errors';
-import { getCompositionFactor, isPowerOf2 } from './lib/utils';
+import { getCompositionFactor, isPowerOf2, sha256prng } from './lib/utils';
 
 // MODULE VARIABLES
 // ================================================================================================
@@ -29,6 +29,10 @@ export {
 export { StaticRegister, InputRegister, CyclicRegister, MaskRegister, StaticRegisterSet } from './lib/registers';
 export { ExportDeclaration } from './lib/exports';
 export { AssemblyError } from './lib/errors';
+
+export const prng = {
+    sha256  : sha256prng
+};
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
