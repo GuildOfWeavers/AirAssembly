@@ -16,7 +16,7 @@ const applyTransition = function () { return []; };
 const evaluateConstraints = function () { return []; };
 // PROVER GENERATOR
 // ================================================================================================
-function createProver(inputs = []) {
+function initProvingContext(inputs = []) {
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
     // build evaluation domain
@@ -176,10 +176,10 @@ function createProver(inputs = []) {
         secretRegisterTraces: secretRegisterTraces
     };
 }
-exports.createProver = createProver;
+exports.initProvingContext = initProvingContext;
 // VERIFIER GENERATOR
 // ================================================================================================
-function createVerifier(inputShapes = [], publicInputs = []) {
+function initVerificationContext(inputShapes = [], publicInputs = []) {
     const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
     const evaluationDomainSize = traceLength * extensionFactor;
     const rootOfUnity = f.getRootOfUnity(evaluationDomainSize);
@@ -255,7 +255,7 @@ function createVerifier(inputShapes = [], publicInputs = []) {
         evaluateConstraintsAt: evaluateConstraintsAt
     };
 }
-exports.createVerifier = createVerifier;
+exports.initVerificationContext = initVerificationContext;
 // INPUT PROCESSING
 // ================================================================================================
 function digestInputs(inputs) {

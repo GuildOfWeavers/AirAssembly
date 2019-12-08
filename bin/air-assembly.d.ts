@@ -333,7 +333,7 @@ declare module '@guildofweavers/air-assembly' {
          * computation contains input registers. In such a case, the shape of input objects must
          * be in line with the shapes specified by the computation's input descriptors.
          */
-        createProver(inputs?: any[]): Prover;
+        initProvingContext(inputs?: any[]): ProvingContext;
 
         /**
          * Instantiates a Verifier object for a specific instance of the computation.
@@ -342,7 +342,7 @@ declare module '@guildofweavers/air-assembly' {
          * @param publicInputs Values consumed by input registers. Must be provided only if the
          * computation contains public input registers.
          */
-        createVerifier(inputShapes?: InputShape[], publicInputs?: any[]): Verifier;
+        initVerificationContext(inputShapes?: InputShape[], publicInputs?: any[]): VerificationContext;
     }
 
     export interface InputDescriptor {
@@ -386,7 +386,7 @@ declare module '@guildofweavers/air-assembly' {
 
     // CONTEXTS
     // --------------------------------------------------------------------------------------------
-    export interface AirInstance {
+    export interface AirContext {
 
         /** Reference to the finite field object of the AirModule which describes the computation. */
         readonly field: FiniteField;
@@ -407,7 +407,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly inputShapes: InputShape[];
     }
 
-    export interface Verifier extends AirInstance {
+    export interface VerificationContext extends AirContext {
         /**
          * Evaluates transition constraints at the specified point.
          * @param x Point in the evaluation domain at which to evaluate constraints
@@ -418,7 +418,7 @@ declare module '@guildofweavers/air-assembly' {
         evaluateConstraintsAt(x: bigint, rValues: bigint[], nValues: bigint[], sValues: bigint[]): bigint[];
     }
 
-    export interface Prover extends AirInstance {
+    export interface ProvingContext extends AirContext {
 
         /** Domain of the execution trace */
         readonly executionDomain: Vector;

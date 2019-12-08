@@ -50,12 +50,12 @@ const schema = compile(Buffer.from(source));
 const air = instantiate(schema);
 
 // generate trace table
-const prover = air.createProver();
-const trace = prover.generateExecutionTrace([3n]);
+const context = air.initProvingContext();
+const trace = context.generateExecutionTrace([3n]);
 
 // generate constraint evaluation table
-const tracePolys = air.field.interpolateRoots(prover.executionDomain, trace);
-const constraintEvaluations = prover.evaluateTransitionConstraints(tracePolys);
+const tracePolys = air.field.interpolateRoots(context.executionDomain, trace);
+const constraintEvaluations = context.evaluateTransitionConstraints(tracePolys);
 ```
 
 ## API
@@ -99,21 +99,21 @@ To generate an execution trace for a computation defined by AirAssembly source c
 
 1. Compile AirAssembly source code into [AirSchema](#Air-Schema) using the top-level `compile()` function.
 2. Pass the resulting `AirSchema` to the top-level `instantiate()` function to create an [AirModule](#Air-Module).
-3. Create a [Prover](#Prover) object by invoking `AirModule.createProver()` method. If the computation contains input registers, then input values for these registers must be passed to the `createProver()` method. This instantiates the `prover` for a specific set of inputs.
-4. Generate the execution trace by invoking `Prover.generateExecutionTrace()` method. If the computation's [main export](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#main-export) uses a seed vector to initialize the execution trace, then an array with seed values must be passed to the `generateExecutionTrace()` method. If the computation does not define a main export, an error will be thrown.
+3. Create a [ProvingContext](#Proving-context) by invoking `AirModule.initProvingContext()` method. If the computation contains input registers, then input values for these registers must be passed to the `initProvingContext()` method. This instantiates the `ProvingContext` for a specific set of inputs.
+4. Generate the execution trace by invoking `ProvingContext.generateExecutionTrace()` method. If the computation's [main export](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#main-export) uses a seed vector to initialize the execution trace, then an array with seed values must be passed to the `generateExecutionTrace()` method. If the computation does not define a main export, an error will be thrown.
 
 The code block bellow illustrates these steps:
 
 ```TypeScript
 const schema = compile(Buffer.from(source));
 const air = instantiate(schema, { extensionFactor: 16 });
-const prover = air.createProver();
-const trace = prover.generateExecutionTrace([3n]);
+const context = air.initProvingContext();
+const trace = context.generateExecutionTrace([3n]);
 ```
 In the above:
 * `source` is a string variable containing AirAssembly source code similar to the one shown in the [usage](#Usage) section.
 * The `AirModule` is instantiated using default limits but setting extension factor to `16`.
-* No inputs are passed to the `createProver()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
+* No inputs are passed to the `initProvingContext()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
 * Execution trace is generated using value `3` as the seed for the single register column.
 * After the code is executed, the `trace` variable will be a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) with 1 row and 32 columns (corresponding to 1 register and 32 steps).
 
@@ -128,19 +128,19 @@ The execution trace for the single register will look like so:
 ```
 
 ### Evaluating transition constraints
-Transition constraints described in AirAssembly source code can be evaluated using either a [Prover](#Prover) or a [Verifier](#Verifier). Both methods are described below.
+Transition constraints described in AirAssembly source code can be evaluated using either as a prover or as a verifier. Both methods are described below.
 
 #### Evaluating transition constraints as a prover
-When generating a STARK proof, transition constraints need to be evaluated at all points of the evaluation domain. This can be done efficiently by invoking `Prover.evaluateTransitionConstraints()` method. To evaluate the constraints, the following steps should be executed:
+When generating a STARK proof, transition constraints need to be evaluated at all points of the evaluation domain. This can be done efficiently by invoking `ProvingContext.evaluateTransitionConstraints()` method. To evaluate the constraints, the following steps should be executed:
 
-1. Create a `prover` object and generate an execution `trace` as described in the [previous section](#Generating-execution-trace).
+1. Create a proving context and generate an execution trace as described in the [previous section](#Generating-execution-trace).
 2. Generate a set of trace polynomials by interpolating execution trace columns over the execution domain.
-3. Evaluate the constraints by invoking `Prover.evaluateTransitionConstraints()` method and passing trace polynomials to it.
+3. Evaluate the constraints by invoking `ProvingContext.evaluateTransitionConstraints()` method and passing trace polynomials to it.
 
 The code block bellow illustrates steps 2 and 3:
 ```TypeScript
-const tracePolys = air.field.interpolateRoots(prover.executionDomain, trace);
-const constraintEvaluations = prover.evaluateTransitionConstraints(tracePolys);
+const tracePolys = air.field.interpolateRoots(context.executionDomain, trace);
+const constraintEvaluations = context.evaluateTransitionConstraints(tracePolys);
 ```
 In the above:
 * AirModule's `field` object is used to interpolate the execution trace. The [interpolateRoots()](https://github.com/GuildOfWeavers/galois#polynomial-evaluation-and-interpolation) method takes a vector of `x` values as the first parameter, and a matrix of `y` values as the second parameter (the matrix is expected to have a distinct set of `y` values in each row). The output is a matrix where each row contains an interpolated polynomial.
@@ -171,26 +171,26 @@ For example, evaluating constraints for AirAssembly code from the [usage](#Usage
 **Note:** The constraints are evaluated over the composition domain (not evaluation domain). The evaluations can be extended to the full evaluation domain by interpolating them over the composition domain, and then evaluating the resulting polynomials over the evaluation domain. But in practice, to improve performance, the evaluations are first merged into a single vector via random linear combination, and then this single vector is extended to the full evaluation domain.
 
 #### Evaluating transition constraints as a verifier
-When verifying a STARK proof, transition constraints need to be evaluated at a small subset of points. This can be done by invoking `Verifier.evaluateConstraintsAt()` method which evaluates constraints at a single point of evaluation domain. To evaluate constraints at a single point, the following steps should be executed:
+When verifying a STARK proof, transition constraints need to be evaluated at a small subset of points. This can be done by invoking `VerificationContext.evaluateConstraintsAt()` method which evaluates constraints at a single point of evaluation domain. To evaluate constraints at a single point, the following steps should be executed:
 
 1. Compile AirAssembly source code into [AirSchema](#Air-Schema) using the top-level `compile()` function.
 2. Pass the resulting `AirSchema` to the top-level `instantiate()` function to create an [AirModule](#Air-Module).
-3. Create a [Verifier](#Verifier) object by invoking `AirModule.createVerifier()` method. If the computation contains input registers, input shapes for these registers must be passed to the `createVerifier()` method. If any of the input registers are public, input values for these registers must also be passed to the method.
-4. Evaluate constraints by invoking `Verifier.evaluateConstraintsAt()` method and passing to it an x-coordinate of the desired point from the evaluation domain, as well as corresponding values of register traces.
+3. Create a [VerificationContext](#Verification-context) by invoking `AirModule.initVerificationContext()` method. If the computation contains input registers, input shapes for these registers must be passed to the `initVerificationContext()` method. If any of the input registers are public, input values for these registers must also be passed to the method.
+4. Evaluate constraints by invoking `VerificationContext.evaluateConstraintsAt()` method and passing to it an x-coordinate of the desired point from the evaluation domain, as well as corresponding values of register traces.
 
 The code block bellow illustrates these steps:
 ```TypeScript
 const schema = compile(Buffer.from(source));
 const air = instantiate(schema, { extensionFactor: 16 });
-const verifier = air.createVerifier();
-const x = air.field.exp(verifier.rootOfUnity, 16n);
+const context = air.initVerificationContext();
+const x = air.field.exp(context.rootOfUnity, 16n);
 const rValues = [1539309651n], nValues = [3863242857n];
-const evaluations = verifier.evaluateConstraintsAt(x, rValues, nValues, []);
+const evaluations = context.evaluateConstraintsAt(x, rValues, nValues, []);
 ```
 In the above:
 * `source` is a string variable containing AirAssembly source code similar to the one shown in the [usage](#Usage) section.
 * The `AirModule` is instantiated using default limits but setting extension factor to `16`.
-* No input shapes or inputs are passed to the `createVerifier()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
+* No input shapes or inputs are passed to the `initVerificationContext()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
 * `x` is set to the 17th value in of the execution domain, while `rValues` and `nValues` contain register traces for 2nd and 3rd steps of the computation. This is because when the extension factor is `16`, the 2nd value of the execution trace aligns with the 17th value of the evaluation domain.
 * After the code is executed, the `evaluations` variable will be an array with a single value `0`. This is because applying transition function to value `1539309651` (current state of the execution trace) results in `3863242857`, which is the next state of the execution trace.
 
@@ -214,7 +214,7 @@ An `AirSchema` object contains a semantic representation of AirAssembly source c
 Note: definitions for `LiteralValue`, `StaticRegister` and other objects mentioned above can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts) file.
 
 ### Air Module
-An `AirModule` object contains JavaScript code needed to create [Prover](#Prover) and [Verifier](#Verifier) objects. These objects can then be used to generate execution trace and evaluate transition constraints for a computation. An `AirModule` can be instantiated from an `AirSchema` by using the top-level `instantiate()` function.
+An `AirModule` object contains JavaScript code needed to create [ProvingContext](#Proving-context) and [VerificationContext](#Verification-context) objects. These objects can then be used to generate execution trace and evaluate transition constraints for a computation. An `AirModule` can be instantiated from an `AirSchema` by using the top-level `instantiate()` function.
 
 `AirModule` has the following properties:
 
@@ -231,16 +231,16 @@ An `AirModule` object contains JavaScript code needed to create [Prover](#Prover
 
 `AirModule` exposes the following methods:
 
-* **createProver**(inputs?: `any[]`): `Prover`</br>
-  Instantiates a [Prover](#Prover) object for a specific instance of the computation. This `prover` can then be used to generate execution trace table and constraint evaluation table for the computation. The `inputs` parameter must be provided only if the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers). In such a case, the shape of input objects must be in line with the shapes specified by the computation's input descriptors.
+* **initProvingContext**(inputs?: `any[]`): `ProvingContext`</br>
+  Instantiates a [ProvingContext](#Proving-context) object for a specific instance of the computation. This context can then be used to generate execution trace table and constraint evaluation table for the computation. The `inputs` parameter must be provided only if the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers). In such a case, the shape of input objects must be in line with the shapes specified by the computation's input descriptors.
 
-* **createVerifier**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `Verifier`</br>
-  Instantiates a [Verifier](#Verifier) object for a specific instance of the computation. This `verifier` can then be used to evaluate transition constraints at a given point of the evaluation domain of the computation. If the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers), `inputShapes` parameter must be provided to specify the shapes of consumed inputs. If any of the input registers are public, `publicInputs` parameter must also be provided to specify the actual values of all public inputs consumed by the computation.
+* **initVerificationContext**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `VerificationContext`</br>
+  Instantiates a [VerificationContext](#Verification-context) object for a specific instance of the computation. This context can then be used to evaluate transition constraints at a given point of the evaluation domain of the computation. If the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers), `inputShapes` parameter must be provided to specify the shapes of consumed inputs. If any of the input registers are public, `publicInputs` parameter must also be provided to specify the actual values of all public inputs consumed by the computation.
 
-#### Prover
-A `Prover` object contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `Prover` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace. To create a `Prover`, use `createProver()` method of [AirModule](#Air-Module) object.
+#### Proving context
+A `ProvingContext` object contains properties and methods needed to help generate a proof for a specific instance of a computation. Specifically, a `ProvingContext` can be used to generate an execution trace for a specific set of inputs, and to evaluate transition constraints derived form this trace. To create a `ProvingContext`, use `initProvingContext()` method of [AirModule](#Air-Module) object.
 
-`Prover` has the following properties:
+`ProvingContext` has the following properties:
 
 | Property             | Description |
 | -------------------- | ----------- |
@@ -255,7 +255,7 @@ A `Prover` object contains properties and methods needed to help generate a proo
 | compositionDomain    | A [vector](https://github.com/GuildOfWeavers/galois#vectors) defining domain of the low-degree extended composition polynomial. The length of the composition domain is equal to `traceLength * compositionFactor`, where `compositionFactor` is set to be the smallest power of 2 greater than or equal to the highest constraint degree of the computation. For example, if highest constraint degree is `3`, the `compositionFactor` will be set to `2`. |
 | secretRegisterTraces | Values of secret input registers evaluated over the evaluation domain. |
 
-`Prover` exposes the following methods:
+`ProvingContext` exposes the following methods:
 
 * **generateExecutionTrace**(seed?: `bigint[]`): `Matrix`</br>
   Generates an execution trace for a computation. The `seed` parameter must be provided only if the seed vector is used in the main export expression of the computation's AirAssembly definition. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
@@ -263,10 +263,10 @@ A `Prover` object contains properties and methods needed to help generate a proo
 * **evaluateTransitionConstraints**(tracePolys: `Matrix`): `Matrix`</br>
   Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a transition constraint evaluated over the composition domain.
 
-#### Verifier
-A `Verifier` object contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `Verifier` can be used to evaluate transition constraints at a specific point of an evaluation domain. To create a `Verifier`, use `createVerifier()` method of [AirModule](#Air-Module) object.
+#### Verification context
+A `VerificationContext` object contains properties and methods needed to help verify a proof of an instance of a computation (i.e. instance of a computation for a specific set of inputs). Specifically, a `VerificationContext` can be used to evaluate transition constraints at a specific point of an evaluation domain. To create a `VerificationContext`, use `initVerificationContext()` method of [AirModule](#Air-Module) object.
 
-`Verifier` has the following properties:
+`VerificationContext` has the following properties:
 
 | Property             | Description |
 | -------------------- | ----------- |
@@ -277,7 +277,7 @@ A `Verifier` object contains properties and methods needed to help verify a proo
 | constraints          | An array of constraint descriptors with metadata for the defined transition constraints. |
 | inputShapes          | Shapes of all input registers for the instance of the computation. |
 
-`Verifier` exposes the following methods:
+`VerificationContext` exposes the following methods:
 
 * **evaluateConstraintsAt**(x: `bigint`, rValues: `bigint[]`, nValues: `bigint[]`, sValues: `bigint[]`): `bigint[]`</br>
   Returns an array of values resulting from evaluating transition constraints at point `x`. For example, if the computation is defined by a single transition constraint, an array with one value will be returned. The meaning of the parameters is as follows:

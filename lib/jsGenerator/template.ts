@@ -2,7 +2,7 @@
 // ================================================================================================
 import {
     FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, RegisterEvaluatorSpecs,
-    Prover, Verifier, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor,
+    ProvingContext, VerificationContext, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor,
     TraceInitializer
 } from "@guildofweavers/air-assembly";
 
@@ -33,7 +33,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 
 // PROVER GENERATOR
 // ================================================================================================
-export function createProver(inputs: any[] = []): Prover {
+export function initProvingContext(inputs: any[] = []): ProvingContext {
 
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
@@ -235,7 +235,7 @@ export function createProver(inputs: any[] = []): Prover {
 
 // VERIFIER GENERATOR
 // ================================================================================================
-export function createVerifier(inputShapes: number[][] = [], publicInputs: any[] = []): Verifier {
+export function initVerificationContext(inputShapes: number[][] = [], publicInputs: any[] = []): VerificationContext {
     
     const { traceLength, registerSpecs } = digestPublicInputs(publicInputs, inputShapes);
         

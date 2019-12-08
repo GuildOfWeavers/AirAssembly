@@ -32,16 +32,16 @@ const source = `
 const schema = index_1.compile(Buffer.from(source));
 const air = index_1.instantiate(schema, { extensionFactor: 16 });
 // generate trace table
-const prover = air.createProver();
-const trace = prover.generateExecutionTrace([3n]);
+const pContext = air.initProvingContext();
+const trace = pContext.generateExecutionTrace([3n]);
 // generate constraint evaluation table
-const pPolys = air.field.interpolateRoots(prover.executionDomain, trace);
-const cEvaluations = prover.evaluateTransitionConstraints(pPolys);
-const verifier = air.createVerifier(prover.inputShapes);
-const x = air.field.exp(verifier.rootOfUnity, 16n);
+const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);
+const cEvaluations = pContext.evaluateTransitionConstraints(pPolys);
+const vContext = air.initVerificationContext(pContext.inputShapes);
+const x = air.field.exp(vContext.rootOfUnity, 16n);
 const rValues = [trace.getValue(0, 1)];
 const nValues = [trace.getValue(0, 2)];
-const qValues = verifier.evaluateConstraintsAt(x, rValues, nValues, []);
+const qValues = vContext.evaluateConstraintsAt(x, rValues, nValues, []);
 console.log(qValues);
 console.log('done!');
 //# sourceMappingURL=mimc.js.map

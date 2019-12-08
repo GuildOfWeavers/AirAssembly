@@ -43,8 +43,8 @@ function instantiateModule(schema, options) {
     code += `constraints: constraints,\n`;
     code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
-    code += `createProver,\n`;
-    code += `createVerifier\n`;
+    code += `initProvingContext,\n`;
+    code += `initVerificationContext\n`;
     code += '};';
     // create and execute module builder function
     const field = buildField(schema, options.wasmOptions);
