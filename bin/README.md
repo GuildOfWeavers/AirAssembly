@@ -50,8 +50,8 @@ const schema = compile(Buffer.from(source));
 const air = instantiate(schema);
 
 // generate trace table
-const context = air.initProvingContext();
-const trace = context.generateExecutionTrace([3n]);
+const context = air.initProvingContext([], [3n]);
+const trace = context.generateExecutionTrace();
 
 // generate constraint evaluation table
 const tracePolys = air.field.interpolateRoots(context.executionDomain, trace);
