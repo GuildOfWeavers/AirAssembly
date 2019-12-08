@@ -22,6 +22,7 @@ const DEFAULT_LIMITS: StarkLimits = {
 
 // RE-EXPORTS
 // ================================================================================================
+export { AirSchema } from './lib/AirSchema';
 export {
     LiteralValue, BinaryOperation, UnaryOperation, MakeVector, GetVectorElement, SliceVector, MakeMatrix,
     LoadExpression

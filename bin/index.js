@@ -18,6 +18,8 @@ const DEFAULT_LIMITS = {
 };
 // RE-EXPORTS
 // ================================================================================================
+var AirSchema_1 = require("./lib/AirSchema");
+exports.AirSchema = AirSchema_1.AirSchema;
 var expressions_1 = require("./lib/expressions");
 exports.LiteralValue = expressions_1.LiteralValue;
 exports.BinaryOperation = expressions_1.BinaryOperation;

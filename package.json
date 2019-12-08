@@ -1,6 +1,6 @@
 {
   "name": "@guildofweavers/air-assembly",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A low-level language for encoding Algebraic Intermediate Representation of computations",
   "main": "index.js",
   "typings": "air-assembly.d.ts",
@@ -25,7 +25,7 @@
   "scripts": {
     "clean": "rimraf bin",
     "compile": "tsc -p .",
-    "copyfiles": "copyfiles ./package.json ./package-lock.json ./air-assembly.d.ts ./.npmignore ./README.md bin",
+    "copyfiles": "copyfiles ./package*.json ./*.d.ts ./*.md ./.npmignore \"**/*.air\" bin",
     "build": "npm run clean && npm run copyfiles && npm run compile",
     "publish": "npm publish bin --access=public"
   },
