@@ -172,16 +172,6 @@ class AirSchema {
     }
     // VALIDATION
     // --------------------------------------------------------------------------------------------
-    validateLimits(limits) {
-        if (this.traceRegisterCount > limits.maxTraceRegisters)
-            throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
-        else if (this.staticRegisterCount > limits.maxStaticRegisters)
-            throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
-        else if (this.constraintCount > limits.maxConstraintCount)
-            throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
-        else if (this.maxConstraintDegree > limits.maxConstraintDegree)
-            throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
-    }
     validateConstant(constant, index) {
         constant.elements.forEach(v => {
             if (!this.field.isElement(v)) {

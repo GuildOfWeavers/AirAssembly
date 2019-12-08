@@ -33,7 +33,7 @@ const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 
 // PROVER GENERATOR
 // ================================================================================================
-export function initProvingContext(inputs: any[] = []): ProvingContext {
+export function initProvingContext(inputs: any[] = [], seed?: bigint[]): ProvingContext {
 
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
@@ -59,7 +59,7 @@ export function initProvingContext(inputs: any[] = []): ProvingContext {
 
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
-    function generateExecutionTrace(seed?: bigint[]): Matrix {
+    function generateExecutionTrace(): Matrix {
         const steps = traceLength - 1;
         
         let rValues = initializeTrace(f, seed);

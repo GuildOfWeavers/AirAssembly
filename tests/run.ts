@@ -46,8 +46,8 @@ const inputs = [
 
 const air = instantiate(schema);
 
-const pContext = air.initProvingContext(inputs);
-const trace = pContext.generateExecutionTrace([3n]);
+const pContext = air.initProvingContext(inputs, [3n]);
+const trace = pContext.generateExecutionTrace();
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pContext.evaluationDomain);
 const cEvaluations = pContext.evaluateTransitionConstraints(pPolys);

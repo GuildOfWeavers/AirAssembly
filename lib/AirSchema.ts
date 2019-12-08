@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema as IAirSchema, StarkLimits, ConstraintDescriptor } from "@guildofweavers/air-assembly";
+import { AirSchema as IAirSchema, ConstraintDescriptor } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { LiteralValue, Dimensions } from "./expressions";
 import { Procedure } from "./procedures";
@@ -202,17 +202,6 @@ export class AirSchema implements IAirSchema {
 
     // VALIDATION
     // --------------------------------------------------------------------------------------------
-    validateLimits(limits: StarkLimits): void {
-        if (this.traceRegisterCount > limits.maxTraceRegisters)
-            throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
-        else if (this.staticRegisterCount > limits.maxStaticRegisters)
-            throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
-        else if (this.constraintCount > limits.maxConstraintCount)
-            throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
-        else if (this.maxConstraintDegree > limits.maxConstraintDegree)
-            throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
-    }
-
     private validateConstant(constant: LiteralValue, index: number): LiteralValue {
         constant.elements.forEach(v => {
             if (!this.field.isElement(v)) {

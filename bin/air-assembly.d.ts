@@ -112,8 +112,6 @@ declare module '@guildofweavers/air-assembly' {
         setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure;
         setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure;
         setExports(declarations: ExportDeclaration[]): void;
-
-        validateLimits(limits: StarkLimits): void;
     }
 
     export type ProcedureName = 'transition' | 'evaluation';
@@ -332,8 +330,9 @@ declare module '@guildofweavers/air-assembly' {
          * @param inputs Values for initializing input registers. Must be provided only if the
          * computation contains input registers. In such a case, the shape of input objects must
          * be in line with the shapes specified by the computation's input descriptors.
+         * @param seed Must be provided only if the seed vector is used in the main export expression.
          */
-        initProvingContext(inputs?: any[]): ProvingContext;
+        initProvingContext(inputs?: any[], seed?: bigint[]): ProvingContext;
 
         /**
          * Instantiates a Verifier object for a specific instance of the computation.
@@ -435,9 +434,8 @@ declare module '@guildofweavers/air-assembly' {
         /**
          * Generates execution trace for the computation. The trace is returned as a Matrix object where
          * rows correspond to the dynamic register traces, and columns correspond to computation steps.
-         * @param seed Must be provided only if the seed vector is used in the main export expression.
          */
-        generateExecutionTrace(seed?: bigint[]): Matrix;
+        generateExecutionTrace(): Matrix;
 
         /**
          * Evaluates transition constraints for a computation. The evaluations are returned as a matrix

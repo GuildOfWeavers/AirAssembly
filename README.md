@@ -107,14 +107,14 @@ The code block bellow illustrates these steps:
 ```TypeScript
 const schema = compile(Buffer.from(source));
 const air = instantiate(schema, { extensionFactor: 16 });
-const context = air.initProvingContext();
-const trace = context.generateExecutionTrace([3n]);
+const context = air.initProvingContext([], [3n]);
+const trace = context.generateExecutionTrace();
 ```
 In the above:
 * `source` is a string variable containing AirAssembly source code similar to the one shown in the [usage](#Usage) section.
 * The `AirModule` is instantiated using default limits but setting extension factor to `16`.
-* No inputs are passed to the `initProvingContext()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
-* Execution trace is generated using value `3` as the seed for the single register column.
+* An empty inputs array is passed as the first parameter to the `initProvingContext()` method since the computation shown in the [usage](#Usage) section does not define any input registers.
+* A seed array with value `3` is passed as the second parameter to the `initProvingContext()` method since main export initializer uses a `seed` vector to initialize the first row of the execution trace.
 * After the code is executed, the `trace` variable will be a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) with 1 row and 32 columns (corresponding to 1 register and 32 steps).
 
 The execution trace for the single register will look like so:
@@ -231,8 +231,10 @@ An `AirModule` object contains JavaScript code needed to create [ProvingContext]
 
 `AirModule` exposes the following methods:
 
-* **initProvingContext**(inputs?: `any[]`): `ProvingContext`</br>
-  Instantiates a [ProvingContext](#Proving-context) object for a specific instance of the computation. This context can then be used to generate execution trace table and constraint evaluation table for the computation. The `inputs` parameter must be provided only if the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers). In such a case, the shape of input objects must be in line with the shapes specified by the computation's input descriptors.
+* **initProvingContext**(inputs?: `any[]`, seed?: `bigint[]`): `ProvingContext`</br>
+  Instantiates a [ProvingContext](#Proving-context) object for a specific instance of the computation. This context can then be used to generate execution trace table and constraint evaluation table for the computation.
+  * `inputs` parameter must be provided only if the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers). In such a case, the shape of input objects must be in line with the shapes specified by the computation's input descriptors.
+  *  `seed` parameter must be provided only if the seed vector is used in the [main export](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#main-export) expression of the computation's AirAssembly definition.
 
 * **initVerificationContext**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `VerificationContext`</br>
   Instantiates a [VerificationContext](#Verification-context) object for a specific instance of the computation. This context can then be used to evaluate transition constraints at a given point of the evaluation domain of the computation. If the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers), `inputShapes` parameter must be provided to specify the shapes of consumed inputs. If any of the input registers are public, `publicInputs` parameter must also be provided to specify the actual values of all public inputs consumed by the computation.
@@ -257,8 +259,8 @@ A `ProvingContext` object contains properties and methods needed to help generat
 
 `ProvingContext` exposes the following methods:
 
-* **generateExecutionTrace**(seed?: `bigint[]`): `Matrix`</br>
-  Generates an execution trace for a computation. The `seed` parameter must be provided only if the seed vector is used in the main export expression of the computation's AirAssembly definition. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
+* **generateExecutionTrace**(): `Matrix`</br>
+  Generates an execution trace for a computation. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row corresponds to a dynamic register, and every column corresponds to a step in a computation (i.e. the number of columns will be equal to the length of the execution trace).
 
 * **evaluateTransitionConstraints**(tracePolys: `Matrix`): `Matrix`</br>
   Evaluates transition constraints for a computation. The `tracePolys` parameter is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a polynomial interpolated from a corresponding register of the execution trace. The return value is a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) where each row represents a transition constraint evaluated over the composition domain.

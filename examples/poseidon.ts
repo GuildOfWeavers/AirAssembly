@@ -90,8 +90,8 @@ const stats = analyze(schema);
 const air = instantiate(schema);
 
 // generate trace table
-const pContext = air.initProvingContext(inputs);
-const trace = pContext.generateExecutionTrace([inputs[0][0], inputs[1][0], 0n]);
+const pContext = air.initProvingContext(inputs, [inputs[0][0], inputs[1][0], 0n]);
+const trace = pContext.generateExecutionTrace();
 
 // generate constraint evaluation table
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);

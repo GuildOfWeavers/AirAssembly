@@ -51,8 +51,8 @@ const inputs = [
 const schema = index_1.compile(Buffer.from(source));
 const air = index_1.instantiate(schema);
 // generate trace table
-const pContext = air.initProvingContext(inputs);
-const trace = pContext.generateExecutionTrace([inputs[0][0]]);
+const pContext = air.initProvingContext(inputs, [inputs[0][0]]);
+const trace = pContext.generateExecutionTrace();
 // generate constraint evaluation table
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);
 const cEvaluations = pContext.evaluateTransitionConstraints(pPolys);

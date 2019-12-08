@@ -16,7 +16,7 @@ const applyTransition = function () { return []; };
 const evaluateConstraints = function () { return []; };
 // PROVER GENERATOR
 // ================================================================================================
-function initProvingContext(inputs = []) {
+function initProvingContext(inputs = [], seed) {
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
     // build evaluation domain
@@ -35,7 +35,7 @@ function initProvingContext(inputs = []) {
     const kRegisters = registerSpecs.map(r => buildStaticRegisterEvaluator(r));
     // EXECUTION TRACE GENERATOR
     // --------------------------------------------------------------------------------------------
-    function generateExecutionTrace(seed) {
+    function generateExecutionTrace() {
         const steps = traceLength - 1;
         let rValues = initializeTrace(f, seed);
         if (rValues.length !== traceRegisterCount) {

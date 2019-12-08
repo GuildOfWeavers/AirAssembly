@@ -111,7 +111,14 @@ function validateModuleOptions(options: Partial<AirModuleOptions>, compositionFa
 
 function validateLimits(schema: AirSchema, limits: StarkLimits): void {
     try {
-        schema.validateLimits(limits);
+        if (schema.traceRegisterCount > limits.maxTraceRegisters)
+            throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
+        else if (schema.staticRegisterCount > limits.maxStaticRegisters)
+            throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
+        else if (schema.constraintCount > limits.maxConstraintCount)
+            throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
+        else if (schema.maxConstraintDegree > limits.maxConstraintDegree)
+            throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
     }
     catch (error) {
         throw new AssemblyError([error]);
