@@ -19,52 +19,53 @@ const source = `
         (cycle (prng sha256 0x486164657331 64))
         (cycle (prng sha256 0x486164657332 64))
         (cycle (prng sha256 0x486164657333 64)))
+	(functions
+		(define #init
+			(param scalar) (param scalar) (result vector 3)
+			(vector (load.param 0) (load.param 1) (scalar 0))
+		)
+		(define #round
+			(param matrix 3 3) (param vector 3) (param scalar) (param vector 3) (param scalar) (result vector 3)
+			(local vector 3) (local vector 3)
+			(store.local 0
+				(prod
+					(load.param 0)
+					(exp
+						(add (load.param 3) (load.param 1))
+						(load.param 2))))
+			(store.local 1
+				(prod
+					(load.param 0)
+					(vector
+						(add (slice (load.param 3) 0 1) (slice (load.param 1) 1 2))
+						(exp
+							(add (get (load.param 3) 2) (get (load.param 1) 3))
+							(load.param 2)))))
+			(add
+				(mul (load.local 0) (load.param 0))
+				(mul (load.local 1) (sub (scalar 1)  (load.param 0)))))
+	)
     (transition
         (span 1) (result vector 3)
-        (local vector 3) (local vector 3)
-        (store.local 0 
-            (prod
-                (load.const 1)
-                (exp
-                    (add (load.trace 0) (slice (load.static 0) 1 3))
-                    (load.const 0))))
-        (store.local 1
-            (prod
-                (load.const 1)
-                (vector
-                    (add (slice (load.trace 0) 0 1) (slice (load.static 0) 1 2))
-                    (exp
-                        (add (get (load.trace 0) 2) (get (load.static 0) 3))
-                        (load.const 0)))))
-        (add
-            (mul (load.local 0) (get (load.static 0) 0))
-            (mul (load.local 1) (sub (scalar 1)  (get (load.static 0) 0))))
+        (call 1
+			(load.const 1)
+			(slice (load.static 0) 1 3)
+			(load.const 0)
+			(load.trace 0)
+			(get (load.static 0) 0))
     )
     (evaluation
         (span 2) (result vector 3)
-		(local vector 3) (local vector 3)
-        (store.local 0 
-            (prod
-                (load.const 1)
-                (exp
-                    (add (load.trace 0) (slice (load.static 0) 1 3))
-                    (load.const 0))))
-        (store.local 1
-            (prod
-                (load.const 1)
-                (vector
-                    (add (slice (load.trace 0) 0 1) (slice (load.static 0) 1 2))
-                    (exp
-                        (add (get (load.trace 0) 2) (get (load.static 0) 3))
-                        (load.const 0)))))
         (sub
             (load.trace 1)
-            (add
-                (mul (load.local 0) (get (load.static 0) 0))
-                (mul (load.local 1) (sub (scalar 1)  (get (load.static 0) 0))))
-		)
+            (call 1
+				(load.const 1)
+				(slice (load.static 0) 1 3)
+				(load.const 0)
+				(load.trace 0)
+				(get (load.static 0) 0)))
 	)
-    (export main (init seed) (steps 64)))
+    (export main (init (call 0 (get seed 0) (get seed 1))) (steps 64)))
 `;
 // EXAMPLE CODE
 // ================================================================================================
