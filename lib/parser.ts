@@ -3,12 +3,12 @@
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { StaticRegisterSet, PrngSequence } from "./registers";
-import { Procedure } from "./procedures";
+import { Procedure, ExecutionContext, Parameter, LocalVariable, AirFunction } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
     Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus,
-    Prng, Sha256, HexLiteral
+    Prng, Sha256, HexLiteral, Handle, Param, Function
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -280,6 +280,76 @@ class AirParser extends EmbeddedActionsParser {
         const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
         this.CONSUME(RParen);
         return this.ACTION(() => ctx.addSubroutine(value, index));
+    });
+
+    private airFunction = this.RULE('airFunction', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Function);
+
+        // build function context
+        const context = new ExecutionContext(['param', 'local']);
+        this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+        this.MANY2(() => this.SUBRULE(this.localDeclaration2, { ARGS: [context] }));
+
+        // build function body
+        const func = new AirFunction(0, context);
+
+        // TODO: statements
+        const result = this.SUBRULE(this.expression,  { ARGS: [context] });
+
+        this.CONSUME(RParen);
+    });
+
+    private paramDeclaration = this.RULE('paramDeclaration', (ctx: ExecutionContext) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Param);
+        this.OR([
+            { ALT: () => {
+                this.CONSUME(Scalar);
+                const handle = this.OPTION1(() => this.CONSUME1(Handle).image);
+                return this.ACTION(() => ctx.add(new Parameter(Dimensions.scalar(), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Vector);
+                const handle = this.OPTION2(() => this.CONSUME2(Handle).image);
+                const length = this.SUBRULE1(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new Parameter(Dimensions.vector(length), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Matrix);
+                const handle = this.OPTION2(() => this.CONSUME2(Handle).image);
+                const rowCount = this.SUBRULE2(this.integerLiteral);
+                const colCount = this.SUBRULE3(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new Parameter(Dimensions.matrix(rowCount, colCount), handle)));
+            }}
+        ]);
+        this.CONSUME(RParen);
+    });
+
+    private localDeclaration2 = this.RULE('localDeclaration2', (ctx: ExecutionContext) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Local);
+        this.OR([
+            { ALT: () => {
+                this.CONSUME(Scalar);
+                const handle = this.OPTION1(() => this.CONSUME1(Handle).image);
+                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.scalar(), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Vector);
+                const handle = this.OPTION2(() => this.CONSUME2(Handle).image);
+                const length = this.SUBRULE1(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.vector(length), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Matrix);
+                const handle = this.OPTION2(() => this.CONSUME2(Handle).image);
+                const rowCount = this.SUBRULE2(this.integerLiteral);
+                const colCount = this.SUBRULE3(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.matrix(rowCount, colCount), handle)));
+            }}
+        ]);
+        this.CONSUME(RParen);
     });
 
     // EXPRESSIONS

@@ -2,18 +2,23 @@
 // ================================================================================================
 import { Dimensions } from "../expressions/utils";
 import { Subroutine } from "./Subroutine";
+import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class LocalVariable {
 
     readonly dimensions : Dimensions;
+    readonly handle?    : string;
     private binding?    : Subroutine;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(dimensions: Dimensions) {
+    constructor(dimensions: Dimensions, handle?: string) {
         this.dimensions = dimensions;
+        if (handle !== undefined) {
+            this.handle = validateHandle(handle);
+        }
     }
 
     // ACCESSORS
@@ -42,8 +47,13 @@ export class LocalVariable {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString(): string {
-        if (Dimensions.isScalar(this.dimensions)) return `(local scalar)`;
-        else if (Dimensions.isVector(this.dimensions)) return `(local vector ${this.dimensions[0]})`;
-        else return `(local matrix ${this.dimensions[0]} ${this.dimensions[1]})`;
+        const handle = this.handle ? ` ${this.handle} ` : ' ';
+
+        if (Dimensions.isScalar(this.dimensions))
+            return `(local${handle}scalar)`;
+        else if (Dimensions.isVector(this.dimensions))
+            return `(local${handle}vector ${this.dimensions[0]})`;
+        else
+            return `(local${handle}matrix ${this.dimensions[0]} ${this.dimensions[1]})`;
     }
 }

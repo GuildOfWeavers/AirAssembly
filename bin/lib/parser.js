@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const chevrotain_1 = require("chevrotain");
 const AirSchema_1 = require("./AirSchema");
 const registers_1 = require("./registers");
+const procedures_1 = require("./procedures");
 const lexer_1 = require("./lexer");
 const expressions_1 = require("./expressions");
 const errors_1 = require("./errors");
@@ -241,6 +242,69 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => ctx.addSubroutine(value, index));
+        });
+        this.airFunction = this.RULE('airFunction', () => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Function);
+            // build function context
+            const context = new procedures_1.ExecutionContext(['param', 'local']);
+            this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+            this.MANY2(() => this.SUBRULE(this.localDeclaration2, { ARGS: [context] }));
+            // build function body
+            const func = new procedures_1.AirFunction(0, context);
+            // TODO: statements
+            const result = this.SUBRULE(this.expression, { ARGS: [context] });
+            this.CONSUME(lexer_1.RParen);
+        });
+        this.paramDeclaration = this.RULE('paramDeclaration', (ctx) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Param);
+            this.OR([
+                { ALT: () => {
+                        this.CONSUME(lexer_1.Scalar);
+                        const handle = this.OPTION1(() => this.CONSUME1(lexer_1.Handle).image);
+                        return this.ACTION(() => ctx.add(new procedures_1.Parameter(expressions_1.Dimensions.scalar(), handle)));
+                    } },
+                { ALT: () => {
+                        this.CONSUME(lexer_1.Vector);
+                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
+                        const length = this.SUBRULE1(this.integerLiteral);
+                        return this.ACTION(() => ctx.add(new procedures_1.Parameter(expressions_1.Dimensions.vector(length), handle)));
+                    } },
+                { ALT: () => {
+                        this.CONSUME(lexer_1.Matrix);
+                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
+                        const rowCount = this.SUBRULE2(this.integerLiteral);
+                        const colCount = this.SUBRULE3(this.integerLiteral);
+                        return this.ACTION(() => ctx.add(new procedures_1.Parameter(expressions_1.Dimensions.matrix(rowCount, colCount), handle)));
+                    } }
+            ]);
+            this.CONSUME(lexer_1.RParen);
+        });
+        this.localDeclaration2 = this.RULE('localDeclaration2', (ctx) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Local);
+            this.OR([
+                { ALT: () => {
+                        this.CONSUME(lexer_1.Scalar);
+                        const handle = this.OPTION1(() => this.CONSUME1(lexer_1.Handle).image);
+                        return this.ACTION(() => ctx.add(new procedures_1.LocalVariable(expressions_1.Dimensions.scalar(), handle)));
+                    } },
+                { ALT: () => {
+                        this.CONSUME(lexer_1.Vector);
+                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
+                        const length = this.SUBRULE1(this.integerLiteral);
+                        return this.ACTION(() => ctx.add(new procedures_1.LocalVariable(expressions_1.Dimensions.vector(length), handle)));
+                    } },
+                { ALT: () => {
+                        this.CONSUME(lexer_1.Matrix);
+                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
+                        const rowCount = this.SUBRULE2(this.integerLiteral);
+                        const colCount = this.SUBRULE3(this.integerLiteral);
+                        return this.ACTION(() => ctx.add(new procedures_1.LocalVariable(expressions_1.Dimensions.matrix(rowCount, colCount), handle)));
+                    } }
+            ]);
+            this.CONSUME(lexer_1.RParen);
         });
         // EXPRESSIONS
         // --------------------------------------------------------------------------------------------

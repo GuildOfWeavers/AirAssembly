@@ -19,6 +19,11 @@ export function getCompositionFactor(schema: AirSchema): number {
     return 2**Math.ceil(Math.log2(schema.maxConstraintDegree));
 }
 
+export function validateHandle(handle: string): string {
+    // TODO: implement
+    return handle;
+}
+
 // PRNG FUNCTIONS
 // ================================================================================================
 export function sha256prng(seed: Buffer, count: number, field: FiniteField): bigint[] {

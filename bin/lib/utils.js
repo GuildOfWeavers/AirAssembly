@@ -18,6 +18,11 @@ function getCompositionFactor(schema) {
     return 2 ** Math.ceil(Math.log2(schema.maxConstraintDegree));
 }
 exports.getCompositionFactor = getCompositionFactor;
+function validateHandle(handle) {
+    // TODO: implement
+    return handle;
+}
+exports.validateHandle = validateHandle;
 // PRNG FUNCTIONS
 // ================================================================================================
 function sha256prng(seed, count, field) {

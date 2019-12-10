@@ -210,7 +210,7 @@ declare module '@guildofweavers/air-assembly' {
     export type Dimensions = [number, number];
     export type Degree = bigint | bigint[] | bigint[][];
     export type StoreTarget = 'local';
-    export type LoadSource = 'const' | 'trace' | 'static' | 'local';
+    export type LoadSource = 'const' | 'trace' | 'static' | 'param' | 'local';
 
     export type BinaryOperationType = 'add' | 'sub' | 'mul' | 'div' | 'exp' | 'prod';
     export type UnaryOperationType = 'neg' | 'inv';

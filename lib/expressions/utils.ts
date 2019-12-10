@@ -8,6 +8,7 @@ const sources: { [index: string]: LoadSource } = {
     'load.const'    : 'const',
     'load.trace'    : 'trace',
     'load.static'   : 'static',
+    'load.param'    : 'param',
     'load.local'    : 'local',
 };
 
