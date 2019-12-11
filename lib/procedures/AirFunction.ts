@@ -6,7 +6,7 @@ import { Dimensions, getLoadSource } from "../expressions/utils";
 import { LocalVariable } from "./LocalVariable";
 import { StoreOperation } from './StoreOperation';
 import { Parameter } from './Parameter';
-import { ExecutionContext } from './ExecutionContext';
+import { ExecutionContext } from './contexts/ExecutionContext';
 
 // CLASS DEFINITION
 // ================================================================================================

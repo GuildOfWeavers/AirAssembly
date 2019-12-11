@@ -4,11 +4,11 @@ import { LoadSource } from '@guildofweavers/air-assembly';
 import { Expression } from './Expression';
 import { LiteralValue } from './LiteralValue';
 import { TraceSegment } from './TraceSegment';
-import { Subroutine } from '../procedures';
+import { Subroutine, Parameter } from '../procedures';
 
 // INTERFACES
 // ================================================================================================
-type LoadBinding = TraceSegment | LiteralValue | Subroutine;
+type LoadBinding = TraceSegment | LiteralValue | Subroutine | Parameter;
 
 // CLASS DEFINITION
 // ================================================================================================

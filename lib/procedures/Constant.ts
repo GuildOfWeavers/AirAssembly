@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { LiteralValue } from "../expressions";
+import { LiteralValue, Dimensions } from "../expressions";
 import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
@@ -17,6 +17,12 @@ export class Constant {
         if (handle !== undefined) {
             this.handle = validateHandle(handle);
         }
+    }
+
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get dimensions(): Dimensions {
+        return this.value.dimensions;
     }
 
     // PUBLIC METHODS

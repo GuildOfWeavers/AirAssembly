@@ -19,6 +19,12 @@ export function getCompositionFactor(schema: AirSchema): number {
     return 2**Math.ceil(Math.log2(schema.maxConstraintDegree));
 }
 
+// VALIDATORS
+// ================================================================================================
+export function validate(condition: any, errorMessage: string): asserts condition {
+    if (!condition) throw new Error(errorMessage);
+}
+
 export function validateHandle(handle: string): string {
     // TODO: implement
     return handle;

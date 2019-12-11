@@ -177,6 +177,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
+            const context = new procedures_1.ProcedureContext(schema, span, width);
             // locals
             const locals = [];
             this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
@@ -201,6 +202,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
+            const context = new procedures_1.ProcedureContext(schema, span);
             // locals
             const locals = [];
             this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
@@ -243,11 +245,11 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => ctx.addSubroutine(value, index));
         });
-        this.airFunction = this.RULE('airFunction', () => {
+        this.airFunction = this.RULE('airFunction', (schema) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Function);
             // build function context
-            const context = new procedures_1.ExecutionContext(['param', 'local']);
+            const context = new procedures_1.FunctionContext(schema);
             this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
             this.MANY2(() => this.SUBRULE(this.localDeclaration2, { ARGS: [context] }));
             // build function body

@@ -18,6 +18,13 @@ function getCompositionFactor(schema) {
     return 2 ** Math.ceil(Math.log2(schema.maxConstraintDegree));
 }
 exports.getCompositionFactor = getCompositionFactor;
+// VALIDATORS
+// ================================================================================================
+function validate(condition, errorMessage) {
+    if (!condition)
+        throw new Error(errorMessage);
+}
+exports.validate = validate;
 function validateHandle(handle) {
     // TODO: implement
     return handle;

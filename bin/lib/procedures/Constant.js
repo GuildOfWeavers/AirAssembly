@@ -12,6 +12,11 @@ class Constant {
             this.handle = utils_1.validateHandle(handle);
         }
     }
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get dimensions() {
+        return this.value.dimensions;
+    }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {

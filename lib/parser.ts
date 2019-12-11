@@ -3,7 +3,7 @@
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { StaticRegisterSet, PrngSequence } from "./registers";
-import { Procedure, ExecutionContext, Parameter, LocalVariable, AirFunction } from "./procedures";
+import { Procedure, ExecutionContext, Parameter, LocalVariable, AirFunction, ProcedureContext, FunctionContext } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
@@ -206,6 +206,8 @@ class AirParser extends EmbeddedActionsParser {
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME3(RParen);
 
+        const context = new ProcedureContext(schema, span, width);
+
         // locals
         const locals: Dimensions[] = [];
         this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
@@ -234,6 +236,8 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Vector);
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME3(RParen);
+
+        const context = new ProcedureContext(schema, span);
 
         // locals
         const locals: Dimensions[] = [];
@@ -282,12 +286,12 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => ctx.addSubroutine(value, index));
     });
 
-    private airFunction = this.RULE('airFunction', () => {
+    private airFunction = this.RULE('airFunction', (schema: AirSchema) => {
         this.CONSUME(LParen);
         this.CONSUME(Function);
 
         // build function context
-        const context = new ExecutionContext(['param', 'local']);
+        const context = new FunctionContext(schema);
         this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
         this.MANY2(() => this.SUBRULE(this.localDeclaration2, { ARGS: [context] }));
 
@@ -354,7 +358,7 @@ class AirParser extends EmbeddedActionsParser {
 
     // EXPRESSIONS
     // --------------------------------------------------------------------------------------------
-    private expression = this.RULE<Expression>('expression', (ctx: Procedure) => {
+    private expression = this.RULE<Expression>('expression', (ctx: ExecutionContext) => {
         const result = this.OR([
             { ALT: () => this.SUBRULE(this.binaryOperation,     { ARGS: [ctx] })},
             { ALT: () => this.SUBRULE(this.unaryOperation,      { ARGS: [ctx] })},
@@ -368,7 +372,7 @@ class AirParser extends EmbeddedActionsParser {
         return result;
     });
 
-    private binaryOperation = this.RULE<BinaryOperation>('binaryOperation', (ctx: Procedure) => {
+    private binaryOperation = this.RULE<BinaryOperation>('binaryOperation', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         const op = this.CONSUME(BinaryOp).image;
         const lhs = this.SUBRULE1(this.expression, { ARGS: [ctx] });
@@ -377,7 +381,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new BinaryOperation(op, lhs, rhs));
     });
 
-    private unaryOperation = this.RULE<UnaryOperation>('unaryOperation', (ctx: Procedure) => {
+    private unaryOperation = this.RULE<UnaryOperation>('unaryOperation', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         const op = this.CONSUME(UnaryOp).image;
         const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
@@ -387,7 +391,7 @@ class AirParser extends EmbeddedActionsParser {
 
     // VECTORS AND MATRIXES
     // --------------------------------------------------------------------------------------------
-    private makeVector = this.RULE<MakeVector>('makeVector', (ctx: Procedure) => {
+    private makeVector = this.RULE<MakeVector>('makeVector', (ctx: ExecutionContext) => {
         const elements: Expression[] = [];
         this.CONSUME(LParen);
         this.CONSUME(Vector);
@@ -396,7 +400,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new MakeVector(elements));
     });
 
-    private getVectorElement = this.RULE<GetVectorElement>('getVectorElement', (ctx: Procedure) => {
+    private getVectorElement = this.RULE<GetVectorElement>('getVectorElement', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         this.CONSUME(Get);
         const source = this.SUBRULE(this.expression, { ARGS: [ctx] });
@@ -405,7 +409,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new GetVectorElement(source, index));
     });
 
-    private sliceVector = this.RULE<SliceVector>('sliceVector', (ctx: Procedure) => {
+    private sliceVector = this.RULE<SliceVector>('sliceVector', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         this.CONSUME(Slice);
         const source = this.SUBRULE(this.expression, { ARGS: [ctx] });
@@ -415,7 +419,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new SliceVector(source, startIdx, endIdx));
     });
 
-    private makeMatrix = this.RULE<MakeMatrix>('makeMatrix', (ctx: Procedure) => {
+    private makeMatrix = this.RULE<MakeMatrix>('makeMatrix', (ctx: ExecutionContext) => {
         const rows: Expression[][] = [];
         this.CONSUME1(LParen);
         this.CONSUME(Matrix);
@@ -432,7 +436,7 @@ class AirParser extends EmbeddedActionsParser {
 
     // LOAD AND STORE OPERATIONS
     // --------------------------------------------------------------------------------------------
-    private loadExpression = this.RULE<LoadExpression>('loadExpression', (ctx: Procedure) => {
+    private loadExpression = this.RULE<LoadExpression>('loadExpression', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         const op = this.CONSUME(LoadOp).image;
         const index = this.SUBRULE(this.integerLiteral);
