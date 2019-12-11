@@ -52,7 +52,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                     { ALT: () => this.SUBRULE(this.literalVector) },
                     { ALT: () => this.SUBRULE(this.literalMatrix) }
                 ]);
-                values.push(value);
+                values.push(new procedures_1.Constant(value));
             });
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => schema.setConstants(values));
@@ -167,7 +167,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.transitionFunction = this.RULE('transitionFunction', (schema) => {
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Transition);
-            // signature
+            // build context
             this.CONSUME2(lexer_1.LParen);
             this.CONSUME(lexer_1.Span);
             const span = this.SUBRULE1(this.integerLiteral);
@@ -177,22 +177,19 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
-            const context = new procedures_1.ProcedureContext(schema, span, width);
-            // locals
-            const locals = [];
-            this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            // body
-            let procedure;
-            this.ACTION(() => procedure = schema.setTransitionFunction(span, width, locals));
+            const context = this.ACTION(() => new procedures_1.ProcedureContext(schema, span, width));
+            this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+            // build body
+            const procedure = this.ACTION(() => schema.setTransitionFunction(context, width));
             this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
-            const resultExpression = this.SUBRULE(this.expression, { ARGS: [procedure] });
+            const resultExpression = this.SUBRULE(this.expression, { ARGS: [context] });
             this.ACTION(() => schema.transitionFunction.setResult(resultExpression));
             this.CONSUME1(lexer_1.RParen);
         });
         this.transitionConstraints = this.RULE('transitionConstraints', (schema) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Evaluation);
-            // signature
+            // build context
             this.CONSUME2(lexer_1.LParen);
             this.CONSUME(lexer_1.Span);
             const span = this.SUBRULE1(this.integerLiteral);
@@ -202,40 +199,14 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
-            const context = new procedures_1.ProcedureContext(schema, span);
-            // locals
-            const locals = [];
-            this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            // body
-            let procedure;
-            this.ACTION(() => procedure = schema.setConstraintEvaluator(span, width, locals));
+            const context = this.ACTION(() => new procedures_1.ProcedureContext(schema, span));
+            this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+            // build body
+            const procedure = this.ACTION(() => schema.setConstraintEvaluator(context, width));
             this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
-            const resultExpression = this.SUBRULE(this.expression, { ARGS: [procedure] });
+            const resultExpression = this.SUBRULE(this.expression, { ARGS: [context] });
             this.ACTION(() => schema.constraintEvaluator.setResult(resultExpression));
             this.CONSUME(lexer_1.RParen);
-        });
-        this.localDeclaration = this.RULE('localDeclaration', () => {
-            this.CONSUME(lexer_1.LParen);
-            this.CONSUME(lexer_1.Local);
-            const result = this.OR([
-                { ALT: () => {
-                        this.CONSUME(lexer_1.Scalar);
-                        return this.ACTION(() => expressions_1.Dimensions.scalar());
-                    } },
-                { ALT: () => {
-                        this.CONSUME(lexer_1.Vector);
-                        const length = this.SUBRULE1(this.integerLiteral);
-                        return this.ACTION(() => expressions_1.Dimensions.vector(length));
-                    } },
-                { ALT: () => {
-                        this.CONSUME(lexer_1.Matrix);
-                        const rowCount = this.SUBRULE2(this.integerLiteral);
-                        const colCount = this.SUBRULE3(this.integerLiteral);
-                        return this.ACTION(() => expressions_1.Dimensions.matrix(rowCount, colCount));
-                    } }
-            ]);
-            this.CONSUME(lexer_1.RParen);
-            return result;
         });
         this.procedureSubroutine = this.RULE('procedureSubroutine', (ctx) => {
             this.CONSUME(lexer_1.LParen);
@@ -249,11 +220,11 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Function);
             // build function context
-            const context = new procedures_1.FunctionContext(schema);
+            const context = this.ACTION(() => new procedures_1.FunctionContext(schema));
             this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
-            this.MANY2(() => this.SUBRULE(this.localDeclaration2, { ARGS: [context] }));
+            this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build function body
-            const func = new procedures_1.AirFunction(0, context);
+            // const func = new AirFunction(0, context);
             // TODO: statements
             const result = this.SUBRULE(this.expression, { ARGS: [context] });
             this.CONSUME(lexer_1.RParen);
@@ -261,21 +232,19 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.paramDeclaration = this.RULE('paramDeclaration', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Param);
+            const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             this.OR([
                 { ALT: () => {
                         this.CONSUME(lexer_1.Scalar);
-                        const handle = this.OPTION1(() => this.CONSUME1(lexer_1.Handle).image);
                         return this.ACTION(() => ctx.add(new procedures_1.Parameter(expressions_1.Dimensions.scalar(), handle)));
                     } },
                 { ALT: () => {
                         this.CONSUME(lexer_1.Vector);
-                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
                         const length = this.SUBRULE1(this.integerLiteral);
                         return this.ACTION(() => ctx.add(new procedures_1.Parameter(expressions_1.Dimensions.vector(length), handle)));
                     } },
                 { ALT: () => {
                         this.CONSUME(lexer_1.Matrix);
-                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
                         const rowCount = this.SUBRULE2(this.integerLiteral);
                         const colCount = this.SUBRULE3(this.integerLiteral);
                         return this.ACTION(() => ctx.add(new procedures_1.Parameter(expressions_1.Dimensions.matrix(rowCount, colCount), handle)));
@@ -283,24 +252,22 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             ]);
             this.CONSUME(lexer_1.RParen);
         });
-        this.localDeclaration2 = this.RULE('localDeclaration2', (ctx) => {
+        this.localDeclaration = this.RULE('localDeclaration', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Local);
+            const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             this.OR([
                 { ALT: () => {
                         this.CONSUME(lexer_1.Scalar);
-                        const handle = this.OPTION1(() => this.CONSUME1(lexer_1.Handle).image);
                         return this.ACTION(() => ctx.add(new procedures_1.LocalVariable(expressions_1.Dimensions.scalar(), handle)));
                     } },
                 { ALT: () => {
                         this.CONSUME(lexer_1.Vector);
-                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
                         const length = this.SUBRULE1(this.integerLiteral);
                         return this.ACTION(() => ctx.add(new procedures_1.LocalVariable(expressions_1.Dimensions.vector(length), handle)));
                     } },
                 { ALT: () => {
                         this.CONSUME(lexer_1.Matrix);
-                        const handle = this.OPTION2(() => this.CONSUME2(lexer_1.Handle).image);
                         const rowCount = this.SUBRULE2(this.integerLiteral);
                         const colCount = this.SUBRULE3(this.integerLiteral);
                         return this.ACTION(() => ctx.add(new procedures_1.LocalVariable(expressions_1.Dimensions.matrix(rowCount, colCount), handle)));

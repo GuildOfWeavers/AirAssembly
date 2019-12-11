@@ -81,7 +81,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly field: FiniteField;
 
         /** An array of LiteralValue expressions describing constants defined for the computation. */
-        readonly constants: ReadonlyArray<LiteralValue>;
+        readonly constants: ReadonlyArray<Constant>;
 
         /** An array of StaticRegister objects describing static registers defined for the computation. */
         readonly staticRegisters: ReadonlyArray<StaticRegister>;
@@ -107,10 +107,10 @@ declare module '@guildofweavers/air-assembly' {
         constructor();
 
         setField(type: 'prime', modulus: bigint): void;
-        setConstants(values: LiteralValue[]): void;
+        setConstants(values: Constant[]): void;
         setStaticRegisters(registers: StaticRegisterSet): void;
-        setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure;
-        setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure;
+        setTransitionFunction(context: any, width: number): Procedure;
+        setConstraintEvaluator(context: any, width: number): Procedure;
         setExports(declarations: ExportDeclaration[]): void;
     }
 
@@ -126,6 +126,12 @@ declare module '@guildofweavers/air-assembly' {
         setResult(expression: Expression): void;
         addSubroutine(expression: Expression, localVarIdx: number): void;
         buildLoadExpression(operation: string, index: number): LoadExpression;
+    }
+
+    export interface Constant {
+        readonly dimensions : Dimensions;
+        readonly value      : LiteralValue;
+        readonly handle?    : string;
     }
 
     export interface Subroutine {

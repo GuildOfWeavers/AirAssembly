@@ -39,7 +39,7 @@ export class ProcedureContext extends ExecutionContext {
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
     add(value: LocalVariable): void {
-        if (value instanceof Constant) {
+        if (value instanceof LocalVariable) {
             // if local variable has a handle, set handle mapping
             if (value.handle) {
                 validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
@@ -48,7 +48,7 @@ export class ProcedureContext extends ExecutionContext {
 
             // set index mapping and add local variable to the list
             this.declarationMap.set(`local::${this.constants.length}`, value);
-            this.constants.push(value);
+            this.locals.push(value);
         }
         else {
             throw new Error(`${value} is not allowed in procedure context`);

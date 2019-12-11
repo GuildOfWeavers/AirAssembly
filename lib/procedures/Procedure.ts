@@ -1,10 +1,11 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure as IProcedure, ProcedureName, FiniteField } from '@guildofweavers/air-assembly';
+import { Procedure as IProcedure, ProcedureName, FiniteField, Constant } from '@guildofweavers/air-assembly';
 import { Expression, LoadExpression, LiteralValue, TraceSegment, ExpressionTransformer } from "../expressions";
 import { Dimensions, getLoadSource } from "../expressions/utils";
 import { Subroutine } from "./Subroutine";
 import { LocalVariable } from "./LocalVariable";
+import { ProcedureContext } from './contexts/ProcedureContext';
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -14,7 +15,7 @@ export class Procedure implements IProcedure {
     readonly name               : ProcedureName;
     readonly span               : number;
     readonly resultLength       : number;
-    readonly constants          : LiteralValue[];
+    readonly constants          : Constant[];
     readonly localVariables     : LocalVariable[];
     readonly traceRegisters     : TraceSegment;
     readonly staticRegisters    : TraceSegment;
@@ -24,16 +25,15 @@ export class Procedure implements IProcedure {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(field: FiniteField, name: ProcedureName, span: number, width: number,
-        constants: LiteralValue[], locals: Dimensions[], traceWidth: number, staticWidth: number)
+    constructor(name: ProcedureName, context: ProcedureContext, width: number)
     {
-        this.field = field;
+        this.field = context.field;
         this.name = name;
-        this.span = validateSpan(name, span);
-        this.constants = constants;
-        this.localVariables = locals.map(d => new LocalVariable(d));
-        this.traceRegisters = new TraceSegment('trace', traceWidth);
-        this.staticRegisters = new TraceSegment('static', staticWidth);
+        this.span = validateSpan(name, context.traceSpan);
+        this.constants = context.constants;
+        this.localVariables = context.locals;
+        this.traceRegisters = context.traceRegisters;
+        this.staticRegisters = context.staticRegisters;
         this.resultLength = width;
 
         this.subroutines = [];
@@ -75,7 +75,7 @@ export class Procedure implements IProcedure {
         if (source === 'const') {
             if (index >= this.constants.length)
                 throw new Error(`constant with index ${index} has not been defined for ${this.name} procedure`);
-            return new LoadExpression(this.constants[index], index);
+            return new LoadExpression(this.constants[index].value, index);
         }
         else if (source === 'trace') {
             this.validateTraceOffset(index);

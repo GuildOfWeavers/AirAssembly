@@ -95,9 +95,9 @@ function buildField(schema: AirSchema, wasmOptions?: Partial<WasmOptions> | bool
 
 function buildConstants(schema: AirSchema, field: FiniteField): (bigint | Vector | Matrix)[] {
     return schema.constants.map(c => {
-        if (c.isScalar) return c.value as bigint;
-        else if (c.isVector) return field.newVectorFrom(c.value as bigint[]);
-        else return field.newMatrixFrom(c.value as bigint[][]);
+        if (c.isScalar) return c.value.value as bigint;
+        else if (c.isVector) return field.newVectorFrom(c.value.value as bigint[]);
+        else return field.newMatrixFrom(c.value.value as bigint[][]);
     });
 }
 

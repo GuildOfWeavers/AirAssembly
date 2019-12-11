@@ -1,5 +1,6 @@
 // IMPORTS
 // ================================================================================================
+import { FiniteField } from "@guildofweavers/galois";
 import { LiteralValue, Dimensions } from "../expressions";
 import { validateHandle } from "../utils";
 
@@ -25,8 +26,28 @@ export class Constant {
         return this.value.dimensions;
     }
 
+    get isScalar(): boolean {
+        return this.value.isScalar;
+    }
+
+    get isVector(): boolean {
+        return this.value.isVector;
+    }
+
+    get isMatrix(): boolean {
+        return this.value.isMatrix;
+    }
+
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    validate(field: FiniteField): void {
+        for (let element of this.value.elements) {
+            if (!field.isElement(element)) {
+                throw new Error(`constant value ${element} is not a valid field element`);
+            }
+        }
+    }
+
     toString(): string {
         return this.value.toString();
     }

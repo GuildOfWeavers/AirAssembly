@@ -79,11 +79,11 @@ function buildField(schema, wasmOptions) {
 function buildConstants(schema, field) {
     return schema.constants.map(c => {
         if (c.isScalar)
-            return c.value;
+            return c.value.value;
         else if (c.isVector)
-            return field.newVectorFrom(c.value);
+            return field.newVectorFrom(c.value.value);
         else
-            return field.newMatrixFrom(c.value);
+            return field.newMatrixFrom(c.value.value);
     });
 }
 function buildStaticRegisters(schema) {

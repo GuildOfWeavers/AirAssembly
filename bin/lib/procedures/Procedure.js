@@ -3,20 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const expressions_1 = require("../expressions");
 const utils_1 = require("../expressions/utils");
 const Subroutine_1 = require("./Subroutine");
-const LocalVariable_1 = require("./LocalVariable");
 // CLASS DEFINITION
 // ================================================================================================
 class Procedure {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(field, name, span, width, constants, locals, traceWidth, staticWidth) {
-        this.field = field;
+    constructor(name, context, width) {
+        this.field = context.field;
         this.name = name;
-        this.span = validateSpan(name, span);
-        this.constants = constants;
-        this.localVariables = locals.map(d => new LocalVariable_1.LocalVariable(d));
-        this.traceRegisters = new expressions_1.TraceSegment('trace', traceWidth);
-        this.staticRegisters = new expressions_1.TraceSegment('static', staticWidth);
+        this.span = validateSpan(name, context.traceSpan);
+        this.constants = context.constants;
+        this.localVariables = context.locals;
+        this.traceRegisters = context.traceRegisters;
+        this.staticRegisters = context.staticRegisters;
         this.resultLength = width;
         this.subroutines = [];
     }
@@ -54,7 +53,7 @@ class Procedure {
         if (source === 'const') {
             if (index >= this.constants.length)
                 throw new Error(`constant with index ${index} has not been defined for ${this.name} procedure`);
-            return new expressions_1.LoadExpression(this.constants[index], index);
+            return new expressions_1.LoadExpression(this.constants[index].value, index);
         }
         else if (source === 'trace') {
             this.validateTraceOffset(index);

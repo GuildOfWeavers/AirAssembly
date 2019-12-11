@@ -38,7 +38,10 @@ class AirSchema {
     setConstants(values) {
         if (this.constantCount > 0)
             throw new Error(`constants have already been set`);
-        values.forEach((v, i) => this._constants.push(this.validateConstant(v, i)));
+        for (let constant of values) {
+            constant.validate(this.field);
+            this._constants.push(constant);
+        }
     }
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
@@ -84,15 +87,12 @@ class AirSchema {
             throw new Error(`transition function hasn't been set yet`);
         return this._transitionFunction;
     }
-    setTransitionFunction(span, width, locals) {
+    setTransitionFunction(context, width) {
         if (this._transitionFunction)
             throw new Error(`transition function has already been set`);
         if (!this._field)
             throw new Error(`transition function cannot be set before field is set`);
-        const constants = this._constants;
-        const traceWidth = width;
-        const staticWidth = this.staticRegisterCount;
-        this._transitionFunction = new procedures_1.Procedure(this.field, 'transition', span, width, constants, locals, traceWidth, staticWidth);
+        this._transitionFunction = new procedures_1.Procedure('transition', context, width);
         return this._transitionFunction;
     }
     // TRANSITION CONSTRAINTS
@@ -120,7 +120,7 @@ class AirSchema {
         }
         return this._maxConstraintDegree;
     }
-    setConstraintEvaluator(span, width, locals) {
+    setConstraintEvaluator(context, width) {
         if (this._constraintEvaluator)
             throw new Error(`constraint evaluator has already been set`);
         if (!this._field)
@@ -128,7 +128,7 @@ class AirSchema {
         const constants = this._constants;
         const traceWidth = this.traceRegisterCount;
         const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new procedures_1.Procedure(this.field, 'evaluation', span, width, constants, locals, traceWidth, staticWidth);
+        this._constraintEvaluator = new procedures_1.Procedure('evaluation', context, width);
         return this._constraintEvaluator;
     }
     // EXPORT DECLARATIONS
@@ -172,14 +172,6 @@ class AirSchema {
     }
     // VALIDATION
     // --------------------------------------------------------------------------------------------
-    validateConstant(constant, index) {
-        constant.elements.forEach(v => {
-            if (!this.field.isElement(v)) {
-                throw new Error(`value ${v} for constant ${index} is not a valid field element`);
-            }
-        });
-        return constant;
-    }
     validateStaticRegister(register, index) {
         if (!(register instanceof registers_1.CyclicRegister))
             return register;

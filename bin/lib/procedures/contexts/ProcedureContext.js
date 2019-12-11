@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const ExecutionContext_1 = require("./ExecutionContext");
 const expressions_1 = require("../../expressions");
-const Constant_1 = require("../Constant");
+const LocalVariable_1 = require("../LocalVariable");
 const utils_1 = require("../../utils");
 // CLASS DEFINITION
 // ================================================================================================
@@ -26,7 +26,7 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
     add(value) {
-        if (value instanceof Constant_1.Constant) {
+        if (value instanceof LocalVariable_1.LocalVariable) {
             // if local variable has a handle, set handle mapping
             if (value.handle) {
                 utils_1.validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
@@ -34,7 +34,7 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
             }
             // set index mapping and add local variable to the list
             this.declarationMap.set(`local::${this.constants.length}`, value);
-            this.constants.push(value);
+            this.locals.push(value);
         }
         else {
             throw new Error(`${value} is not allowed in procedure context`);

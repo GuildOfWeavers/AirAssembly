@@ -17,8 +17,24 @@ class Constant {
     get dimensions() {
         return this.value.dimensions;
     }
+    get isScalar() {
+        return this.value.isScalar;
+    }
+    get isVector() {
+        return this.value.isVector;
+    }
+    get isMatrix() {
+        return this.value.isMatrix;
+    }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    validate(field) {
+        for (let element of this.value.elements) {
+            if (!field.isElement(element)) {
+                throw new Error(`constant value ${element} is not a valid field element`);
+            }
+        }
+    }
     toString() {
         return this.value.toString();
     }

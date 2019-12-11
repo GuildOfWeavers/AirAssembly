@@ -4,5 +4,6 @@ export { AirFunction } from './AirFunction';
 export { ExecutionContext } from './contexts/ExecutionContext';
 export { ProcedureContext } from './contexts/ProcedureContext';
 export { FunctionContext } from './contexts/FunctionContext';
+export { Constant } from './Constant';
 export { Parameter } from './Parameter';
 export { LocalVariable } from './LocalVariable';

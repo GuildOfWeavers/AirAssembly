@@ -3,7 +3,7 @@
 import { AirSchema as IAirSchema, ConstraintDescriptor } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { LiteralValue, Dimensions } from "./expressions";
-import { Procedure } from "./procedures";
+import { Procedure, Constant, ProcedureContext } from "./procedures";
 import { analyzeProcedure } from "./analysis";
 import { StaticRegister, StaticRegisterSet, InputRegister, CyclicRegister } from "./registers";
 import { ExportDeclaration } from "./exports";
@@ -14,7 +14,7 @@ export class AirSchema implements IAirSchema {
 
     private _field?                 : FiniteField;
 
-    private _constants              : LiteralValue[];
+    private _constants              : Constant[];
     private _staticRegisters        : StaticRegister[];
 
     private _transitionFunction?    : Procedure;
@@ -51,13 +51,16 @@ export class AirSchema implements IAirSchema {
         return this._constants.length;
     }
 
-    get constants(): ReadonlyArray<LiteralValue> {
+    get constants(): ReadonlyArray<Constant> {
         return this._constants;
     }
 
-    setConstants(values: LiteralValue[]): void {
+    setConstants(values: Constant[]): void {
         if (this.constantCount > 0) throw new Error(`constants have already been set`);
-        values.forEach((v, i) => this._constants.push(this.validateConstant(v, i)));
+        for (let constant of values) {
+            constant.validate(this.field);
+            this._constants.push(constant);
+        }
     }
 
     // STATIC REGISTERS
@@ -109,13 +112,10 @@ export class AirSchema implements IAirSchema {
         return this._transitionFunction;
     }
 
-    setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure {
+    setTransitionFunction(context: ProcedureContext, width: number): Procedure {
         if (this._transitionFunction) throw new Error(`transition function has already been set`);
         if (!this._field) throw new Error(`transition function cannot be set before field is set`);
-        const constants = this._constants;
-        const traceWidth = width;
-        const staticWidth = this.staticRegisterCount;
-        this._transitionFunction = new Procedure(this.field, 'transition', span, width, constants, locals, traceWidth, staticWidth);
+        this._transitionFunction = new Procedure('transition', context, width);
         return this._transitionFunction;
     }
 
@@ -147,13 +147,13 @@ export class AirSchema implements IAirSchema {
         return this._maxConstraintDegree;
     }
 
-    setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure {
+    setConstraintEvaluator(context: ProcedureContext, width: number): Procedure {
         if (this._constraintEvaluator) throw new Error(`constraint evaluator has already been set`);
         if (!this._field) throw new Error(`constraint evaluator cannot be set before field is set`);
         const constants = this._constants;
         const traceWidth = this.traceRegisterCount;
         const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new Procedure(this.field, 'evaluation', span, width, constants, locals, traceWidth, staticWidth);
+        this._constraintEvaluator = new Procedure('evaluation', context, width);
         return this._constraintEvaluator;
     }
 
@@ -202,15 +202,6 @@ export class AirSchema implements IAirSchema {
 
     // VALIDATION
     // --------------------------------------------------------------------------------------------
-    private validateConstant(constant: LiteralValue, index: number): LiteralValue {
-        constant.elements.forEach(v => {
-            if (!this.field.isElement(v)) {
-                throw new Error(`value ${v} for constant ${index} is not a valid field element`);
-            }
-        });
-        return constant;
-    }
-
     private validateStaticRegister(register: StaticRegister, index: number): StaticRegister {
         if (!(register instanceof CyclicRegister)) return register;
         register.getValues(this.field).forEach(v => {
