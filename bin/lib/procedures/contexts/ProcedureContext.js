@@ -9,19 +9,15 @@ const utils_1 = require("../../utils");
 class ProcedureContext extends ExecutionContext_1.ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema, traceSpan, traceWidth) {
-        super(schema.field);
-        this.constants = []; // TODO
+    constructor(field, constants) {
+        super(field);
+        this.constants = constants.slice();
         for (let constant of this.constants) {
             if (constant.handle) {
                 utils_1.validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
                 this.declarationMap.set(constant.handle, constant);
             }
         }
-        this.locals = [];
-        this.traceSpan = traceSpan;
-        this.traceRegisters = new expressions_1.TraceSegment('trace', traceWidth ? traceWidth : schema.traceRegisterCount);
-        this.staticRegisters = new expressions_1.TraceSegment('static', schema.staticRegisterCount);
     }
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
@@ -58,7 +54,7 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
         }
         else if (operation === 'load.trace') {
             utils_1.validate(typeof indexOrHandle === 'number', errors.traceHandleInvalid(indexOrHandle));
-            utils_1.validate(indexOrHandle < this.traceSpan, errors.traceOffsetInvalid(indexOrHandle, this.traceSpan));
+            utils_1.validate(indexOrHandle < this.span, errors.traceOffsetInvalid(indexOrHandle, this.span));
             return new expressions_1.LoadExpression(this.traceRegisters, indexOrHandle);
         }
         else if (operation === 'load.static') {

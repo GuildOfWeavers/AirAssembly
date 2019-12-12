@@ -4,8 +4,8 @@ import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { StaticRegisterSet, PrngSequence } from "./registers";
 import {
-    Procedure, ExecutionContext, Parameter, LocalVariable, AirFunction, ProcedureContext, FunctionContext,
-    Constant
+    ExecutionContext, TransitionContext, EvaluationContext, FunctionContext, Parameter, LocalVariable,
+    Constant, StoreOperation
 } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
@@ -209,15 +209,16 @@ class AirParser extends EmbeddedActionsParser {
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME3(RParen);
 
-        const context = this.ACTION(() => new ProcedureContext(schema, span, width));
+        const context = this.ACTION(() => new TransitionContext(schema, span, width));
         this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 
         // build body
-        const procedure = this.ACTION(() => schema.setTransitionFunction(context, width));
-        this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure]   }));
-        const resultExpression = this.SUBRULE(this.expression,  { ARGS: [context] });
-        this.ACTION(() => schema.transitionFunction.setResult(resultExpression));
-        this.CONSUME1(RParen);
+        const statements: StoreOperation[] = [];
+        this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+        const result = this.SUBRULE(this.expression, { ARGS: [context] });
+        this.CONSUME(RParen);
+
+        this.ACTION(() => schema.setTransitionFunction(context, statements, result));
     });
 
     private transitionConstraints = this.RULE('transitionConstraints', (schema: AirSchema) => {
@@ -235,24 +236,28 @@ class AirParser extends EmbeddedActionsParser {
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME3(RParen);
 
-        const context = this.ACTION(() => new ProcedureContext(schema, span));
+        const context = this.ACTION(() => new EvaluationContext(schema, span, width));
         this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
         
         // build body
-        const procedure = this.ACTION(() => schema.setConstraintEvaluator(context, width));
-        this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
-        const resultExpression = this.SUBRULE(this.expression,  { ARGS: [context] });
-        this.ACTION(() => schema.constraintEvaluator.setResult(resultExpression));
+        const statements: StoreOperation[] = [];
+        this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+        const result = this.SUBRULE(this.expression, { ARGS: [context] });
         this.CONSUME(RParen);
+
+        this.ACTION(() => schema.setConstraintEvaluator(context, statements, result));
     });
 
-    private procedureSubroutine = this.RULE('procedureSubroutine', (ctx: Procedure) => {
+    private storeOperation = this.RULE<StoreOperation>('storeOperation', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         this.CONSUME(StoreOp);
-        const index = this.SUBRULE(this.integerLiteral);
+        const indexOrHandle = this.OR([
+            { ALT: () => this.SUBRULE(this.integerLiteral) },
+            { ALT: () => this.CONSUME(Handle).image}
+        ]);
         const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
         this.CONSUME(RParen);
-        return this.ACTION(() => ctx.addSubroutine(value, index));
+        return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
     });
 
     private airFunction = this.RULE('airFunction', (schema: AirSchema) => {
@@ -260,7 +265,7 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Function);
 
         // build function context
-        const context = this.ACTION(() => new FunctionContext(schema));
+        const context = this.ACTION(() => new FunctionContext(schema, 0));
         this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
         this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 

@@ -1,11 +1,11 @@
 // IMPORTS
 // ================================================================================================
-import { Subroutine as ISubroutine } from "@guildofweavers/air-assembly";
+import { StoreOperation as IStoreOperation } from "@guildofweavers/air-assembly";
 import { Expression, Dimensions } from '../expressions';
 
 // CLASS DEFINITION
 // ================================================================================================
-export class StoreOperation {
+export class StoreOperation implements IStoreOperation {
     
     private _target     : number;
     private _expression : Expression;

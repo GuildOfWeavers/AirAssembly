@@ -177,14 +177,14 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
-            const context = this.ACTION(() => new procedures_1.ProcedureContext(schema, span, width));
+            const context = this.ACTION(() => new procedures_1.TransitionContext(schema, span, width));
             this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
-            const procedure = this.ACTION(() => schema.setTransitionFunction(context, width));
-            this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
-            const resultExpression = this.SUBRULE(this.expression, { ARGS: [context] });
-            this.ACTION(() => schema.transitionFunction.setResult(resultExpression));
-            this.CONSUME1(lexer_1.RParen);
+            const statements = [];
+            this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+            const result = this.SUBRULE(this.expression, { ARGS: [context] });
+            this.CONSUME(lexer_1.RParen);
+            this.ACTION(() => schema.setTransitionFunction(context, statements, result));
         });
         this.transitionConstraints = this.RULE('transitionConstraints', (schema) => {
             this.CONSUME(lexer_1.LParen);
@@ -199,28 +199,31 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
-            const context = this.ACTION(() => new procedures_1.ProcedureContext(schema, span));
+            const context = this.ACTION(() => new procedures_1.EvaluationContext(schema, span, width));
             this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
-            const procedure = this.ACTION(() => schema.setConstraintEvaluator(context, width));
-            this.MANY2(() => this.SUBRULE(this.procedureSubroutine, { ARGS: [procedure] }));
-            const resultExpression = this.SUBRULE(this.expression, { ARGS: [context] });
-            this.ACTION(() => schema.constraintEvaluator.setResult(resultExpression));
+            const statements = [];
+            this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+            const result = this.SUBRULE(this.expression, { ARGS: [context] });
             this.CONSUME(lexer_1.RParen);
+            this.ACTION(() => schema.setConstraintEvaluator(context, statements, result));
         });
-        this.procedureSubroutine = this.RULE('procedureSubroutine', (ctx) => {
+        this.storeOperation = this.RULE('storeOperation', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.StoreOp);
-            const index = this.SUBRULE(this.integerLiteral);
+            const indexOrHandle = this.OR([
+                { ALT: () => this.SUBRULE(this.integerLiteral) },
+                { ALT: () => this.CONSUME(lexer_1.Handle).image }
+            ]);
             const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => ctx.addSubroutine(value, index));
+            return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
         });
         this.airFunction = this.RULE('airFunction', (schema) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Function);
             // build function context
-            const context = this.ACTION(() => new procedures_1.FunctionContext(schema));
+            const context = this.ACTION(() => new procedures_1.FunctionContext(schema, 0));
             this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
             this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build function body

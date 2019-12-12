@@ -5,7 +5,7 @@ import {
     GetVectorElement, SliceVector, MakeMatrix, LoadExpression, TraceSegment 
 } from "../expressions";
 import { getBinaryFunction, getUnaryFunction } from "./utils";
-import { Subroutine } from "../procedures";
+import { StoreOperation } from "../procedures";
 
 // INTERFACES
 // ================================================================================================
@@ -92,7 +92,7 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
             if (e.binding instanceof LiteralValue) {
                 code = `g[${e.index}]`;
             }
-            else if (e.binding instanceof Subroutine) {
+            else if (e.binding instanceof StoreOperation) {
                 code = `v${e.index}`;
             }
 

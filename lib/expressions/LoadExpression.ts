@@ -4,11 +4,11 @@ import { LoadSource } from '@guildofweavers/air-assembly';
 import { Expression } from './Expression';
 import { LiteralValue } from './LiteralValue';
 import { TraceSegment } from './TraceSegment';
-import { Subroutine, Parameter } from '../procedures';
+import { StoreOperation, Parameter } from '../procedures';
 
 // INTERFACES
 // ================================================================================================
-type LoadBinding = TraceSegment | LiteralValue | Subroutine | Parameter;
+type LoadBinding = TraceSegment | LiteralValue | StoreOperation | Parameter;
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -29,14 +29,14 @@ export class LoadExpression extends Expression {
     // --------------------------------------------------------------------------------------------
     get source(): LoadSource {
         if (this.binding instanceof LiteralValue) return 'const';
-        else if (this.binding instanceof Subroutine) return 'local';
+        else if (this.binding instanceof StoreOperation) return 'local';
         else if (this.binding instanceof TraceSegment) return this.binding.segment;
         else throw new Error(`invalid load binding: ${this.binding}`);
     }
 
     get isStatic(): boolean {
         if (this.binding instanceof LiteralValue) return true;
-        else if (this.binding instanceof Subroutine) return this.binding.expression.isStatic;
+        else if (this.binding instanceof StoreOperation) return this.binding.expression.isStatic;
         else if (this.binding instanceof TraceSegment) return false;
         else throw new Error(`invalid load binding: ${this.binding}`);
     }

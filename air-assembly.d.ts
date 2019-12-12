@@ -109,8 +109,8 @@ declare module '@guildofweavers/air-assembly' {
         setField(type: 'prime', modulus: bigint): void;
         setConstants(values: Constant[]): void;
         setStaticRegisters(registers: StaticRegisterSet): void;
-        setTransitionFunction(context: any, width: number): Procedure;
-        setConstraintEvaluator(context: any, width: number): Procedure;
+        setTransitionFunction(context: any, statements: StoreOperation[], result: Expression): void;      // TODO
+        setConstraintEvaluator(context: any, statements: StoreOperation[], result: Expression): void;     // TODO
         setExports(declarations: ExportDeclaration[]): void;
     }
 
@@ -119,13 +119,8 @@ declare module '@guildofweavers/air-assembly' {
         readonly name           : ProcedureName;
         readonly span           : number;
         readonly locals         : ReadonlyArray<Dimensions>;
-        readonly subroutines    : ReadonlyArray<Subroutine>;
+        readonly statements     : ReadonlyArray<StoreOperation>;
         readonly result         : Expression;
-        readonly resultLength   : number;
-
-        setResult(expression: Expression): void;
-        addSubroutine(expression: Expression, localVarIdx: number): void;
-        buildLoadExpression(operation: string, index: number): LoadExpression;
     }
 
     export interface Constant {
@@ -134,9 +129,9 @@ declare module '@guildofweavers/air-assembly' {
         readonly handle?    : string;
     }
 
-    export interface Subroutine {
+    export interface StoreOperation {
         readonly expression     : Expression;
-        readonly localVarIdx    : number;
+        readonly target         : number;
         readonly dimensions     : Dimensions;
     }
 

@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { Dimensions } from "../expressions/utils";
-import { Subroutine } from "./Subroutine";
+import { StoreOperation } from "./StoreOperation";
 import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
@@ -10,7 +10,7 @@ export class LocalVariable {
 
     readonly dimensions : Dimensions;
     readonly handle?    : string;
-    private binding?    : Subroutine;
+    private binding?    : StoreOperation;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
@@ -27,12 +27,12 @@ export class LocalVariable {
         return this.binding !== undefined;
     }
 
-    getBinding(index: number): Subroutine {
+    getBinding(index: number): StoreOperation {
         if (!this.binding) throw new Error(`local variable ${index} has not yet been set`);
         return this.binding;
     }
 
-    bind(value: Subroutine, index: number) {
+    bind(value: StoreOperation, index: number) {
         if (!Dimensions.areSameDimensions(this.dimensions, value.expression.dimensions)) {
             const vd = value.expression.dimensions;
             throw new Error(`cannot store ${vd[0]}x${vd[1]} value in local variable ${index}`);

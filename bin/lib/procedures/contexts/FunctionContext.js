@@ -10,10 +10,10 @@ const utils_1 = require("../../utils");
 class FunctionContext extends ExecutionContext_1.ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema) {
+    constructor(schema, width) {
         super(schema.field);
+        this.width = width;
         this.parameters = [];
-        this.locals = [];
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

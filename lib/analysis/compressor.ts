@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure, Subroutine } from "../procedures";
+import { Procedure } from "../procedures";
 import {
     Expression, ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
     GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions

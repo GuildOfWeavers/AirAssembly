@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema } from "../../AirSchema";
+import { ProcedureName, FiniteField } from "@guildofweavers/air-assembly";
 import { ExecutionContext } from "./ExecutionContext";
 import { LoadExpression, TraceSegment } from "../../expressions";
 import { LocalVariable } from "../LocalVariable";
@@ -9,31 +9,27 @@ import { validate } from "../../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class ProcedureContext extends ExecutionContext {
+export abstract class ProcedureContext extends ExecutionContext {
 
-    readonly constants          : Constant[];
-    readonly locals             : LocalVariable[];
-    readonly traceRegisters     : TraceSegment;
-    readonly staticRegisters    : TraceSegment;
-    readonly traceSpan          : number;
+    abstract readonly name              : ProcedureName;
+    abstract readonly traceRegisters    : TraceSegment;
+    abstract readonly staticRegisters   : TraceSegment;
+    abstract readonly span              : number;
+    abstract readonly width             : number;
+
+    readonly constants                  : Constant[];
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema: AirSchema, traceSpan: number, traceWidth?: number) {
-        super(schema.field);
-        
-        this.constants = []; // TODO
+    constructor(field: FiniteField, constants: ReadonlyArray<Constant>) {
+        super(field);
+        this.constants = constants.slice();
         for (let constant of this.constants) {
             if (constant.handle) {
                 validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
                 this.declarationMap.set(constant.handle, constant);
             }
         }
-
-        this.locals = [];
-        this.traceSpan = traceSpan;
-        this.traceRegisters = new TraceSegment('trace', traceWidth ? traceWidth : schema.traceRegisterCount);
-        this.staticRegisters = new TraceSegment('static', schema.staticRegisterCount);
     }
 
     // PUBLIC FUNCTIONS
@@ -73,7 +69,7 @@ export class ProcedureContext extends ExecutionContext {
         }
         else if (operation === 'load.trace') {
             validate(typeof indexOrHandle === 'number', errors.traceHandleInvalid(indexOrHandle));
-            validate(indexOrHandle < this.traceSpan, errors.traceOffsetInvalid(indexOrHandle, this.traceSpan));
+            validate(indexOrHandle < this.span, errors.traceOffsetInvalid(indexOrHandle, this.span));
             return new LoadExpression(this.traceRegisters, indexOrHandle);
         }
         else if (operation === 'load.static') {

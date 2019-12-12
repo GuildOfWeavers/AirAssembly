@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const galois_1 = require("@guildofweavers/galois");
+const registers_1 = require("./registers");
 const procedures_1 = require("./procedures");
 const analysis_1 = require("./analysis");
-const registers_1 = require("./registers");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
@@ -80,25 +80,24 @@ class AirSchema {
     // TRANSITION FUNCTION
     // --------------------------------------------------------------------------------------------
     get traceRegisterCount() {
-        return this.transitionFunction.resultLength;
+        return this.transitionFunction.dimensions[0];
     }
     get transitionFunction() {
         if (!this._transitionFunction)
             throw new Error(`transition function hasn't been set yet`);
         return this._transitionFunction;
     }
-    setTransitionFunction(context, width) {
+    setTransitionFunction(context, statements, result) {
         if (this._transitionFunction)
             throw new Error(`transition function has already been set`);
         if (!this._field)
             throw new Error(`transition function cannot be set before field is set`);
-        this._transitionFunction = new procedures_1.Procedure('transition', context, width);
-        return this._transitionFunction;
+        this._transitionFunction = new procedures_1.Procedure(context, statements, result);
     }
     // TRANSITION CONSTRAINTS
     // --------------------------------------------------------------------------------------------
     get constraintCount() {
-        return this.constraintEvaluator.resultLength;
+        return this.constraintEvaluator.dimensions[0];
     }
     get constraintEvaluator() {
         if (!this._constraintEvaluator)
@@ -120,16 +119,12 @@ class AirSchema {
         }
         return this._maxConstraintDegree;
     }
-    setConstraintEvaluator(context, width) {
+    setConstraintEvaluator(context, statements, result) {
         if (this._constraintEvaluator)
             throw new Error(`constraint evaluator has already been set`);
         if (!this._field)
             throw new Error(`constraint evaluator cannot be set before field is set`);
-        const constants = this._constants;
-        const traceWidth = this.traceRegisterCount;
-        const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new procedures_1.Procedure('evaluation', context, width);
-        return this._constraintEvaluator;
+        this._constraintEvaluator = new procedures_1.Procedure(context, statements, result);
     }
     // EXPORT DECLARATIONS
     // --------------------------------------------------------------------------------------------

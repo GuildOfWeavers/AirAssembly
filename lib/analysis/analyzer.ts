@@ -115,10 +115,10 @@ export function analyzeProcedure(procedure: Procedure): ProcedureAnalysisResult 
         stats: { add: 0, mul: 0, inv: 0 }
     }
 
-    // analyze subroutines
-    procedure.subroutines.forEach(s => {
+    // analyze statements
+    procedure.statements.forEach(s => {
         const degree = analyzer.visit(s.expression, context);
-        context.degree.local[s.localVarIdx] = degree;
+        context.degree.local[s.target] = degree;
     })
 
     // analyze result and return

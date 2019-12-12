@@ -11,15 +11,15 @@ import { validate } from "../../utils";
 // ================================================================================================
 export class FunctionContext extends ExecutionContext {
 
-    readonly parameters     : Parameter[];
-    readonly locals         : LocalVariable[];
+    readonly width      : number;
+    readonly parameters : Parameter[];
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema: AirSchema) {
+    constructor(schema: AirSchema, width: number) {
         super(schema.field);
+        this.width = width;
         this.parameters = [];
-        this.locals = [];
     }
 
     // PUBLIC METHODS

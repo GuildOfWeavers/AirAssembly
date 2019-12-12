@@ -1,57 +1,47 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure as IProcedure, ProcedureName, FiniteField, Constant } from '@guildofweavers/air-assembly';
-import { Expression, LoadExpression, LiteralValue, TraceSegment, ExpressionTransformer } from "../expressions";
-import { Dimensions, getLoadSource } from "../expressions/utils";
-import { Subroutine } from "./Subroutine";
-import { LocalVariable } from "./LocalVariable";
+import { Procedure as IProcedure, ProcedureName} from '@guildofweavers/air-assembly';
 import { ProcedureContext } from './contexts/ProcedureContext';
+import { Expression, TraceSegment } from "../expressions";
+import { LocalVariable } from "./LocalVariable";
+import { StoreOperation } from './StoreOperation';
+import { Dimensions } from "../expressions/utils";
+import { Constant } from './Constant';
 
 // CLASS DEFINITION
 // ================================================================================================
 export class Procedure implements IProcedure {
 
-    readonly field              : FiniteField;
     readonly name               : ProcedureName;
     readonly span               : number;
-    readonly resultLength       : number;
-    readonly constants          : Constant[];
     readonly localVariables     : LocalVariable[];
+
+    readonly statements         : StoreOperation[];
+    readonly result             : Expression;
+
+    readonly constants          : Constant[];
     readonly traceRegisters     : TraceSegment;
     readonly staticRegisters    : TraceSegment;
 
-    readonly subroutines        : Subroutine[];
-    private _result?            : Expression;
-
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(name: ProcedureName, context: ProcedureContext, width: number)
-    {
-        this.field = context.field;
-        this.name = name;
-        this.span = validateSpan(name, context.traceSpan);
+    constructor(context: ProcedureContext, statements: StoreOperation[], result: Expression) {
+        this.name = context.name;
+        this.span = validateSpan(name, context.span);
+        this.localVariables = context.locals.slice();
+        this.statements = statements.slice();
+        if (!result.isVector || result.dimensions[0] !== context.width)
+            throw new Error(`${this.name} procedure must resolve to a vector of ${context.width} elements`);
+        this.result = result;
         this.constants = context.constants;
-        this.localVariables = context.locals;
         this.traceRegisters = context.traceRegisters;
         this.staticRegisters = context.staticRegisters;
-        this.resultLength = width;
-
-        this.subroutines = [];
     }
 
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get result(): Expression {
-        if (!this._result) throw new Error(`${this.name} procedure result hasn't been set yet`);
-        return this._result;
-    }
-
-    setResult(value: Expression): void {
-        if (this._result) throw new Error(`${this.name} procedure result hasn't been set yet`);
-        if (!value.isVector || value.dimensions[0] !== this.resultLength)
-            throw new Error(`${this.name} procedure must resolve to a vector of ${this.resultLength} elements`);
-        this.validateExpression(value);
-        this._result = value;
+    get dimensions(): Dimensions {
+        return this.result.dimensions;
     }
 
     get locals(): ReadonlyArray<Dimensions> {
@@ -60,51 +50,33 @@ export class Procedure implements IProcedure {
 
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    addSubroutine(expression: Expression, localVarIdx: number): void {
-        if (this._result)
-            throw new Error(`cannot add subroutines to ${this.name} procedure after result has been set`);
-        this.validateExpression(expression);
-        const variable = this.getLocalVariable(localVarIdx);
-        const subroutine = new Subroutine(expression, localVarIdx)
-        variable.bind(subroutine, localVarIdx);
-        this.subroutines.push(subroutine);
-    }
-
-    buildLoadExpression(operation: string, index: number): LoadExpression {
-        const source = getLoadSource(operation);
-        if (source === 'const') {
-            if (index >= this.constants.length)
-                throw new Error(`constant with index ${index} has not been defined for ${this.name} procedure`);
-            return new LoadExpression(this.constants[index].value, index);
-        }
-        else if (source === 'trace') {
-            this.validateTraceOffset(index);
-            return new LoadExpression(this.traceRegisters, index);
-        }
-        else if (source === 'static') {
-            if (index !== 0) throw new Error(`static registers offset must be 0 for ${this.name} procedure`);
-            return new LoadExpression(this.staticRegisters, index);
-        }
-        else if (source === 'local') {
-            const variable = this.getLocalVariable(index);
-            const binding = variable.getBinding(index);
-            return new LoadExpression(binding, index);
-        }
-        else {
-            throw new Error(`${operation} is not a valid load operation`);
-        }
-    }
-
     toString() {
-        let code = `\n    (span ${this.span}) (result vector ${this.resultLength})`;
+        let code = `\n    (span ${this.span}) (result vector ${this.dimensions[0]})`;
         if (this.localVariables.length > 0)
             code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
-        if (this.subroutines.length > 0)
-            code += `\n    ${this.subroutines.map(s => s.toString()).join('\n    ')}`;
+        if (this.statements.length > 0)
+            code += `\n    ${this.statements.map(s => s.toString()).join('\n    ')}`;
         code += `\n    ${this.result.toString()}`
         return `\n  (${this.name}${code})`;
     }
+}
 
+// HELPER FUNCTIONS
+// ================================================================================================
+function validateSpan(name: ProcedureName, span: number): number {
+    if (name === 'transition') {
+        if (span !== 1) throw new Error(`span ${span} is not valid for ${name} procedure`);
+    }
+    else if (name === 'evaluation') {
+        if (span !== 2) throw new Error(`span ${span} is not valid for ${name} procedure`);
+    }
+    else {
+        throw new Error(`invalid procedure name '${name}'`);
+    }
+    return span;
+}
+
+/*
     // MUTATION METHODS
     // --------------------------------------------------------------------------------------------
     transformExpressions(transformer: ExpressionTransformer, subIdx: number): void {
@@ -149,47 +121,4 @@ export class Procedure implements IProcedure {
             }
         }
     }
-
-    // PRIVATE METHODS
-    // --------------------------------------------------------------------------------------------
-    private getLocalVariable(index: number): LocalVariable {
-        if (index >= this.localVariables.length)
-            throw new Error(`local variable ${index} has not been defined for ${this.name} procedure`);
-        return this.localVariables[index];
-    }
-
-    private validateTraceOffset(offset: number): void {
-        if (offset < 0)
-            throw new Error(`trace offset for ${this.name} procedure cannot be less than 0`);
-        if (offset > (this.span - 1))
-            throw new Error(`trace offset for ${this.name} procedure cannot be greater than ${(this.span - 1)}`);
-    }
-
-    private validateExpression(expression: Expression): void {
-        if (expression instanceof LiteralValue) {
-            expression.elements.forEach(v => {
-                if (!this.field.isElement(v)) {
-                    throw new Error(`value ${v} in ${this.name} procedure is not a valid field element`);
-                }
-            });
-        }
-        else {
-            expression.children.forEach(e => this.validateExpression(e));
-        }
-    }
-}
-
-// HELPER FUNCTIONS
-// ================================================================================================
-function validateSpan(name: ProcedureName, span: number): number {
-    if (name === 'transition') {
-        if (span !== 1) throw new Error(`span ${span} is not valid for ${name} procedure`);
-    }
-    else if (name === 'evaluation') {
-        if (span !== 2) throw new Error(`span ${span} is not valid for ${name} procedure`);
-    }
-    else {
-        throw new Error(`invalid procedure name '${name}'`);
-    }
-    return span;
-}
+*/

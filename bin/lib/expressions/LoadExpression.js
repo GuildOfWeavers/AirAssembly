@@ -19,7 +19,7 @@ class LoadExpression extends Expression_1.Expression {
     get source() {
         if (this.binding instanceof LiteralValue_1.LiteralValue)
             return 'const';
-        else if (this.binding instanceof procedures_1.Subroutine)
+        else if (this.binding instanceof procedures_1.StoreOperation)
             return 'local';
         else if (this.binding instanceof TraceSegment_1.TraceSegment)
             return this.binding.segment;
@@ -29,7 +29,7 @@ class LoadExpression extends Expression_1.Expression {
     get isStatic() {
         if (this.binding instanceof LiteralValue_1.LiteralValue)
             return true;
-        else if (this.binding instanceof procedures_1.Subroutine)
+        else if (this.binding instanceof procedures_1.StoreOperation)
             return this.binding.expression.isStatic;
         else if (this.binding instanceof TraceSegment_1.TraceSegment)
             return false;

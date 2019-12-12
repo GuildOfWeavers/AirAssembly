@@ -75,7 +75,7 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
             if (e.binding instanceof expressions_1.LiteralValue) {
                 code = `g[${e.index}]`;
             }
-            else if (e.binding instanceof procedures_1.Subroutine) {
+            else if (e.binding instanceof procedures_1.StoreOperation) {
                 code = `v${e.index}`;
             }
             if (e.isVector && options.vectorAsArray) {

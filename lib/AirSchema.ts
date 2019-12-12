@@ -2,11 +2,11 @@
 // ================================================================================================
 import { AirSchema as IAirSchema, ConstraintDescriptor } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
-import { LiteralValue, Dimensions } from "./expressions";
-import { Procedure, Constant, ProcedureContext } from "./procedures";
-import { analyzeProcedure } from "./analysis";
 import { StaticRegister, StaticRegisterSet, InputRegister, CyclicRegister } from "./registers";
+import { Procedure, Constant, ProcedureContext, StoreOperation } from "./procedures";
+import { Expression } from "./expressions";
 import { ExportDeclaration } from "./exports";
+import { analyzeProcedure } from "./analysis";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -104,7 +104,7 @@ export class AirSchema implements IAirSchema {
     // TRANSITION FUNCTION
     // --------------------------------------------------------------------------------------------
     get traceRegisterCount(): number {
-        return this.transitionFunction.resultLength;
+        return this.transitionFunction.dimensions[0];
     }
 
     get transitionFunction(): Procedure {
@@ -112,17 +112,16 @@ export class AirSchema implements IAirSchema {
         return this._transitionFunction;
     }
 
-    setTransitionFunction(context: ProcedureContext, width: number): Procedure {
+    setTransitionFunction(context: ProcedureContext, statements: StoreOperation[], result: Expression): void {
         if (this._transitionFunction) throw new Error(`transition function has already been set`);
         if (!this._field) throw new Error(`transition function cannot be set before field is set`);
-        this._transitionFunction = new Procedure('transition', context, width);
-        return this._transitionFunction;
+        this._transitionFunction = new Procedure(context, statements, result);
     }
 
     // TRANSITION CONSTRAINTS
     // --------------------------------------------------------------------------------------------
     get constraintCount(): number {
-        return this.constraintEvaluator.resultLength;
+        return this.constraintEvaluator.dimensions[0];
     }
 
     get constraintEvaluator(): Procedure {
@@ -147,14 +146,10 @@ export class AirSchema implements IAirSchema {
         return this._maxConstraintDegree;
     }
 
-    setConstraintEvaluator(context: ProcedureContext, width: number): Procedure {
+    setConstraintEvaluator(context: ProcedureContext, statements: StoreOperation[], result: Expression): void {
         if (this._constraintEvaluator) throw new Error(`constraint evaluator has already been set`);
         if (!this._field) throw new Error(`constraint evaluator cannot be set before field is set`);
-        const constants = this._constants;
-        const traceWidth = this.traceRegisterCount;
-        const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new Procedure('evaluation', context, width);
-        return this._constraintEvaluator;
+        this._constraintEvaluator = new Procedure(context, statements, result);
     }
 
     // EXPORT DECLARATIONS
