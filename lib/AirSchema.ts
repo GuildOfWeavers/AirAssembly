@@ -3,7 +3,7 @@
 import { AirSchema as IAirSchema, ConstraintDescriptor } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { StaticRegister, StaticRegisterSet, InputRegister, CyclicRegister } from "./registers";
-import { Procedure, Constant, ProcedureContext, StoreOperation } from "./procedures";
+import { Procedure, Constant, ProcedureContext, StoreOperation, FunctionContext, AirFunction } from "./procedures";
 import { Expression } from "./expressions";
 import { ExportDeclaration } from "./exports";
 import { analyzeProcedure } from "./analysis";
@@ -16,6 +16,7 @@ export class AirSchema implements IAirSchema {
 
     private _constants              : Constant[];
     private _staticRegisters        : StaticRegister[];
+    private _functions              : AirFunction[];
 
     private _transitionFunction?    : Procedure;
     private _constraintEvaluator?   : Procedure;
@@ -25,11 +26,15 @@ export class AirSchema implements IAirSchema {
 
     private _exportDeclarations?    : Map<string, ExportDeclaration>;
 
+    private readonly _handles       : Set<string>;
+
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor() {
         this._constants = [];
         this._staticRegisters = [];
+        this._functions = [];
+        this._handles = new Set();
     }
 
     // FIELD
@@ -99,6 +104,23 @@ export class AirSchema implements IAirSchema {
         if (danglingInputs.length > 0)
             throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
         registers.forEach((r, i) => this._staticRegisters.push(this.validateStaticRegister(r, i)));
+    }
+
+    // FUNCTIONS
+    // --------------------------------------------------------------------------------------------
+    get functions(): ReadonlyArray<AirFunction> {
+        return this._functions;
+    }
+
+    addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void {
+        if (handle) {
+            if (this._handles.has(handle)) {
+                throw new Error(`handle ${handle} cannot be declared multiple times`);
+            }
+            this._handles.add(handle);
+        }
+        const func = new AirFunction(context, statements, result, handle);
+        this._functions.push(func);
     }
 
     // TRANSITION FUNCTION
@@ -188,6 +210,7 @@ export class AirSchema implements IAirSchema {
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         if (this.staticRegisterCount > 0)
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
+        this.functions.forEach(f => code += `\n  ${f.toString()}`);
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
         this.exports.forEach(d => code += `\n  ${d.toString()}`);

@@ -9,6 +9,13 @@ const schema = compile(Buffer.from(`
         (input secret vector (steps 16) (shift -1))
         (mask inverted (input 0))
         (cycle (prng sha256 0x4d694d43 16)))
+    (function $test
+        (width 2)
+        (param vector 2) (param scalar)
+        (local $temp vector 2)
+        (store.local $temp
+            (add (load.param 0) (load.param 1) ))
+        (exp (load.local $temp) (scalar 2)))
     (transition
         (span 1) (result vector 1)
         (local vector 1)

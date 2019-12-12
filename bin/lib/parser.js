@@ -24,6 +24,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.SUBRULE(this.fieldDeclaration, { ARGS: [schema] });
             this.OPTION1(() => this.SUBRULE(this.constantDeclarations, { ARGS: [schema] }));
             this.OPTION2(() => this.SUBRULE(this.staticRegisters, { ARGS: [schema] }));
+            this.MANY(() => this.SUBRULE(this.airFunction, { ARGS: [schema] }));
             this.SUBRULE(this.transitionFunction, { ARGS: [schema] });
             this.SUBRULE(this.transitionConstraints, { ARGS: [schema] });
             this.SUBRULE(this.exportDeclarations, { ARGS: [schema] });
@@ -208,29 +209,24 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => schema.setConstraintEvaluator(context, statements, result));
         });
-        this.storeOperation = this.RULE('storeOperation', (ctx) => {
-            this.CONSUME(lexer_1.LParen);
-            this.CONSUME(lexer_1.StoreOp);
-            const indexOrHandle = this.OR([
-                { ALT: () => this.SUBRULE(this.integerLiteral) },
-                { ALT: () => this.CONSUME(lexer_1.Handle).image }
-            ]);
-            const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
-            this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
-        });
         this.airFunction = this.RULE('airFunction', (schema) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Function);
+            const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             // build function context
-            const context = this.ACTION(() => new procedures_1.FunctionContext(schema, 0));
+            this.CONSUME2(lexer_1.LParen);
+            this.CONSUME(lexer_1.Width);
+            const width = this.SUBRULE2(this.integerLiteral);
+            this.CONSUME2(lexer_1.RParen);
+            const context = this.ACTION(() => new procedures_1.FunctionContext(schema, width));
             this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
             this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build function body
-            // const func = new AirFunction(0, context);
-            // TODO: statements
+            const statements = [];
+            this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
             const result = this.SUBRULE(this.expression, { ARGS: [context] });
             this.CONSUME(lexer_1.RParen);
+            this.ACTION(() => schema.addFunction(context, statements, result, handle));
         });
         this.paramDeclaration = this.RULE('paramDeclaration', (ctx) => {
             this.CONSUME(lexer_1.LParen);
@@ -354,9 +350,23 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.loadExpression = this.RULE('loadExpression', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             const op = this.CONSUME(lexer_1.LoadOp).image;
-            const index = this.SUBRULE(this.integerLiteral);
+            const indexOrHandle = this.OR([
+                { ALT: () => this.SUBRULE(this.integerLiteral) },
+                { ALT: () => this.CONSUME(lexer_1.Handle).image }
+            ]);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => ctx.buildLoadExpression(op, index));
+            return this.ACTION(() => ctx.buildLoadExpression(op, indexOrHandle));
+        });
+        this.storeOperation = this.RULE('storeOperation', (ctx) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.StoreOp);
+            const indexOrHandle = this.OR([
+                { ALT: () => this.SUBRULE(this.integerLiteral) },
+                { ALT: () => this.CONSUME(lexer_1.Handle).image }
+            ]);
+            const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
         });
         // LITERALS
         // --------------------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ export const Transition = createToken({ name: "Transition", pattern: /transition
 export const Evaluation = createToken({ name: "Evaluation", pattern: /evaluation/,  longer_alt: Identifier });
 
 export const Span       = createToken({ name: "Span",       pattern: /span/,        longer_alt: Identifier });
+export const Width      = createToken({ name: "Width",      pattern: /width/,       longer_alt: Identifier });
 export const Result     = createToken({ name: "Result",     pattern: /result/,      longer_alt: Identifier });
 export const Param      = createToken({ name: "Param",      pattern: /param/,       longer_alt: Identifier });
 export const Local      = createToken({ name: "Local",      pattern: /local/,       longer_alt: Identifier });
@@ -75,6 +76,7 @@ export const LoadOp     = createToken({ name: "LoadOp",     pattern: Lexer.NA   
 export const LoadConst  = createToken({ name: "LoadConst",  pattern: /load.const/,  longer_alt: Identifier, categories: LoadOp   });
 export const LoadTrace  = createToken({ name: "LoadTrace",  pattern: /load.trace/,  longer_alt: Identifier, categories: LoadOp   });
 export const LoadStatic = createToken({ name: "LoadStatic", pattern: /load.static/, longer_alt: Identifier, categories: LoadOp   });
+export const LoadParam  = createToken({ name: "LoadParam",  pattern: /load.param/,  longer_alt: Identifier, categories: LoadOp   });
 export const LoadLocal  = createToken({ name: "LoadLocal",  pattern: /load.local/,  longer_alt: Identifier, categories: LoadOp   });
 
 export const StoreOp    = createToken({ name: "StoreLocal", pattern: /store.local/, longer_alt: Identifier });
@@ -96,13 +98,13 @@ export const allTokens = [
     WhiteSpace, Comment,
     
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift, Cycle,
-    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Span, Result, Param, Local,
+    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Span, Width, Result, Param, Local,
     Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,
 
     Get, Slice, BinaryOp, Add, Sub, Mul, Div, Exp, Prod, UnaryOp, Neg, Inv,
-    LoadOp, LoadConst, LoadTrace, LoadStatic, LoadLocal, StoreOp,
+    LoadOp, LoadConst, LoadTrace, LoadStatic, LoadParam, LoadLocal, StoreOp,
 
     LParen, RParen, Minus,
 

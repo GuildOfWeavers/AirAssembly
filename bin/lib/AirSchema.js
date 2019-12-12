@@ -12,6 +12,8 @@ class AirSchema {
     constructor() {
         this._constants = [];
         this._staticRegisters = [];
+        this._functions = [];
+        this._handles = new Set();
     }
     // FIELD
     // --------------------------------------------------------------------------------------------
@@ -76,6 +78,21 @@ class AirSchema {
         if (danglingInputs.length > 0)
             throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
         registers.forEach((r, i) => this._staticRegisters.push(this.validateStaticRegister(r, i)));
+    }
+    // FUNCTIONS
+    // --------------------------------------------------------------------------------------------
+    get functions() {
+        return this._functions;
+    }
+    addFunction(context, statements, result, handle) {
+        if (handle) {
+            if (this._handles.has(handle)) {
+                throw new Error(`handle ${handle} cannot be declared multiple times`);
+            }
+            this._handles.add(handle);
+        }
+        const func = new procedures_1.AirFunction(context, statements, result, handle);
+        this._functions.push(func);
     }
     // TRANSITION FUNCTION
     // --------------------------------------------------------------------------------------------
@@ -160,6 +177,7 @@ class AirSchema {
             code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
         if (this.staticRegisterCount > 0)
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
+        this.functions.forEach(f => code += `\n  ${f.toString()}`);
         code += this.transitionFunction.toString();
         code += this.constraintEvaluator.toString();
         this.exports.forEach(d => code += `\n  ${d.toString()}`);

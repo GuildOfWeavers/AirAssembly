@@ -1,22 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// LOAD SOURCE
-// ================================================================================================
-const sources = {
-    'load.const': 'const',
-    'load.trace': 'trace',
-    'load.static': 'static',
-    'load.param': 'param',
-    'load.local': 'local',
-};
-function getLoadSource(operation) {
-    const source = sources[operation];
-    if (!source) {
-        throw new Error(`${operation} is not a valid load operation`);
-    }
-    return source;
-}
-exports.getLoadSource = getLoadSource;
 // STORE TARGET
 // ================================================================================================
 const targets = {

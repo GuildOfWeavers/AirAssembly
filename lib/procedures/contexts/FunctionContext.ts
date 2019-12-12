@@ -48,14 +48,14 @@ export class FunctionContext extends ExecutionContext {
 
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
         if (operation === 'load.param') {
-            const parameter = this.declarationMap.get(`param::${indexOrHandle}`) as Parameter;
+            const parameter = this.getDeclaration(indexOrHandle, 'param');
             validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
             const index = this.parameters.indexOf(parameter);
             validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
             return new LoadExpression(parameter, index);
         }
         else if (operation === 'load.local') {
-            const variable = this.declarationMap.get(`local::${indexOrHandle}`) as LocalVariable;
+            const variable = this.getDeclaration(indexOrHandle, 'local');
             validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
             const index = this.locals.indexOf(variable);
             validate(index !== -1, errors.localHandleInvalid(indexOrHandle));

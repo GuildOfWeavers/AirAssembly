@@ -12,13 +12,16 @@ class ExecutionContext {
         this.locals = [];
         this.declarationMap = new Map();
     }
-    // PUBLIC FUNCTIONS
-    // --------------------------------------------------------------------------------------------
+    getDeclaration(indexOrHandle, kind) {
+        return (typeof indexOrHandle === 'string')
+            ? this.declarationMap.get(indexOrHandle)
+            : this.declarationMap.get(`${kind}::${indexOrHandle}`);
+    }
     buildLiteralValue() {
         // TODO: implement
     }
     buildStoreOperation(indexOrHandle, value) {
-        const variable = this.declarationMap.get(`local::${indexOrHandle}`);
+        const variable = this.getDeclaration(indexOrHandle, 'local');
         utils_1.validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
         const index = this.locals.indexOf(variable);
         utils_1.validate(index !== -1, errors.localHandleInvalid(indexOrHandle));

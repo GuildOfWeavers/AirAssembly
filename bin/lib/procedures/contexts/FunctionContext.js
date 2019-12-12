@@ -39,14 +39,14 @@ class FunctionContext extends ExecutionContext_1.ExecutionContext {
     }
     buildLoadExpression(operation, indexOrHandle) {
         if (operation === 'load.param') {
-            const parameter = this.declarationMap.get(`param::${indexOrHandle}`);
+            const parameter = this.getDeclaration(indexOrHandle, 'param');
             utils_1.validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
             const index = this.parameters.indexOf(parameter);
             utils_1.validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
             return new expressions_1.LoadExpression(parameter, index);
         }
         else if (operation === 'load.local') {
-            const variable = this.declarationMap.get(`local::${indexOrHandle}`);
+            const variable = this.getDeclaration(indexOrHandle, 'local');
             utils_1.validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
             const index = this.locals.indexOf(variable);
             utils_1.validate(index !== -1, errors.localHandleInvalid(indexOrHandle));

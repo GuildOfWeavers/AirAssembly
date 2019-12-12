@@ -26,6 +26,9 @@ class Constant {
     get isMatrix() {
         return this.value.isMatrix;
     }
+    get isStatic() {
+        return true;
+    }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     validate(field) {

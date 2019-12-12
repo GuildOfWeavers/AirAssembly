@@ -38,6 +38,10 @@ export class Constant {
         return this.value.isMatrix;
     }
 
+    get isStatic(): boolean {
+        return true;
+    }
+
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     validate(field: FiniteField): void {

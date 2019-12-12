@@ -31,12 +31,21 @@ export abstract class ExecutionContext {
 
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
+    getDeclaration(indexOrHandle: number | string, kind: 'const'): Constant | undefined;
+    getDeclaration(indexOrHandle: number | string, kind: 'param'): Parameter | undefined;
+    getDeclaration(indexOrHandle: number | string, kind: 'local'): LocalVariable | undefined;
+    getDeclaration(indexOrHandle: number | string, kind: string): any {
+        return (typeof indexOrHandle === 'string')
+            ? this.declarationMap.get(indexOrHandle)
+            : this.declarationMap.get(`${kind}::${indexOrHandle}`);
+    }
+
     buildLiteralValue() {
         // TODO: implement
     }
 
     buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation {
-        const variable = this.declarationMap.get(`local::${indexOrHandle}`) as LocalVariable;
+        const variable = this.getDeclaration(indexOrHandle, 'local');
         validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
         const index = this.locals.indexOf(variable);
         validate(index !== -1, errors.localHandleInvalid(indexOrHandle));

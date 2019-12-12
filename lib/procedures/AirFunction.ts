@@ -1,45 +1,63 @@
 // IMPORTS
 // ================================================================================================
-import { FiniteField } from '@guildofweavers/air-assembly';
-import { Expression, LoadExpression, LiteralValue, TraceSegment, ExpressionTransformer } from "../expressions";
-import { Dimensions, getLoadSource } from "../expressions/utils";
+import { FunctionContext } from './contexts/FunctionContext';
+import { Parameter } from './Parameter';
 import { LocalVariable } from "./LocalVariable";
 import { StoreOperation } from './StoreOperation';
-import { Parameter } from './Parameter';
-import { ExecutionContext } from './contexts/ExecutionContext';
+import { Expression } from "../expressions";
+import { Dimensions } from "../expressions/utils";
+import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class AirFunction {
 
-    readonly dimensions         : Dimensions;
-    readonly context            : ExecutionContext;
+    readonly parameters         : Parameter[];
+    readonly localVariables     : LocalVariable[];
 
-    readonly assignments        : StoreOperation[];
-    private _result?            : Expression;
+    readonly statements         : StoreOperation[];
+    readonly result             : Expression;
+
+    readonly handle?            : string;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(width: number, context: ExecutionContext) {
-        this.dimensions = Dimensions.vector(width);
-        this.context = context;
-        this.assignments = [];
+    constructor(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string) {
+        this.parameters = context.parameters.slice();
+        this.localVariables = context.locals.slice();
+        this.statements = statements.slice();
+        if (!result.isVector || result.dimensions[0] !== context.width)
+            throw new Error(`function must resolve to a vector of ${context.width} elements`);
+        this.result = result;
+        if (handle !== undefined) {
+            this.handle = validateHandle(handle);
+        }
     }
 
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get result(): Expression {
-        return this._result!; // TODO
+    get dimensions(): Dimensions {
+        return this.result.dimensions;
+    }
+
+    get locals(): ReadonlyArray<Dimensions> {
+        return this.localVariables.map(v => v.dimensions);
     }
 
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    addAssignment(): void {
-        // TODO
-    }
-
     toString(): string {
-        return ''; // TODO
+        let code = `\n    (width ${this.dimensions[0]})`;
+        if (this.parameters.length > 0)
+            code += `\n    ${this.parameters.map(p => p.toString()).join(' ')}`;
+        if (this.localVariables.length > 0)
+            code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
+        if (this.statements.length > 0)
+            code += `\n    ${this.statements.map(s => s.toString()).join('\n    ')}`;
+        code += `\n    ${this.result.toString()}`
+
+        const handle = this.handle ? ` ${this.handle}` : '';
+        return `(function${handle}${code})`;
     }
 
     // PRIVATE METHODS

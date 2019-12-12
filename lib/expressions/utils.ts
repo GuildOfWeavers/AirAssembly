@@ -2,24 +2,6 @@
 // ================================================================================================
 import { StoreTarget, LoadSource } from "@guildofweavers/air-assembly";
 
-// LOAD SOURCE
-// ================================================================================================
-const sources: { [index: string]: LoadSource } = {
-    'load.const'    : 'const',
-    'load.trace'    : 'trace',
-    'load.static'   : 'static',
-    'load.param'    : 'param',
-    'load.local'    : 'local',
-};
-
-export function getLoadSource(operation: string): LoadSource {
-    const source = sources[operation];
-    if (!source) {
-        throw new Error(`${operation} is not a valid load operation`);
-    }
-    return source;
-}
-
 // STORE TARGET
 // ================================================================================================
 const targets: { [index: string]: StoreTarget } = {

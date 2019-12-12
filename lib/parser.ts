@@ -11,7 +11,7 @@ import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
     Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus,
-    Prng, Sha256, HexLiteral, Handle, Param, Function
+    Prng, Sha256, HexLiteral, Handle, Param, Function, Width
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -37,6 +37,7 @@ class AirParser extends EmbeddedActionsParser {
         this.SUBRULE(this.fieldDeclaration,                         { ARGS: [schema] });
         this.OPTION1(() => this.SUBRULE(this.constantDeclarations,  { ARGS: [schema] }));
         this.OPTION2(() => this.SUBRULE(this.staticRegisters,       { ARGS: [schema] }));
+        this.MANY(() => this.SUBRULE(this.airFunction,              { ARGS: [schema] }));
         this.SUBRULE(this.transitionFunction,                       { ARGS: [schema] });
         this.SUBRULE(this.transitionConstraints,                    { ARGS: [schema] });
         this.SUBRULE(this.exportDeclarations,                       { ARGS: [schema] });
@@ -248,34 +249,29 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => schema.setConstraintEvaluator(context, statements, result));
     });
 
-    private storeOperation = this.RULE<StoreOperation>('storeOperation', (ctx: ExecutionContext) => {
-        this.CONSUME(LParen);
-        this.CONSUME(StoreOp);
-        const indexOrHandle = this.OR([
-            { ALT: () => this.SUBRULE(this.integerLiteral) },
-            { ALT: () => this.CONSUME(Handle).image}
-        ]);
-        const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
-        this.CONSUME(RParen);
-        return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
-    });
-
     private airFunction = this.RULE('airFunction', (schema: AirSchema) => {
         this.CONSUME(LParen);
         this.CONSUME(Function);
 
+        const handle = this.OPTION(() => this.CONSUME(Handle).image);
+
         // build function context
-        const context = this.ACTION(() => new FunctionContext(schema, 0));
+        this.CONSUME2(LParen);
+        this.CONSUME(Width);
+        const width = this.SUBRULE2(this.integerLiteral);
+        this.CONSUME2(RParen);
+        
+        const context = this.ACTION(() => new FunctionContext(schema, width));
         this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
         this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 
         // build function body
-        // const func = new AirFunction(0, context);
-
-        // TODO: statements
-        const result = this.SUBRULE(this.expression,  { ARGS: [context] });
-
+        const statements: StoreOperation[] = [];
+        this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+        const result = this.SUBRULE(this.expression, { ARGS: [context] });
         this.CONSUME(RParen);
+
+        this.ACTION(() => schema.addFunction(context, statements, result, handle));
     });
 
     private paramDeclaration = this.RULE('paramDeclaration', (ctx: ExecutionContext) => {
@@ -409,9 +405,24 @@ class AirParser extends EmbeddedActionsParser {
     private loadExpression = this.RULE<LoadExpression>('loadExpression', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         const op = this.CONSUME(LoadOp).image;
-        const index = this.SUBRULE(this.integerLiteral);
+        const indexOrHandle = this.OR([
+            { ALT: () => this.SUBRULE(this.integerLiteral) },
+            { ALT: () => this.CONSUME(Handle).image }
+        ]);
         this.CONSUME(RParen);
-        return this.ACTION(() => ctx.buildLoadExpression(op, index));
+        return this.ACTION(() => ctx.buildLoadExpression(op, indexOrHandle));
+    });
+
+    private storeOperation = this.RULE<StoreOperation>('storeOperation', (ctx: ExecutionContext) => {
+        this.CONSUME(LParen);
+        this.CONSUME(StoreOp);
+        const indexOrHandle = this.OR([
+            { ALT: () => this.SUBRULE(this.integerLiteral) },
+            { ALT: () => this.CONSUME(Handle).image }
+        ]);
+        const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
+        this.CONSUME(RParen);
+        return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
     });
 
     // LITERALS
