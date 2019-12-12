@@ -59,22 +59,7 @@ export class ProcedureContext extends ExecutionContext {
     }
 
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
-        if (operation === 'load.const') {
-            const constant = this.getDeclaration(indexOrHandle, 'const');
-            validate(constant !== undefined, errors.constNotDeclared(indexOrHandle));
-            const index = this.constants.indexOf(constant);
-            validate(index !== -1, errors.constHandleInvalid(indexOrHandle));
-            return new LoadExpression(constant, index);
-        }
-        else if (operation === 'load.local') {
-            const variable = this.getDeclaration(indexOrHandle, 'local');
-            validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
-            const index = this.locals.indexOf(variable);
-            validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
-            const binding = variable.getBinding(index);
-            return new LoadExpression(binding, index);
-        }
-        else if (operation === 'load.trace') {
+        if (operation === 'load.trace') {
             validate(typeof indexOrHandle === 'number', errors.traceHandleInvalid(indexOrHandle));
             validate(indexOrHandle < this.span, errors.traceOffsetInvalid(indexOrHandle, this.span));
             return new LoadExpression(this.traceRegisters, indexOrHandle);
@@ -85,7 +70,7 @@ export class ProcedureContext extends ExecutionContext {
             return new LoadExpression(this.staticRegisters, indexOrHandle);
         }
         else {
-            throw new Error(`${operation} is not a valid load operation`);
+            return super.buildLoadExpression(operation, indexOrHandle);
         }
     }
 }
@@ -94,10 +79,6 @@ export class ProcedureContext extends ExecutionContext {
 // ================================================================================================
 const errors = {
     duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
-    constNotDeclared    : (p: any) => `cannot load constant ${p}: constant ${p} has not been declared`,
-    constHandleInvalid  : (p: any) => `cannot load constant ${p}: handle does not identify a constant`,
-    localNotDeclared    : (v: any) => `cannot load local variable ${v}: local variable ${v} has not been declared`,
-    localHandleInvalid  : (v: any) => `cannot load local variable ${v}: handle does not identify a local variable`,
     traceHandleInvalid  : (t: any) => `cannot load trace row ${t}: trace row offset must be an integer`,
     traceOffsetInvalid  : (t: any, s: any) => `cannot load trace row ${t}: trace row offset must be smaller than ${s}`,
     staticHandleInvalid : (t: any) => `cannot load static row ${t}: static row offset must be an integer`,

@@ -66,6 +66,7 @@ exports.LoadStatic = chevrotain_1.createToken({ name: "LoadStatic", pattern: /lo
 exports.LoadParam = chevrotain_1.createToken({ name: "LoadParam", pattern: /load.param/, longer_alt: exports.Identifier, categories: exports.LoadOp });
 exports.LoadLocal = chevrotain_1.createToken({ name: "LoadLocal", pattern: /load.local/, longer_alt: exports.Identifier, categories: exports.LoadOp });
 exports.StoreOp = chevrotain_1.createToken({ name: "StoreLocal", pattern: /store.local/, longer_alt: exports.Identifier });
+exports.CallOp = chevrotain_1.createToken({ name: "CallOp", pattern: /call/, longer_alt: exports.Identifier });
 // SYMBOLS
 // ================================================================================================
 exports.LParen = chevrotain_1.createToken({ name: "LParen", pattern: /\(/ });
@@ -84,7 +85,7 @@ exports.allTokens = [
     exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
-    exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadParam, exports.LoadLocal, exports.StoreOp,
+    exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadParam, exports.LoadLocal, exports.StoreOp, exports.CallOp,
     exports.LParen, exports.RParen, exports.Minus,
     exports.HexLiteral, exports.Literal, exports.Identifier, exports.Handle
 ];

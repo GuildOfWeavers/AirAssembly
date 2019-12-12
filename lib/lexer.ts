@@ -79,6 +79,7 @@ export const LoadParam  = createToken({ name: "LoadParam",  pattern: /load.param
 export const LoadLocal  = createToken({ name: "LoadLocal",  pattern: /load.local/,  longer_alt: Identifier, categories: LoadOp   });
 
 export const StoreOp    = createToken({ name: "StoreLocal", pattern: /store.local/, longer_alt: Identifier });
+export const CallOp     = createToken({ name: "CallOp",     pattern: /call/,        longer_alt: Identifier });
 
 // SYMBOLS
 // ================================================================================================
@@ -103,7 +104,7 @@ export const allTokens = [
     Scalar, Vector, Matrix,
 
     Get, Slice, BinaryOp, Add, Sub, Mul, Div, Exp, Prod, UnaryOp, Neg, Inv,
-    LoadOp, LoadConst, LoadTrace, LoadStatic, LoadParam, LoadLocal, StoreOp,
+    LoadOp, LoadConst, LoadTrace, LoadStatic, LoadParam, LoadLocal, StoreOp, CallOp,
 
     LParen, RParen, Minus,
 

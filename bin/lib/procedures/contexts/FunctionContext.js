@@ -53,16 +53,8 @@ class FunctionContext extends ExecutionContext_1.ExecutionContext {
             utils_1.validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
             return new expressions_1.LoadExpression(parameter, index);
         }
-        else if (operation === 'load.local') {
-            const variable = this.getDeclaration(indexOrHandle, 'local');
-            utils_1.validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
-            const index = this.locals.indexOf(variable);
-            utils_1.validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
-            const binding = variable.getBinding(index);
-            return new expressions_1.LoadExpression(binding, index);
-        }
         else {
-            throw new Error(`${operation} operation is not valid in function context`);
+            return super.buildLoadExpression(operation, indexOrHandle);
         }
     }
 }
@@ -72,8 +64,6 @@ exports.FunctionContext = FunctionContext;
 const errors = {
     duplicateHandle: (h) => `handle ${h} cannot be declared multiple times`,
     paramNotDeclared: (p) => `cannot load parameter ${p}: parameter ${p} has not been declared`,
-    paramHandleInvalid: (p) => `cannot load parameter ${p}: handle does not identify a parameter`,
-    localNotDeclared: (v) => `cannot load local variable ${v}: local variable ${v} has not been declared`,
-    localHandleInvalid: (v) => `cannot load local variable ${v}: handle does not identify a local variable`
+    paramHandleInvalid: (p) => `cannot load parameter ${p}: handle does not identify a parameter`
 };
 //# sourceMappingURL=FunctionContext.js.map

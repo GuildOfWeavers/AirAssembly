@@ -10,11 +10,11 @@ import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
     Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus,
-    Prng, Sha256, HexLiteral, Handle, Param, Function
+    Prng, Sha256, HexLiteral, Handle, Param, Function, CallOp
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
-    GetVectorElement, SliceVector, LoadExpression, Dimensions
+    GetVectorElement, SliceVector, LoadExpression, CallExpression, Dimensions
 } from "./expressions";
 import { parserErrorMessageProvider } from "./errors";
 import { ExportDeclaration } from "./exports/ExportDeclaration";
@@ -333,6 +333,7 @@ class AirParser extends EmbeddedActionsParser {
             { ALT: () => this.SUBRULE(this.sliceVector,         { ARGS: [ctx] })},
             { ALT: () => this.SUBRULE(this.makeMatrix,          { ARGS: [ctx] })},
             { ALT: () => this.SUBRULE(this.loadExpression,      { ARGS: [ctx] })},
+            { ALT: () => this.SUBRULE(this.callExpression,      { ARGS: [ctx] })},
             { ALT: () => this.SUBRULE(this.literalScalar,       { ARGS: [ctx] })}
         ]);
         return result;
@@ -423,6 +424,21 @@ class AirParser extends EmbeddedActionsParser {
         const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
         this.CONSUME(RParen);
         return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
+    });
+
+    // FUNCTION CALLS
+    // --------------------------------------------------------------------------------------------
+    private callExpression = this.RULE<CallExpression>('callExpression', (ctx: ExecutionContext) => {
+        this.CONSUME(LParen);
+        this.CONSUME(CallOp);
+        const indexOrHandle = this.OR([
+            { ALT: () => this.SUBRULE(this.integerLiteral) },
+            { ALT: () => this.CONSUME(Handle).image }
+        ]);
+        const parameters: Expression[] = [];
+        this.MANY(() => parameters.push(this.SUBRULE(this.expression, { ARGS: [ctx] })));
+        this.CONSUME(RParen);
+        return this.ACTION(() => ctx.buildCallExpression(indexOrHandle, parameters));
     });
 
     // LITERALS

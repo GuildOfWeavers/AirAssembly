@@ -7,7 +7,7 @@ import { Constant } from "../Constant";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
 import { StoreOperation } from "../StoreOperation";
-import { Expression, LoadExpression } from "../../expressions";
+import { Expression, LoadExpression, CallExpression } from "../../expressions";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
@@ -49,13 +49,13 @@ export abstract class ExecutionContext {
     // ABSTRACT FUNCTIONS
     // --------------------------------------------------------------------------------------------
     abstract add(value: Parameter | LocalVariable): void;
-    abstract buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
-
+    
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
     getDeclaration(indexOrHandle: number | string, kind: 'const'): Constant | undefined;
     getDeclaration(indexOrHandle: number | string, kind: 'param'): Parameter | undefined;
     getDeclaration(indexOrHandle: number | string, kind: 'local'): LocalVariable | undefined;
+    getDeclaration(indexOrHandle: number | string, kind: 'func'): AirFunction | undefined;
     getDeclaration(indexOrHandle: number | string, kind: string): any {
         return (typeof indexOrHandle === 'string')
             ? this.declarationMap.get(indexOrHandle)
@@ -64,6 +64,27 @@ export abstract class ExecutionContext {
 
     buildLiteralValue() {
         // TODO: implement
+    }
+
+    buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
+        if (operation === 'load.const') {
+            const constant = this.getDeclaration(indexOrHandle, 'const');
+            validate(constant !== undefined, errors.constNotDeclared(indexOrHandle));
+            const index = this.constants.indexOf(constant);
+            validate(index !== -1, errors.constHandleInvalid(indexOrHandle));
+            return new LoadExpression(constant, index);
+        }
+        else if (operation === 'load.local') {
+            const variable = this.getDeclaration(indexOrHandle, 'local');
+            validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
+            const index = this.locals.indexOf(variable);
+            validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
+            const binding = variable.getBinding(index);
+            return new LoadExpression(binding, index);
+        }
+        else {
+            throw new Error(`${operation} operation is not valid in current context`);
+        }
     }
 
     buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation {
@@ -76,8 +97,12 @@ export abstract class ExecutionContext {
         return statement;
     }
 
-    buildCallExpression() {
-
+    buildCallExpression(indexOrHandle: number | string, parameters: Expression[]): CallExpression {
+        const func = this.getDeclaration(indexOrHandle, 'func');
+        validate(func !== undefined, errors.funcNotDeclared(indexOrHandle));
+        const index = this.functions.indexOf(func);
+        validate(index !== -1, errors.funcHandleInvalid(indexOrHandle));
+        return new CallExpression(func, index, parameters);
     }
 }
 
@@ -85,6 +110,10 @@ export abstract class ExecutionContext {
 // ================================================================================================
 const errors = {
     duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
+    constNotDeclared    : (p: any) => `cannot load constant ${p}: constant ${p} has not been declared`,
+    constHandleInvalid  : (p: any) => `cannot load constant ${p}: handle does not identify a constant`,
     localNotDeclared    : (v: any) => `cannot store into local variable ${v}: local variable ${v} has not been declared`,
-    localHandleInvalid  : (v: any) => `cannot store into local variable ${v}: handle does not identify a local variable`
+    localHandleInvalid  : (v: any) => `cannot store into local variable ${v}: handle does not identify a local variable`,
+    funcNotDeclared     : (f: any) => `cannot call function ${f}: function ${f} has not been declared`,
+    funcHandleInvalid   : (f: any) => `cannot call function ${f}: handle does not identify a function`
 };

@@ -286,6 +286,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 { ALT: () => this.SUBRULE(this.sliceVector, { ARGS: [ctx] }) },
                 { ALT: () => this.SUBRULE(this.makeMatrix, { ARGS: [ctx] }) },
                 { ALT: () => this.SUBRULE(this.loadExpression, { ARGS: [ctx] }) },
+                { ALT: () => this.SUBRULE(this.callExpression, { ARGS: [ctx] }) },
                 { ALT: () => this.SUBRULE(this.literalScalar, { ARGS: [ctx] }) }
             ]);
             return result;
@@ -368,6 +369,20 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => ctx.buildStoreOperation(indexOrHandle, value));
+        });
+        // FUNCTION CALLS
+        // --------------------------------------------------------------------------------------------
+        this.callExpression = this.RULE('callExpression', (ctx) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.CallOp);
+            const indexOrHandle = this.OR([
+                { ALT: () => this.SUBRULE(this.integerLiteral) },
+                { ALT: () => this.CONSUME(lexer_1.Handle).image }
+            ]);
+            const parameters = [];
+            this.MANY(() => parameters.push(this.SUBRULE(this.expression, { ARGS: [ctx] })));
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => ctx.buildCallExpression(indexOrHandle, parameters));
         });
         // LITERALS
         // --------------------------------------------------------------------------------------------
