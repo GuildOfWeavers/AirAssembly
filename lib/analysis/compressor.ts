@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure } from "../procedures";
+import { AirProcedure } from "../procedures";
 import {
     Expression, ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
     GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions
@@ -69,7 +69,7 @@ class ExpressionCompressor extends ExpressionVisitor<Expression> {
 }
 
 const compressor = new ExpressionCompressor();
-export function compressProcedure(proc: Procedure) {
+export function compressProcedure(proc: AirProcedure) {
     return undefined as any; // TODO
 }
 

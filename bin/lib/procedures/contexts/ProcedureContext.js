@@ -9,16 +9,24 @@ const utils_1 = require("../../utils");
 class ProcedureContext extends ExecutionContext_1.ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(field, constants) {
-        super(field);
-        this.constants = constants.map((constant, i) => {
-            if (constant.handle) {
-                utils_1.validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
-                this.declarationMap.set(constant.handle, constant);
-            }
-            this.declarationMap.set(`const::${i}`, constant);
-            return constant;
-        });
+    constructor(name, schema, span, width) {
+        super(schema);
+        this.name = name;
+        if (name === 'transition') {
+            this.span = span;
+            this.width = width;
+            this.traceRegisters = new expressions_1.TraceSegment('trace', width);
+            this.staticRegisters = new expressions_1.TraceSegment('static', schema.staticRegisterCount);
+        }
+        else if (name === 'evaluation') {
+            this.span = span;
+            this.width = width;
+            this.traceRegisters = new expressions_1.TraceSegment('trace', schema.traceRegisterCount);
+            this.staticRegisters = new expressions_1.TraceSegment('static', schema.staticRegisterCount);
+        }
+        else {
+            throw new Error(`procedure name '${name}' is not valid`);
+        }
     }
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------

@@ -47,7 +47,7 @@ export class AirFunction {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString(): string {
-        let code = `\n    (width ${this.dimensions[0]})`;
+        let code = `\n    (result ${Dimensions.toTypeString(this.dimensions)})`;
         if (this.parameters.length > 0)
             code += `\n    ${this.parameters.map(p => p.toString()).join(' ')}`;
         if (this.localVariables.length > 0)
@@ -64,4 +64,3 @@ export class AirFunction {
     // --------------------------------------------------------------------------------------------
     
 }
-

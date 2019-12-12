@@ -10,7 +10,7 @@ const schema = compile(Buffer.from(`
         (mask inverted (input 0))
         (cycle (prng sha256 0x4d694d43 16)))
     (function $test
-        (width 2)
+        (result vector 2)
         (param vector 2) (param scalar)
         (local $temp vector 2)
         (store.local $temp

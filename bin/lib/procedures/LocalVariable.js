@@ -39,12 +39,7 @@ class LocalVariable {
     // --------------------------------------------------------------------------------------------
     toString() {
         const handle = this.handle ? ` ${this.handle} ` : ' ';
-        if (utils_1.Dimensions.isScalar(this.dimensions))
-            return `(local${handle}scalar)`;
-        else if (utils_1.Dimensions.isVector(this.dimensions))
-            return `(local${handle}vector ${this.dimensions[0]})`;
-        else
-            return `(local${handle}matrix ${this.dimensions[0]} ${this.dimensions[1]})`;
+        return `(local${handle}${utils_1.Dimensions.toTypeString(this.dimensions)})`;
     }
 }
 exports.LocalVariable = LocalVariable;

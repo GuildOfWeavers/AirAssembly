@@ -1,36 +1,42 @@
 // IMPORTS
 // ================================================================================================
-import { ProcedureName, FiniteField } from "@guildofweavers/air-assembly";
+import { AirSchema } from "../../AirSchema";
+import { ProcedureName } from "@guildofweavers/air-assembly";
 import { ExecutionContext } from "./ExecutionContext";
 import { LoadExpression, TraceSegment } from "../../expressions";
 import { LocalVariable } from "../LocalVariable";
-import { Constant } from "../Constant";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export abstract class ProcedureContext extends ExecutionContext {
+export class ProcedureContext extends ExecutionContext {
 
-    abstract readonly name              : ProcedureName;
-    abstract readonly traceRegisters    : TraceSegment;
-    abstract readonly staticRegisters   : TraceSegment;
-    abstract readonly span              : number;
-    abstract readonly width             : number;
-
-    readonly constants                  : Constant[];
+    readonly name              : ProcedureName;
+    readonly traceRegisters    : TraceSegment;
+    readonly staticRegisters   : TraceSegment;
+    readonly span              : number;
+    readonly width             : number;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(field: FiniteField, constants: ReadonlyArray<Constant>) {
-        super(field);
-        this.constants = constants.map((constant, i) => {
-            if (constant.handle) {
-                validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
-                this.declarationMap.set(constant.handle, constant);
-            }
-            this.declarationMap.set(`const::${i}`, constant);
-            return constant;
-        });
+    constructor(name: ProcedureName, schema: AirSchema, span: number, width: number) {
+        super(schema);
+        this.name = name;
+        if (name === 'transition') {
+            this.span = span;
+            this.width = width;
+            this.traceRegisters = new TraceSegment('trace', width);
+            this.staticRegisters = new TraceSegment('static', schema.staticRegisterCount);
+        }
+        else if (name === 'evaluation') {
+            this.span = span;
+            this.width = width;
+            this.traceRegisters = new TraceSegment('trace', schema.traceRegisterCount);
+            this.staticRegisters = new TraceSegment('static', schema.staticRegisterCount);
+        }
+        else {
+            throw new Error(`procedure name '${name}' is not valid`);
+        }
     }
 
     // PUBLIC FUNCTIONS

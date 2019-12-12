@@ -11,9 +11,17 @@ class FunctionContext extends ExecutionContext_1.ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(schema, width) {
-        super(schema.field);
+        super(schema);
         this.width = width;
         this.parameters = [];
+        this.functions = schema.functions.map((func, i) => {
+            if (func.handle) {
+                utils_1.validate(!this.declarationMap.has(func.handle), errors.duplicateHandle(func.handle));
+                this.declarationMap.set(func.handle, func);
+            }
+            this.declarationMap.set(`func::${i}`, func);
+            return func;
+        });
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure as IProcedure, ProcedureName} from '@guildofweavers/air-assembly';
+import { AirProcedure as IProcedure, ProcedureName} from '@guildofweavers/air-assembly';
 import { ProcedureContext } from './contexts/ProcedureContext';
 import { Expression, TraceSegment } from "../expressions";
 import { LocalVariable } from "./LocalVariable";
@@ -10,7 +10,7 @@ import { Constant } from './Constant';
 
 // CLASS DEFINITION
 // ================================================================================================
-export class Procedure implements IProcedure {
+export class AirProcedure implements IProcedure {
 
     readonly name               : ProcedureName;
     readonly span               : number;
@@ -51,7 +51,7 @@ export class Procedure implements IProcedure {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n    (span ${this.span}) (result vector ${this.dimensions[0]})`;
+        let code = `\n    (span ${this.span}) (result ${Dimensions.toTypeString(this.dimensions)})`;
         if (this.localVariables.length > 0)
             code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)

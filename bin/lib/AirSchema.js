@@ -109,7 +109,7 @@ class AirSchema {
             throw new Error(`transition function has already been set`);
         if (!this._field)
             throw new Error(`transition function cannot be set before field is set`);
-        this._transitionFunction = new procedures_1.Procedure(context, statements, result);
+        this._transitionFunction = new procedures_1.AirProcedure(context, statements, result);
     }
     // TRANSITION CONSTRAINTS
     // --------------------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ class AirSchema {
             throw new Error(`constraint evaluator has already been set`);
         if (!this._field)
             throw new Error(`constraint evaluator cannot be set before field is set`);
-        this._constraintEvaluator = new procedures_1.Procedure(context, statements, result);
+        this._constraintEvaluator = new procedures_1.AirProcedure(context, statements, result);
     }
     // EXPORT DECLARATIONS
     // --------------------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
 import { AirModule, AirModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
 import { AirSchema } from '../AirSchema';
-import { Procedure } from '../procedures';
+import { AirProcedure } from '../procedures';
 import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
 import { getCompositionFactor } from "../utils";
 import * as expressions from "./expressions";
@@ -69,7 +69,7 @@ export function instantiateModule(schema: AirSchema, options: AirModuleOptions):
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function generateProcedureCode(procedure: Procedure): string {
+function generateProcedureCode(procedure: AirProcedure): string {
     let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
     if (procedure.locals.length > 0) {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';

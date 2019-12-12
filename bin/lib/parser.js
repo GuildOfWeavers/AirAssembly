@@ -178,7 +178,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
-            const context = this.ACTION(() => new procedures_1.TransitionContext(schema, span, width));
+            const context = this.ACTION(() => new procedures_1.ProcedureContext('transition', schema, span, width));
             this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
             const statements = [];
@@ -200,7 +200,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME3(lexer_1.RParen);
-            const context = this.ACTION(() => new procedures_1.EvaluationContext(schema, span, width));
+            const context = this.ACTION(() => new procedures_1.ProcedureContext('evaluation', schema, span, width));
             this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
             const statements = [];
@@ -215,7 +215,8 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             // build function context
             this.CONSUME2(lexer_1.LParen);
-            this.CONSUME(lexer_1.Width);
+            this.CONSUME(lexer_1.Result);
+            this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME2(lexer_1.RParen);
             const context = this.ACTION(() => new procedures_1.FunctionContext(schema, width));

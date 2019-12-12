@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const utils_1 = require("../expressions/utils");
 // CLASS DEFINITION
 // ================================================================================================
-class Procedure {
+class AirProcedure {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(context, statements, result) {
@@ -28,7 +29,7 @@ class Procedure {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n    (span ${this.span}) (result vector ${this.dimensions[0]})`;
+        let code = `\n    (span ${this.span}) (result ${utils_1.Dimensions.toTypeString(this.dimensions)})`;
         if (this.localVariables.length > 0)
             code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)
@@ -37,7 +38,7 @@ class Procedure {
         return `\n  (${this.name}${code})`;
     }
 }
-exports.Procedure = Procedure;
+exports.AirProcedure = AirProcedure;
 // HELPER FUNCTIONS
 // ================================================================================================
 function validateSpan(name, span) {
@@ -100,4 +101,4 @@ function validateSpan(name, span) {
         }
     }
 */ 
-//# sourceMappingURL=Procedure.js.map
+//# sourceMappingURL=AirProcedure.js.map

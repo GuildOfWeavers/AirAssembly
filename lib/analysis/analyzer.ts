@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { Degree, ProcedureAnalysisResult } from "@guildofweavers/air-assembly";
-import { Procedure } from "../procedures";
+import { AirProcedure } from "../procedures";
 import {
     ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
     GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions
@@ -102,7 +102,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
 // PUBLIC FUNCTIONS
 // ================================================================================================
 const analyzer = new ExpressionAnalyzer();
-export function analyzeProcedure(procedure: Procedure): ProcedureAnalysisResult {
+export function analyzeProcedure(procedure: AirProcedure): ProcedureAnalysisResult {
 
     // initialize context
     const context: AnalysisContext = {

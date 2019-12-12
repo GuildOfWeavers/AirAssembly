@@ -4,14 +4,13 @@ import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { StaticRegisterSet, PrngSequence } from "./registers";
 import {
-    ExecutionContext, TransitionContext, EvaluationContext, FunctionContext, Parameter, LocalVariable,
-    Constant, StoreOperation
+    ExecutionContext, ProcedureContext, FunctionContext, Parameter, LocalVariable, Constant, StoreOperation
 } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
     Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus,
-    Prng, Sha256, HexLiteral, Handle, Param, Function, Width
+    Prng, Sha256, HexLiteral, Handle, Param, Function
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -210,7 +209,7 @@ class AirParser extends EmbeddedActionsParser {
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME3(RParen);
 
-        const context = this.ACTION(() => new TransitionContext(schema, span, width));
+        const context = this.ACTION(() => new ProcedureContext('transition', schema, span, width));
         this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 
         // build body
@@ -237,7 +236,7 @@ class AirParser extends EmbeddedActionsParser {
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME3(RParen);
 
-        const context = this.ACTION(() => new EvaluationContext(schema, span, width));
+        const context = this.ACTION(() => new ProcedureContext('evaluation', schema, span, width));
         this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
         
         // build body
@@ -257,7 +256,8 @@ class AirParser extends EmbeddedActionsParser {
 
         // build function context
         this.CONSUME2(LParen);
-        this.CONSUME(Width);
+        this.CONSUME(Result);
+        this.CONSUME(Vector);
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME2(RParen);
         

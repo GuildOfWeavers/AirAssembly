@@ -33,7 +33,6 @@ exports.Function = chevrotain_1.createToken({ name: "Function", pattern: /functi
 exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/, longer_alt: exports.Identifier });
 exports.Evaluation = chevrotain_1.createToken({ name: "Evaluation", pattern: /evaluation/, longer_alt: exports.Identifier });
 exports.Span = chevrotain_1.createToken({ name: "Span", pattern: /span/, longer_alt: exports.Identifier });
-exports.Width = chevrotain_1.createToken({ name: "Width", pattern: /width/, longer_alt: exports.Identifier });
 exports.Result = chevrotain_1.createToken({ name: "Result", pattern: /result/, longer_alt: exports.Identifier });
 exports.Param = chevrotain_1.createToken({ name: "Param", pattern: /param/, longer_alt: exports.Identifier });
 exports.Local = chevrotain_1.createToken({ name: "Local", pattern: /local/, longer_alt: exports.Identifier });
@@ -81,7 +80,7 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
     exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Shift, exports.Cycle,
-    exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Span, exports.Width, exports.Result, exports.Param, exports.Local,
+    exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Param, exports.Local,
     exports.Export, exports.Main, exports.Init, exports.Seed,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,

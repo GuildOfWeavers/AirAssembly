@@ -1,12 +1,12 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure, StoreOperation } from "../procedures";
+import { AirProcedure, StoreOperation } from "../procedures";
 import { Expression, LoadExpression } from "../expressions";
 import { LocalVariable } from "../procedures/LocalVariable";
 
 // PROCEDURE COMPRESSOR
 // ================================================================================================
-export function compressProcedure(procedure: Procedure): Procedure {
+export function compressProcedure(procedure: AirProcedure): AirProcedure {
 
     /*
     let expressions = [...procedure.subroutines.map(s => s.expression), procedure.result];

@@ -23,12 +23,6 @@ export class Parameter {
     // --------------------------------------------------------------------------------------------
     toString(): string {
         const handle = this.handle ? ` ${this.handle} ` : ' ';
-
-        if (Dimensions.isScalar(this.dimensions))
-            return `(param${handle}scalar)`;
-        else if (Dimensions.isVector(this.dimensions))
-            return `(param${handle}vector ${this.dimensions[0]})`;
-        else
-            return `(param${handle}matrix ${this.dimensions[0]} ${this.dimensions[1]})`;
+        return `(param${handle}${Dimensions.toTypeString(this.dimensions)})`;
     }
 }

@@ -1,6 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { AirSchema } from "../../AirSchema";
+import { AirFunction } from "../AirFunction";
 import { ExecutionContext } from "./ExecutionContext";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
@@ -13,13 +14,22 @@ export class FunctionContext extends ExecutionContext {
 
     readonly width      : number;
     readonly parameters : Parameter[];
+    readonly functions  : AirFunction[];
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(schema: AirSchema, width: number) {
-        super(schema.field);
+        super(schema);
         this.width = width;
         this.parameters = [];
+        this.functions = schema.functions.map((func, i) => {
+            if (func.handle) {
+                validate(!this.declarationMap.has(func.handle), errors.duplicateHandle(func.handle));
+                this.declarationMap.set(func.handle, func);
+            }
+            this.declarationMap.set(`func::${i}`, func);
+            return func;
+        });
     }
 
     // PUBLIC METHODS

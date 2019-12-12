@@ -39,7 +39,6 @@ export const Transition = createToken({ name: "Transition", pattern: /transition
 export const Evaluation = createToken({ name: "Evaluation", pattern: /evaluation/,  longer_alt: Identifier });
 
 export const Span       = createToken({ name: "Span",       pattern: /span/,        longer_alt: Identifier });
-export const Width      = createToken({ name: "Width",      pattern: /width/,       longer_alt: Identifier });
 export const Result     = createToken({ name: "Result",     pattern: /result/,      longer_alt: Identifier });
 export const Param      = createToken({ name: "Param",      pattern: /param/,       longer_alt: Identifier });
 export const Local      = createToken({ name: "Local",      pattern: /local/,       longer_alt: Identifier });
@@ -98,7 +97,7 @@ export const allTokens = [
     WhiteSpace, Comment,
     
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift, Cycle,
-    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Span, Width, Result, Param, Local,
+    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Span, Result, Param, Local,
     Export, Main, Init, Seed,
 
     Scalar, Vector, Matrix,

@@ -90,10 +90,10 @@ declare module '@guildofweavers/air-assembly' {
         readonly secretInputCount: number;
 
         /** A Procedure object describing transition function expression defined for the computation. */
-        readonly transitionFunction: Procedure;
+        readonly transitionFunction: AirProcedure;
 
         /** A Procedure object describing transition constraint evaluator expression defined for the computation. */
-        readonly constraintEvaluator: Procedure;
+        readonly constraintEvaluator: AirProcedure;
 
         /** An array of constraint descriptors with metadata for the defined transition constraints */
         readonly constraints: ConstraintDescriptor[];
@@ -115,7 +115,7 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export type ProcedureName = 'transition' | 'evaluation';
-    export interface Procedure {
+    export interface AirProcedure {
         readonly name           : ProcedureName;
         readonly span           : number;
         readonly locals         : ReadonlyArray<Dimensions>;

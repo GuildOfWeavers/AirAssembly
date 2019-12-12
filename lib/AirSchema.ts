@@ -3,7 +3,7 @@
 import { AirSchema as IAirSchema, ConstraintDescriptor } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { StaticRegister, StaticRegisterSet, InputRegister, CyclicRegister } from "./registers";
-import { Procedure, Constant, ProcedureContext, StoreOperation, FunctionContext, AirFunction } from "./procedures";
+import { AirFunction, FunctionContext, AirProcedure, ProcedureContext, Constant, StoreOperation } from "./procedures";
 import { Expression } from "./expressions";
 import { ExportDeclaration } from "./exports";
 import { analyzeProcedure } from "./analysis";
@@ -18,8 +18,8 @@ export class AirSchema implements IAirSchema {
     private _staticRegisters        : StaticRegister[];
     private _functions              : AirFunction[];
 
-    private _transitionFunction?    : Procedure;
-    private _constraintEvaluator?   : Procedure;
+    private _transitionFunction?    : AirProcedure;
+    private _constraintEvaluator?   : AirProcedure;
 
     private _constraints?           : ConstraintDescriptor[];
     private _maxConstraintDegree?   : number;
@@ -129,7 +129,7 @@ export class AirSchema implements IAirSchema {
         return this.transitionFunction.dimensions[0];
     }
 
-    get transitionFunction(): Procedure {
+    get transitionFunction(): AirProcedure {
         if (!this._transitionFunction) throw new Error(`transition function hasn't been set yet`);
         return this._transitionFunction;
     }
@@ -137,7 +137,7 @@ export class AirSchema implements IAirSchema {
     setTransitionFunction(context: ProcedureContext, statements: StoreOperation[], result: Expression): void {
         if (this._transitionFunction) throw new Error(`transition function has already been set`);
         if (!this._field) throw new Error(`transition function cannot be set before field is set`);
-        this._transitionFunction = new Procedure(context, statements, result);
+        this._transitionFunction = new AirProcedure(context, statements, result);
     }
 
     // TRANSITION CONSTRAINTS
@@ -146,7 +146,7 @@ export class AirSchema implements IAirSchema {
         return this.constraintEvaluator.dimensions[0];
     }
 
-    get constraintEvaluator(): Procedure {
+    get constraintEvaluator(): AirProcedure {
         if (!this._constraintEvaluator) throw new Error(`constraint evaluator hasn't been set yet`);
         return this._constraintEvaluator;
     }
@@ -171,7 +171,7 @@ export class AirSchema implements IAirSchema {
     setConstraintEvaluator(context: ProcedureContext, statements: StoreOperation[], result: Expression): void {
         if (this._constraintEvaluator) throw new Error(`constraint evaluator has already been set`);
         if (!this._field) throw new Error(`constraint evaluator cannot be set before field is set`);
-        this._constraintEvaluator = new Procedure(context, statements, result);
+        this._constraintEvaluator = new AirProcedure(context, statements, result);
     }
 
     // EXPORT DECLARATIONS
