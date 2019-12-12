@@ -23,7 +23,7 @@ class ExecutionContext {
         const index = this.locals.indexOf(variable);
         utils_1.validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
         const statement = new StoreOperation_1.StoreOperation(index, value);
-        variable.bind(statement, index); // TODO
+        variable.bind(statement, index);
         return statement;
     }
 }

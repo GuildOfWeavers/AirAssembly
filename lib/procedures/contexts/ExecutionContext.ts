@@ -41,7 +41,7 @@ export abstract class ExecutionContext {
         const index = this.locals.indexOf(variable);
         validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
         const statement = new StoreOperation(index, value);
-        variable.bind(statement as any, index); // TODO
+        variable.bind(statement, index);
         return statement;
     }
 }

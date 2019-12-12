@@ -7,7 +7,7 @@ class Procedure {
     // --------------------------------------------------------------------------------------------
     constructor(context, statements, result) {
         this.name = context.name;
-        this.span = validateSpan(name, context.span);
+        this.span = validateSpan(this.name, context.span);
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)

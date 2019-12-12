@@ -11,13 +11,14 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
     // --------------------------------------------------------------------------------------------
     constructor(field, constants) {
         super(field);
-        this.constants = constants.slice();
-        for (let constant of this.constants) {
+        this.constants = constants.map((constant, i) => {
             if (constant.handle) {
                 utils_1.validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
                 this.declarationMap.set(constant.handle, constant);
             }
-        }
+            this.declarationMap.set(`const::${i}`, constant);
+            return constant;
+        });
     }
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
                 this.declarationMap.set(value.handle, value);
             }
             // set index mapping and add local variable to the list
-            this.declarationMap.set(`local::${this.constants.length}`, value);
+            this.declarationMap.set(`local::${this.locals.length}`, value);
             this.locals.push(value);
         }
         else {
@@ -42,7 +43,7 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
             utils_1.validate(constant !== undefined, errors.constNotDeclared(indexOrHandle));
             const index = this.constants.indexOf(constant);
             utils_1.validate(index !== -1, errors.constHandleInvalid(indexOrHandle));
-            return new expressions_1.LoadExpression(constant, index);
+            return new expressions_1.LoadExpression(constant.value, index);
         }
         else if (operation === 'load.local') {
             const variable = this.declarationMap.get(`local::${indexOrHandle}`);
