@@ -104,11 +104,11 @@ declare module '@guildofweavers/air-assembly' {
         /** A map of export declarations, where the key is the name of the export, and the value is an ExportDeclaration object. */
         readonly exports: ReadonlyMap<string, ExportDeclaration>;
 
-        constructor();
+        constructor(type: 'prime', modulus: bigint);
 
-        setField(type: 'prime', modulus: bigint): void;
-        setConstants(values: Constant[]): void;
+        addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void;
         setStaticRegisters(registers: StaticRegisterSet): void;
+        addFunction(context: any, statements: StoreOperation[], result: Expression, handle?: string): void; // TODO
         setTransitionFunction(context: any, statements: StoreOperation[], result: Expression): void;      // TODO
         setConstraintEvaluator(context: any, statements: StoreOperation[], result: Expression): void;     // TODO
         setExports(declarations: ExportDeclaration[]): void;

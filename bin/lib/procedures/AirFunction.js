@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const utils_1 = require("../expressions/utils");
-const utils_2 = require("../utils");
+const expressions_1 = require("../expressions");
+const utils_1 = require("../utils");
 // CLASS DEFINITION
 // ================================================================================================
 class AirFunction {
@@ -15,7 +15,7 @@ class AirFunction {
             throw new Error(`function must resolve to a vector of ${context.width} elements`);
         this.result = result;
         if (handle !== undefined) {
-            this.handle = utils_2.validateHandle(handle);
+            this.handle = utils_1.validateHandle(handle);
         }
     }
     // ACCESSORS
@@ -29,7 +29,7 @@ class AirFunction {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n    (result ${utils_1.Dimensions.toTypeString(this.dimensions)})`;
+        let code = `\n    (result ${expressions_1.Dimensions.toTypeString(this.dimensions)})`;
         if (this.parameters.length > 0)
             code += `\n    ${this.parameters.map(p => p.toString()).join(' ')}`;
         if (this.localVariables.length > 0)

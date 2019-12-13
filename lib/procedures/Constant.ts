@@ -53,6 +53,16 @@ export class Constant {
     }
 
     toString(): string {
-        return this.value.toString();
+        const handle = this.handle ? ` ${this.handle} ` : ' ';
+        if (this.isScalar) {
+            return `(const${handle}scalar ${this.value.value})`;
+        }
+        else if (this.isVector) {
+            return `(const${handle}vector ${(this.value.value as bigint[]).join(' ')})`;
+        }
+        else {
+            const rows = (this.value.value as bigint[][]).map(r => `(${r.join(' ')})`);
+            return `(const${handle}matrix ${rows.join(' ')})`;
+        }
     }
 }

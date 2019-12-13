@@ -39,7 +39,17 @@ class Constant {
         }
     }
     toString() {
-        return this.value.toString();
+        const handle = this.handle ? ` ${this.handle} ` : ' ';
+        if (this.isScalar) {
+            return `(const${handle}scalar ${this.value.value})`;
+        }
+        else if (this.isVector) {
+            return `(const${handle}vector ${this.value.value.join(' ')})`;
+        }
+        else {
+            const rows = this.value.value.map(r => `(${r.join(' ')})`);
+            return `(const${handle}matrix ${rows.join(' ')})`;
+        }
     }
 }
 exports.Constant = Constant;

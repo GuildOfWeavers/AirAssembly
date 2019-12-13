@@ -3,13 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const galois_1 = require("@guildofweavers/galois");
 const registers_1 = require("./registers");
 const procedures_1 = require("./procedures");
+const expressions_1 = require("./expressions");
 const analysis_1 = require("./analysis");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor() {
+    constructor(type, modulus) {
+        if (type !== 'prime')
+            throw new Error(`field type '${type}' is not supported`);
+        this._field = galois_1.createPrimeField(modulus);
         this._constants = [];
         this._staticRegisters = [];
         this._functions = [];
@@ -22,13 +26,6 @@ class AirSchema {
             throw new Error(`fields has not been set yet`);
         return this._field;
     }
-    setField(type, modulus) {
-        if (this._field)
-            throw new Error('field has already been set');
-        if (type !== 'prime')
-            throw new Error(`field type '${type}' is not supported`);
-        this._field = galois_1.createPrimeField(modulus);
-    }
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
     get constantCount() {
@@ -37,13 +34,15 @@ class AirSchema {
     get constants() {
         return this._constants;
     }
-    setConstants(values) {
-        if (this.constantCount > 0)
-            throw new Error(`constants have already been set`);
-        for (let constant of values) {
-            constant.validate(this.field);
-            this._constants.push(constant);
+    addConstant(value, handle) {
+        if (handle) {
+            if (this._handles.has(handle)) {
+                throw new Error(`handle ${handle} cannot be declared multiple times`);
+            }
+            this._handles.add(handle);
         }
+        const constant = new procedures_1.Constant(new expressions_1.LiteralValue(value), handle); // TODO: pass field
+        this._constants.push(constant);
     }
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
@@ -173,8 +172,7 @@ class AirSchema {
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = `\n  ${buildFieldExpression(this.field)}`;
-        if (this.constantCount > 0)
-            code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
+        this.constants.forEach(c => code += `\n  ${c.toString()}`);
         if (this.staticRegisterCount > 0)
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
         this.functions.forEach(f => code += `\n  ${f.toString()}`);

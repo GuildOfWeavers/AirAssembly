@@ -4,7 +4,7 @@ import { AirSchema as IAirSchema, ConstraintDescriptor } from "@guildofweavers/a
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { StaticRegister, StaticRegisterSet, InputRegister, CyclicRegister } from "./registers";
 import { AirFunction, FunctionContext, AirProcedure, ProcedureContext, Constant, StoreOperation } from "./procedures";
-import { Expression } from "./expressions";
+import { Expression, LiteralValue } from "./expressions";
 import { ExportDeclaration } from "./exports";
 import { analyzeProcedure } from "./analysis";
 
@@ -30,7 +30,10 @@ export class AirSchema implements IAirSchema {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor() {
+    constructor(type: 'prime', modulus: bigint) {
+        if (type !== 'prime') throw new Error(`field type '${type}' is not supported`);
+        this._field = createPrimeField(modulus);
+
         this._constants = [];
         this._staticRegisters = [];
         this._functions = [];
@@ -44,12 +47,6 @@ export class AirSchema implements IAirSchema {
         return this._field;
     }
 
-    setField(type: 'prime', modulus: bigint): void {
-        if (this._field) throw new Error('field has already been set');
-        if (type !== 'prime') throw new Error(`field type '${type}' is not supported`);
-        this._field = createPrimeField(modulus);
-    }
-
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
     get constantCount(): number {
@@ -60,14 +57,17 @@ export class AirSchema implements IAirSchema {
         return this._constants;
     }
 
-    setConstants(values: Constant[]): void {
-        if (this.constantCount > 0) throw new Error(`constants have already been set`);
-        for (let constant of values) {
-            constant.validate(this.field);
-            this._constants.push(constant);
+    addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void {
+        if (handle) {
+            if (this._handles.has(handle)) {
+                throw new Error(`handle ${handle} cannot be declared multiple times`);
+            }
+            this._handles.add(handle);
         }
+        const constant = new Constant(new LiteralValue(value), handle); // TODO: pass field
+        this._constants.push(constant);
     }
-
+    
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
     get staticRegisterCount(): number {
@@ -206,8 +206,7 @@ export class AirSchema implements IAirSchema {
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = `\n  ${buildFieldExpression(this.field)}`;
-        if (this.constantCount > 0)
-            code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
+        this.constants.forEach(c => code += `\n  ${c.toString()}`);
         if (this.staticRegisterCount > 0)
             code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
         this.functions.forEach(f => code += `\n  ${f.toString()}`);

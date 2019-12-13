@@ -4,8 +4,7 @@ import { FunctionContext } from './contexts/FunctionContext';
 import { Parameter } from './Parameter';
 import { LocalVariable } from "./LocalVariable";
 import { StoreOperation } from './StoreOperation';
-import { Expression } from "../expressions";
-import { Dimensions } from "../expressions/utils";
+import { Expression, Dimensions } from "../expressions";
 import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
@@ -26,9 +25,11 @@ export class AirFunction {
         this.parameters = context.parameters.slice();
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
+
         if (!result.isVector || result.dimensions[0] !== context.width)
             throw new Error(`function must resolve to a vector of ${context.width} elements`);
         this.result = result;
+        
         if (handle !== undefined) {
             this.handle = validateHandle(handle);
         }
@@ -59,8 +60,4 @@ export class AirFunction {
         const handle = this.handle ? ` ${this.handle}` : '';
         return `(function${handle}${code})`;
     }
-
-    // PRIVATE METHODS
-    // --------------------------------------------------------------------------------------------
-    
 }

@@ -3,8 +3,7 @@ import { compile, instantiate, analyze, prng } from '../index';
 const schema = compile(Buffer.from(`
 (module
     (field prime 96769)
-    (const 
-        (scalar 3))
+    (const $alpha scalar 3)
     (static
         (input secret vector (steps 16) (shift -1))
         (mask inverted (input 0))
@@ -17,7 +16,7 @@ const schema = compile(Buffer.from(`
         (result vector 1)
         (param $state vector 1) (param $key scalar)
         (add 
-            (exp (load.param $state) (load.const 0))
+            (exp (load.param $state) (load.const $alpha))
             (load.param $key)))
     (transition
         (span 1) (result vector 1)

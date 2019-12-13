@@ -30,13 +30,12 @@ class AirParser extends EmbeddedActionsParser {
     // MODULE
     // --------------------------------------------------------------------------------------------
     public module = this.RULE<AirSchema>('module', () => {
-        const schema = new AirSchema();
         this.CONSUME(LParen);
         this.CONSUME(Module);
-        this.SUBRULE(this.fieldDeclaration,                         { ARGS: [schema] });
-        this.OPTION1(() => this.SUBRULE(this.constantDeclarations,  { ARGS: [schema] }));
+        const schema = this.SUBRULE(this.fieldDeclaration);
+        this.MANY1(() => this.SUBRULE(this.constantDeclaration,     { ARGS: [schema] }));
         this.OPTION2(() => this.SUBRULE(this.staticRegisters,       { ARGS: [schema] }));
-        this.MANY(() => this.SUBRULE(this.airFunction,              { ARGS: [schema] }));
+        this.MANY2(() => this.SUBRULE(this.airFunction,             { ARGS: [schema] }));
         this.SUBRULE(this.transitionFunction,                       { ARGS: [schema] });
         this.SUBRULE(this.transitionConstraints,                    { ARGS: [schema] });
         this.SUBRULE(this.exportDeclarations,                       { ARGS: [schema] });
@@ -46,61 +45,43 @@ class AirParser extends EmbeddedActionsParser {
 
     // FINITE FIELD
     // --------------------------------------------------------------------------------------------
-    private fieldDeclaration = this.RULE('fieldDeclaration', (schema: AirSchema) => {
+    private fieldDeclaration = this.RULE<AirSchema>('fieldDeclaration', () => {
         this.CONSUME(LParen);
         this.CONSUME(Field);
         this.CONSUME(Prime);
         const modulus = this.CONSUME(Literal).image;
         this.CONSUME(RParen);
-        this.ACTION(() => schema.setField('prime', BigInt(modulus)));
+        return this.ACTION(() => new AirSchema('prime', BigInt(modulus)));
     });
 
-    // GLOBAL CONSTANTS
+    // MODULE CONSTANTS
     // --------------------------------------------------------------------------------------------
-    private constantDeclarations = this.RULE('constantDeclarations', (schema: AirSchema) => {
-        const values: Constant[] = [];
+    private constantDeclaration = this.RULE('constantDeclaration', (schema: AirSchema) => {
         this.CONSUME(LParen);
         this.CONSUME(Const);
-        this.AT_LEAST_ONE(() => {
-            const value = this.OR([
-                { ALT: () => this.SUBRULE(this.literalScalar) },
-                { ALT: () => this.SUBRULE(this.literalVector) },
-                { ALT: () => this.SUBRULE(this.literalMatrix) }
-            ]);
-            values.push(new Constant(value));
-        });
+        const handle = this.OPTION(() => this.CONSUME(Handle).image);
+        const value = this.OR([
+            { ALT: () => {
+                this.CONSUME(Scalar);
+                return this.SUBRULE(this.fieldElement);
+            }},
+            { ALT: () => {
+                this.CONSUME(Vector);
+                return this.SUBRULE1(this.fieldElementSequence);
+            }},
+            { ALT: () => {
+                this.CONSUME(Matrix);
+                const rows: bigint[][] = [];
+                this.AT_LEAST_ONE(() => {
+                    this.CONSUME2(LParen);
+                    rows.push(this.SUBRULE2(this.fieldElementSequence));
+                    this.CONSUME2(RParen);
+                });
+                return rows;
+            }}
+        ]);
         this.CONSUME(RParen);
-        this.ACTION(() => schema.setConstants(values));
-    });
-
-    private literalVector = this.RULE<LiteralValue>('literalVector', () => {
-        this.CONSUME(LParen);
-        this.CONSUME(Vector);
-        const values = this.SUBRULE(this.elementSequence);
-        this.CONSUME(RParen);
-        return this.ACTION(() => new LiteralValue(values));
-    });
-
-    private literalMatrix = this.RULE<LiteralValue>('literalMatrix', () => {
-        const rows: bigint[][] = [];
-        this.CONSUME1(LParen);
-        this.CONSUME(Matrix);
-        this.AT_LEAST_ONE1(() => {
-            this.CONSUME2(LParen);
-            const row = this.SUBRULE(this.elementSequence);
-            this.CONSUME2(RParen);
-            rows.push(row);
-        });
-        this.CONSUME1(RParen);
-        return this.ACTION(() => new LiteralValue(rows));
-    });
-    
-    private literalScalar = this.RULE<LiteralValue>('literalScalar', () => {
-        this.CONSUME(LParen);
-        this.CONSUME(Scalar);
-        const value = this.CONSUME(Literal).image;
-        this.CONSUME(RParen);
-        return this.ACTION(() => new LiteralValue(BigInt(value)));
+        this.ACTION(() => schema.addConstant(value, handle));
     });
 
     // STATIC REGISTERS
@@ -164,7 +145,7 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Cycle);
         const values = this.OR([
             { ALT: () => this.SUBRULE(this.prngSequence)    },
-            { ALT: () => this.SUBRULE(this.elementSequence) }
+            { ALT: () => this.SUBRULE(this.fieldElementSequence) }
         ]);
         this.CONSUME(RParen);
         this.ACTION(() => registers.addCyclic(values));
@@ -334,7 +315,7 @@ class AirParser extends EmbeddedActionsParser {
             { ALT: () => this.SUBRULE(this.makeMatrix,          { ARGS: [ctx] })},
             { ALT: () => this.SUBRULE(this.loadExpression,      { ARGS: [ctx] })},
             { ALT: () => this.SUBRULE(this.callExpression,      { ARGS: [ctx] })},
-            { ALT: () => this.SUBRULE(this.literalScalar,       { ARGS: [ctx] })}
+            { ALT: () => this.SUBRULE(this.scalarLiteral,       { ARGS: [ctx] })}
         ]);
         return result;
     });
@@ -354,6 +335,14 @@ class AirParser extends EmbeddedActionsParser {
         const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
         this.CONSUME(RParen);
         return this.ACTION(() => new UnaryOperation(op, value));
+    });
+
+    private scalarLiteral = this.RULE<LiteralValue>('scalarLiteral', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Scalar);
+        const value = this.CONSUME(Literal).image;
+        this.CONSUME(RParen);
+        return this.ACTION(() => new LiteralValue(BigInt(value)));
     });
 
     // VECTORS AND MATRIXES
@@ -454,7 +443,12 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => Number(value) * sign);
     });
 
-    private elementSequence = this.RULE<bigint[]>('elementSequence', () => {
+    private fieldElement = this.RULE<bigint>('fieldElement', () => {
+        const value = this.CONSUME(Literal).image;
+        return this.ACTION(() => BigInt(value));
+    });
+
+    private fieldElementSequence = this.RULE<bigint[]>('fieldElementSequence', () => {
         const values: string[] = [];
         this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
         return this.ACTION(() => values.map(v => BigInt(v)));
@@ -496,6 +490,14 @@ class AirParser extends EmbeddedActionsParser {
         ]);
         this.CONSUME(RParen);
         return this.ACTION(() => initializer);
+    });
+
+    private literalVector = this.RULE<LiteralValue>('literalVector', () => {
+        this.CONSUME(LParen);
+        this.CONSUME(Vector);
+        const values = this.SUBRULE(this.fieldElementSequence);
+        this.CONSUME(RParen);
+        return this.ACTION(() => new LiteralValue(values));
     });
 
     private traceCycleExpression = this.RULE<number>('traceCycleExpression', () => {
