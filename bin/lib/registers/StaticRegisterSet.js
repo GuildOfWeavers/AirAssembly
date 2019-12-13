@@ -70,6 +70,12 @@ class StaticRegisterSet {
     }
     // OTHER PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    validate() {
+        // TODO: merge with getDanglingInputs()?
+        const danglingInputs = this.getDanglingInputs();
+        if (danglingInputs.length > 0)
+            throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
+    }
     getDanglingInputs() {
         const registers = new Set(this.inputs);
         const leaves = this.inputs.filter(r => r.isLeaf);

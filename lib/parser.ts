@@ -2,22 +2,22 @@
 // ================================================================================================
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
+import { Component } from "./Component";
 import { StaticRegisterSet, PrngSequence } from "./registers";
 import {
-    ExecutionContext, ProcedureContext, FunctionContext, Parameter, LocalVariable, Constant, StoreOperation
+    ExecutionContext, ProcedureContext, FunctionContext, Parameter, LocalVariable, StoreOperation
 } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
-    Span, Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Main, Init, Seed, Shift, Minus,
-    Prng, Sha256, HexLiteral, Handle, Param, Function, CallOp
+    Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Init, Shift, Minus,
+    Prng, Sha256, HexLiteral, Handle, Param, Function, CallOp, Registers, Constraints
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
     GetVectorElement, SliceVector, LoadExpression, CallExpression, Dimensions
 } from "./expressions";
 import { parserErrorMessageProvider } from "./errors";
-import { ExportDeclaration } from "./exports/ExportDeclaration";
 
 // PARSER DEFINITION
 // ================================================================================================
@@ -33,12 +33,9 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(LParen);
         this.CONSUME(Module);
         const schema = this.SUBRULE(this.fieldDeclaration);
-        this.MANY1(() => this.SUBRULE(this.constantDeclaration,     { ARGS: [schema] }));
-        this.OPTION2(() => this.SUBRULE(this.staticRegisters,       { ARGS: [schema] }));
-        this.MANY2(() => this.SUBRULE(this.airFunction,             { ARGS: [schema] }));
-        this.SUBRULE(this.transitionFunction,                       { ARGS: [schema] });
-        this.SUBRULE(this.transitionConstraints,                    { ARGS: [schema] });
-        this.SUBRULE(this.exportDeclarations,                       { ARGS: [schema] });
+        this.MANY1(() => this.SUBRULE(this.constantDeclaration,         { ARGS: [schema] }));
+        this.MANY2(() => this.SUBRULE(this.airFunction,                 { ARGS: [schema] }));
+        this.AT_LEAST_ONE(() => this.SUBRULE(this.componentDeclaration, { ARGS: [schema] }));
         this.CONSUME(RParen);
         return schema;
     });
@@ -54,7 +51,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new AirSchema('prime', BigInt(modulus)));
     });
 
-    // MODULE CONSTANTS
+    // GLOBAL CONSTANTS
     // --------------------------------------------------------------------------------------------
     private constantDeclaration = this.RULE('constantDeclaration', (schema: AirSchema) => {
         this.CONSUME(LParen);
@@ -84,17 +81,126 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => schema.addConstant(value, handle));
     });
 
+    // GLOBAL FUNCTIONS
+    // --------------------------------------------------------------------------------------------
+    private airFunction = this.RULE('airFunction', (schema: AirSchema) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Function);
+
+        const handle = this.OPTION(() => this.CONSUME(Handle).image);
+
+        // build function context
+        this.CONSUME2(LParen);
+        this.CONSUME(Result);
+        this.CONSUME(Vector);
+        const width = this.SUBRULE2(this.integerLiteral);
+        this.CONSUME2(RParen);
+        
+        const context = this.ACTION(() => new FunctionContext(schema, width));
+        this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+        this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+
+        // build function body
+        const statements: StoreOperation[] = [];
+        this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+        const result = this.SUBRULE(this.expression, { ARGS: [context] });
+        this.CONSUME(RParen);
+
+        this.ACTION(() => schema.addFunction(context, statements, result, handle));
+    });
+
+    private paramDeclaration = this.RULE('paramDeclaration', (ctx: ExecutionContext) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Param);
+        const handle = this.OPTION(() => this.CONSUME(Handle).image);
+        this.OR([
+            { ALT: () => {
+                this.CONSUME(Scalar);
+                return this.ACTION(() => ctx.add(new Parameter(Dimensions.scalar(), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Vector);
+                const length = this.SUBRULE1(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new Parameter(Dimensions.vector(length), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Matrix);
+                const rowCount = this.SUBRULE2(this.integerLiteral);
+                const colCount = this.SUBRULE3(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new Parameter(Dimensions.matrix(rowCount, colCount), handle)));
+            }}
+        ]);
+        this.CONSUME(RParen);
+    });
+
+    private localDeclaration = this.RULE('localDeclaration', (ctx: ExecutionContext) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Local);
+        const handle = this.OPTION(() => this.CONSUME(Handle).image);
+        this.OR([
+            { ALT: () => {
+                this.CONSUME(Scalar);
+                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.scalar(), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Vector);
+                const length = this.SUBRULE1(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.vector(length), handle)));
+            }},
+            { ALT: () => {
+                this.CONSUME(Matrix);
+                const rowCount = this.SUBRULE2(this.integerLiteral);
+                const colCount = this.SUBRULE3(this.integerLiteral);
+                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.matrix(rowCount, colCount), handle)));
+            }}
+        ]);
+        this.CONSUME(RParen);
+    });
+
+    // COMPONENTS
+    // --------------------------------------------------------------------------------------------
+    private componentDeclaration = this.RULE('componentDeclaration', (schema: AirSchema) => {
+        this.CONSUME1(LParen);
+        this.CONSUME(Export);
+        const name = this.CONSUME(Identifier).image;
+
+        this.CONSUME2(LParen);
+        this.CONSUME(Registers);
+        const registers = this.SUBRULE1(this.integerLiteral);
+        this.CONSUME2(RParen);
+
+        this.CONSUME3(LParen);
+        this.CONSUME(Constraints);
+        const constraints = this.SUBRULE2(this.integerLiteral);
+        this.CONSUME3(RParen);
+
+        this.CONSUME4(LParen);
+        this.CONSUME(Steps);
+        const steps = this.SUBRULE3(this.integerLiteral);
+        this.CONSUME4(RParen);
+        
+        const component = this.ACTION(() => new Component(name, schema, registers, constraints, steps));
+
+        this.OPTION(() => this.SUBRULE(this.staticRegisters,    { ARGS: [component] }));
+        this.SUBRULE(this.traceInitializer,                     { ARGS: [component] });
+        this.SUBRULE(this.transitionFunction,                   { ARGS: [component] });
+        this.SUBRULE(this.transitionConstraints,                { ARGS: [component] });
+        this.CONSUME1(RParen);
+
+        this.ACTION(() => schema.addComponent(component));
+    });
+
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    private staticRegisters = this.RULE('staticRegisters', (schema: AirSchema) => { 
+    private staticRegisters = this.RULE('staticRegisters', (component: Component) => {
         this.CONSUME(LParen);
         this.CONSUME(Static);
-        const registers = new StaticRegisterSet();
+        const registers = new StaticRegisterSet(); // TODO: pass cycleLength
         this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
         this.MANY2(() => this.SUBRULE(this.maskRegister,    { ARGS: [registers] }));
         this.MANY3(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
         this.CONSUME(RParen);
-        this.ACTION(() => schema.setStaticRegisters(registers));
+        this.ACTION(() => component.setStaticRegisters(registers));
     });
 
     private inputRegister = this.RULE('inputRegister', (registers: StaticRegisterSet) => {
@@ -175,22 +281,30 @@ class AirParser extends EmbeddedActionsParser {
 
     // PROCEDURES
     // --------------------------------------------------------------------------------------------
-    private transitionFunction = this.RULE('transitionFunction', (schema: AirSchema) => {
+    private traceInitializer = this.RULE('traceInitializer', (component: Component) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Init);
+
+        // build context
+        const context = this.ACTION(() => new ProcedureContext('init', component));
+        this.OPTION(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+        this.MANY1(() => this.SUBRULE(this.localDeclaration,  { ARGS: [context] }));
+
+        // build body
+        const statements: StoreOperation[] = [];
+        this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
+        const result = this.SUBRULE(this.expression, { ARGS: [context] });
+        this.CONSUME(RParen);
+
+        this.ACTION(() => component.setTraceInitializer(context, statements, result));
+    });
+
+    private transitionFunction = this.RULE('transitionFunction', (component: Component) => {
         this.CONSUME1(LParen);
         this.CONSUME(Transition);
 
         // build context
-        this.CONSUME2(LParen);
-        this.CONSUME(Span);
-        const span = this.SUBRULE1(this.integerLiteral);
-        this.CONSUME2(RParen);
-        this.CONSUME3(LParen);
-        this.CONSUME(Result);
-        this.CONSUME(Vector);
-        const width = this.SUBRULE2(this.integerLiteral);
-        this.CONSUME3(RParen);
-
-        const context = this.ACTION(() => new ProcedureContext('transition', schema, span, width));
+        const context = this.ACTION(() => new ProcedureContext('transition', component));
         this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 
         // build body
@@ -199,25 +313,14 @@ class AirParser extends EmbeddedActionsParser {
         const result = this.SUBRULE(this.expression, { ARGS: [context] });
         this.CONSUME(RParen);
 
-        this.ACTION(() => schema.setTransitionFunction(context, statements, result));
+        this.ACTION(() => component.setTransitionFunction(context, statements, result));
     });
 
-    private transitionConstraints = this.RULE('transitionConstraints', (schema: AirSchema) => {
+    private transitionConstraints = this.RULE('transitionConstraints', (component: Component) => {
         this.CONSUME(LParen);
         this.CONSUME(Evaluation);
         
-        // build context
-        this.CONSUME2(LParen);
-        this.CONSUME(Span);
-        const span = this.SUBRULE1(this.integerLiteral);
-        this.CONSUME2(RParen);
-        this.CONSUME3(LParen);
-        this.CONSUME(Result);
-        this.CONSUME(Vector);
-        const width = this.SUBRULE2(this.integerLiteral);
-        this.CONSUME3(RParen);
-
-        const context = this.ACTION(() => new ProcedureContext('evaluation', schema, span, width));
+        const context = this.ACTION(() => new ProcedureContext('evaluation', component));
         this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
         
         // build body
@@ -226,81 +329,7 @@ class AirParser extends EmbeddedActionsParser {
         const result = this.SUBRULE(this.expression, { ARGS: [context] });
         this.CONSUME(RParen);
 
-        this.ACTION(() => schema.setConstraintEvaluator(context, statements, result));
-    });
-
-    private airFunction = this.RULE('airFunction', (schema: AirSchema) => {
-        this.CONSUME(LParen);
-        this.CONSUME(Function);
-
-        const handle = this.OPTION(() => this.CONSUME(Handle).image);
-
-        // build function context
-        this.CONSUME2(LParen);
-        this.CONSUME(Result);
-        this.CONSUME(Vector);
-        const width = this.SUBRULE2(this.integerLiteral);
-        this.CONSUME2(RParen);
-        
-        const context = this.ACTION(() => new FunctionContext(schema, width));
-        this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
-        this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
-
-        // build function body
-        const statements: StoreOperation[] = [];
-        this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
-        const result = this.SUBRULE(this.expression, { ARGS: [context] });
-        this.CONSUME(RParen);
-
-        this.ACTION(() => schema.addFunction(context, statements, result, handle));
-    });
-
-    private paramDeclaration = this.RULE('paramDeclaration', (ctx: ExecutionContext) => {
-        this.CONSUME(LParen);
-        this.CONSUME(Param);
-        const handle = this.OPTION(() => this.CONSUME(Handle).image);
-        this.OR([
-            { ALT: () => {
-                this.CONSUME(Scalar);
-                return this.ACTION(() => ctx.add(new Parameter(Dimensions.scalar(), handle)));
-            }},
-            { ALT: () => {
-                this.CONSUME(Vector);
-                const length = this.SUBRULE1(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new Parameter(Dimensions.vector(length), handle)));
-            }},
-            { ALT: () => {
-                this.CONSUME(Matrix);
-                const rowCount = this.SUBRULE2(this.integerLiteral);
-                const colCount = this.SUBRULE3(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new Parameter(Dimensions.matrix(rowCount, colCount), handle)));
-            }}
-        ]);
-        this.CONSUME(RParen);
-    });
-
-    private localDeclaration = this.RULE('localDeclaration', (ctx: ExecutionContext) => {
-        this.CONSUME(LParen);
-        this.CONSUME(Local);
-        const handle = this.OPTION(() => this.CONSUME(Handle).image);
-        this.OR([
-            { ALT: () => {
-                this.CONSUME(Scalar);
-                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.scalar(), handle)));
-            }},
-            { ALT: () => {
-                this.CONSUME(Vector);
-                const length = this.SUBRULE1(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.vector(length), handle)));
-            }},
-            { ALT: () => {
-                this.CONSUME(Matrix);
-                const rowCount = this.SUBRULE2(this.integerLiteral);
-                const colCount = this.SUBRULE3(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.matrix(rowCount, colCount), handle)));
-            }}
-        ]);
-        this.CONSUME(RParen);
+        this.ACTION(() => component.setConstraintEvaluator(context, statements, result));
     });
 
     // EXPRESSIONS
@@ -390,7 +419,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new MakeMatrix(rows));
     });
 
-    // LOAD AND STORE OPERATIONS
+    // LOAD AND STORE
     // --------------------------------------------------------------------------------------------
     private loadExpression = this.RULE<LoadExpression>('loadExpression', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
@@ -430,7 +459,7 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => ctx.buildCallExpression(indexOrHandle, parameters));
     });
 
-    // LITERALS
+    // LITERALS AND ELEMENTS
     // --------------------------------------------------------------------------------------------
     private integerLiteral = this.RULE<number>('integerLiteral', () => {
         const value = this.CONSUME(Literal).image;
@@ -452,60 +481,6 @@ class AirParser extends EmbeddedActionsParser {
         const values: string[] = [];
         this.AT_LEAST_ONE(() => values.push(this.CONSUME(Literal).image));
         return this.ACTION(() => values.map(v => BigInt(v)));
-    });
-
-    // EXPORTS
-    // --------------------------------------------------------------------------------------------
-    private exportDeclarations = this.RULE('exportDeclarations', (schema: AirSchema) => {
-        const declarations: ExportDeclaration[] = []; 
-        this.AT_LEAST_ONE(() => declarations.push(this.SUBRULE(this.exportDeclaration)));
-        this.ACTION(() => schema.setExports(declarations));
-    });
-
-    private exportDeclaration = this.RULE<ExportDeclaration>('exportDeclaration', () => {
-        this.CONSUME(LParen);
-        this.CONSUME(Export);
-        let initializer: LiteralValue | 'seed' | undefined;
-        const name = this.OR([
-            { ALT: () => {
-                const name = this.CONSUME(Main).image;
-                initializer = this.SUBRULE(this.initExpression);
-                return name;
-            }},
-            { ALT: () => {
-                return this.CONSUME(Identifier).image;
-            }}
-        ]);
-        const cycleLength = this.SUBRULE(this.traceCycleExpression);
-        this.CONSUME(RParen);
-        return this.ACTION(() => new ExportDeclaration(name, cycleLength, initializer));
-    });
-
-    private initExpression = this.RULE<LiteralValue | 'seed'>('initExpression', () => {
-        this.CONSUME(LParen);
-        this.CONSUME(Init);
-        const initializer = this.OR([
-            { ALT: () => this.SUBRULE(this.literalVector)   },
-            { ALT: () => this.CONSUME(Seed).image           }
-        ]);
-        this.CONSUME(RParen);
-        return this.ACTION(() => initializer);
-    });
-
-    private literalVector = this.RULE<LiteralValue>('literalVector', () => {
-        this.CONSUME(LParen);
-        this.CONSUME(Vector);
-        const values = this.SUBRULE(this.fieldElementSequence);
-        this.CONSUME(RParen);
-        return this.ACTION(() => new LiteralValue(values));
-    });
-
-    private traceCycleExpression = this.RULE<number>('traceCycleExpression', () => {
-        this.CONSUME(LParen);
-        this.CONSUME(Steps);
-        const steps = this.CONSUME(Literal).image;
-        this.CONSUME(RParen);
-        return this.ACTION(() => Number(steps));
     });
 }
 

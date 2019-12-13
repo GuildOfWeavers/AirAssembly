@@ -11,7 +11,7 @@ class FunctionContext extends ExecutionContext_1.ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(schema, width) {
-        super(schema);
+        super(schema.field, schema.constants, schema.functions);
         this.width = width;
         this.parameters = [];
     }

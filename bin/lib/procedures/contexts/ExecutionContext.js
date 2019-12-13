@@ -8,11 +8,11 @@ const utils_1 = require("../../utils");
 class ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema) {
-        this.field = schema.field;
+    constructor(field, constants, functions) {
+        this.field = field;
         this.locals = [];
         this.declarationMap = new Map();
-        this.constants = schema.constants.map((constant, i) => {
+        this.constants = constants.map((constant, i) => {
             if (constant.handle) {
                 utils_1.validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
                 this.declarationMap.set(constant.handle, constant);
@@ -20,7 +20,7 @@ class ExecutionContext {
             this.declarationMap.set(`const::${i}`, constant);
             return constant;
         });
-        this.functions = schema.functions.map((func, i) => {
+        this.functions = functions.map((func, i) => {
             if (func.handle) {
                 utils_1.validate(!this.declarationMap.has(func.handle), errors.duplicateHandle(func.handle));
                 this.declarationMap.set(func.handle, func);

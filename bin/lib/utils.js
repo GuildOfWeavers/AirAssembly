@@ -14,8 +14,8 @@ function isPowerOf2(value) {
     }
 }
 exports.isPowerOf2 = isPowerOf2;
-function getCompositionFactor(schema) {
-    return 2 ** Math.ceil(Math.log2(schema.maxConstraintDegree));
+function getCompositionFactor(component) {
+    return 2 ** Math.ceil(Math.log2(component.maxConstraintDegree));
 }
 exports.getCompositionFactor = getCompositionFactor;
 // VALIDATORS

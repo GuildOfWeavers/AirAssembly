@@ -4,32 +4,29 @@ const schema = compile(Buffer.from(`
 (module
     (field prime 96769)
     (const $alpha scalar 3)
-    (static
-        (input secret vector (steps 16) (shift -1))
-        (mask inverted (input 0))
-        (cycle (prng sha256 0x4d694d43 16)))
-    (function $initializer
-        (result vector 1)
-        (param $seed vector 1)
-        (load.param $seed))
     (function $mimcRound
         (result vector 1)
         (param $state vector 1) (param $key scalar)
         (add 
             (exp (load.param $state) (load.const $alpha))
             (load.param $key)))
-    (transition
-        (span 1) (result vector 1)
-        (call $mimcRound (load.trace 0) (get (load.static 0) 2))
-    )
-    (evaluation
-        (span 2) (result vector 1)
-        (sub
-            (load.trace 1)
-            (call $mimcRound (load.trace 0) (get (load.static 0) 2))
-		)
+    (export main
+		(registers 1) (constraints 1) (steps 16)
+		(static
+			(input secret vector (steps 16) (shift -1))
+			(mask inverted (input 0))
+            (cycle (prng sha256 0x4d694d43 16)))
+        (init
+            (vector (scalar 1)))
+		(transition
+			(call $mimcRound (load.trace 0) (get (load.static 0) 2)))
+		(evaluation
+			(sub
+				(load.trace 1)
+				(call $mimcRound (load.trace 0) (get (load.static 0) 2))))
+	
 	)
-    (export main (init seed) (steps 16)))
+)
 `));
 
 console.log(schema.toString());

@@ -90,6 +90,13 @@ export class StaticRegisterSet implements IStaticRegisterSet {
 
     // OTHER PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
+    validate() {
+        // TODO: merge with getDanglingInputs()?
+        const danglingInputs = this.getDanglingInputs();
+        if (danglingInputs.length > 0)
+            throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
+    }
+
     getDanglingInputs(): number[] {
         const registers = new Set<InputRegister>(this.inputs);
         const leaves = this.inputs.filter(r => r.isLeaf);

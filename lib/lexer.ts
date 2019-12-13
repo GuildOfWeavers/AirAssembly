@@ -38,15 +38,14 @@ export const Function   = createToken({ name: "Function",   pattern: /function/,
 export const Transition = createToken({ name: "Transition", pattern: /transition/,  longer_alt: Identifier });
 export const Evaluation = createToken({ name: "Evaluation", pattern: /evaluation/,  longer_alt: Identifier });
 
-export const Span       = createToken({ name: "Span",       pattern: /span/,        longer_alt: Identifier });
 export const Result     = createToken({ name: "Result",     pattern: /result/,      longer_alt: Identifier });
 export const Param      = createToken({ name: "Param",      pattern: /param/,       longer_alt: Identifier });
 export const Local      = createToken({ name: "Local",      pattern: /local/,       longer_alt: Identifier });
 
 export const Export     = createToken({ name: "Export",     pattern: /export/,      longer_alt: Identifier });
-export const Main       = createToken({ name: "Main",       pattern: /main/,        longer_alt: Identifier });
+export const Registers  = createToken({ name: "Registers",  pattern: /registers/,   longer_alt: Identifier });
+export const Constraints= createToken({ name: "Constraints",pattern: /constraints/, longer_alt: Identifier });
 export const Init       = createToken({ name: "Init",       pattern: /init/,        longer_alt: Identifier });
-export const Seed       = createToken({ name: "Seed",       pattern: /seed/,        longer_alt: Identifier });
 
 // TYPES
 // ================================================================================================
@@ -97,9 +96,10 @@ export const Comment    = createToken({ name: "Comment",    pattern : /#.+/,    
 export const allTokens = [
     WhiteSpace, Comment,
     
+    Export, Registers, Constraints, Init,
+
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift, Cycle,
-    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Span, Result, Param, Local,
-    Export, Main, Init, Seed,
+    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Result, Param, Local,
 
     Scalar, Vector, Matrix,
 

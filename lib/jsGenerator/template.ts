@@ -1,9 +1,9 @@
 // INTERFACE IMPORTS
 // ================================================================================================
 import {
-    FiniteField, Vector, Matrix, TransitionFunction, ConstraintEvaluator, RegisterEvaluatorSpecs,
-    ProvingContext, VerificationContext, ConstraintDescriptor, InputDescriptor, MaskRegisterDescriptor,
-    TraceInitializer
+    FiniteField, Vector, Matrix, TraceInitializer, TransitionFunction, ConstraintEvaluator,
+    RegisterEvaluatorSpecs, ProvingContext, VerificationContext, ConstraintDescriptor, InputDescriptor,
+    MaskRegisterDescriptor,
 } from "@guildofweavers/air-assembly";
 
 // INTERFACES
@@ -24,16 +24,16 @@ const staticRegisters: {
     masked  : MaskRegisterDescriptor[];
     cyclic  : RegisterEvaluatorSpecs[];
 } = {} as any;
-const initializeTrace: TraceInitializer = undefined as any;
 
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
+const initializeTrace: TraceInitializer = function () { return []; }
 const applyTransition: TransitionFunction = function () { return []; }
 const evaluateConstraints: ConstraintEvaluator = function () { return []; }
 
 // PROVER GENERATOR
 // ================================================================================================
-export function initProvingContext(inputs: any[] = [], seed?: bigint[]): ProvingContext {
+export function initProvingContext(inputs: any[] = [], seed: bigint[] = []): ProvingContext {
 
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
@@ -62,12 +62,17 @@ export function initProvingContext(inputs: any[] = [], seed?: bigint[]): Proving
     function generateExecutionTrace(): Matrix {
         const steps = traceLength - 1;
         
-        let rValues = initializeTrace(f, seed);
-        if (rValues.length !== traceRegisterCount){
-            throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
-        }
-        let nValues = new Array<bigint>(traceRegisterCount).fill(f.zero);
         const kValues = new Array<bigint>(kRegisters.length).fill(f.zero);
+
+        // compute values of static registers at the last step
+        const lastPosition = steps * compositionFactor;
+        for (let i = 0; i < kValues.length; i++) {
+            kValues[i] = kRegisters[i](lastPosition);
+        }
+
+        // initialize first row of the execution trace
+        let rValues = initializeTrace(kValues, seed);
+        let nValues = new Array<bigint>(traceRegisterCount).fill(f.zero);
 
         // initialize execution trace and copy over the first row
         const traceTable = new Array<bigint[]>(traceRegisterCount);

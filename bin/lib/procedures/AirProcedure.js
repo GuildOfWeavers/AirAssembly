@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const utils_1 = require("../expressions/utils");
 // CLASS DEFINITION
 // ================================================================================================
 class AirProcedure {
@@ -8,7 +7,6 @@ class AirProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context, statements, result) {
         this.name = context.name;
-        this.span = validateSpan(this.name, context.span);
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)
@@ -29,76 +27,14 @@ class AirProcedure {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n    (span ${this.span}) (result ${utils_1.Dimensions.toTypeString(this.dimensions)})`;
+        let code = ``;
         if (this.localVariables.length > 0)
-            code += `\n    ${this.localVariables.map(v => v.toString()).join(' ')}`;
+            code += `\n      ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)
-            code += `\n    ${this.statements.map(s => s.toString()).join('\n    ')}`;
-        code += `\n    ${this.result.toString()}`;
-        return `\n  (${this.name}${code})`;
+            code += `\n      ${this.statements.map(s => s.toString()).join('\n    ')}`;
+        code += `\n      ${this.result.toString()}`;
+        return `\n    (${this.name}${code})`;
     }
 }
 exports.AirProcedure = AirProcedure;
-// HELPER FUNCTIONS
-// ================================================================================================
-function validateSpan(name, span) {
-    if (name === 'transition') {
-        if (span !== 1)
-            throw new Error(`span ${span} is not valid for ${name} procedure`);
-    }
-    else if (name === 'evaluation') {
-        if (span !== 2)
-            throw new Error(`span ${span} is not valid for ${name} procedure`);
-    }
-    else {
-        throw new Error(`invalid procedure name '${name}'`);
-    }
-    return span;
-}
-/*
-    // MUTATION METHODS
-    // --------------------------------------------------------------------------------------------
-    transformExpressions(transformer: ExpressionTransformer, subIdx: number): void {
-        for (let i = subIdx; i < this.subroutines.length; i++) {
-            this.subroutines[i].transformExpression(transformer);
-        }
-    
-        let result = transformer(this.result);
-        if (this.result !== result) {
-            this._result = result;
-        }
-        else {
-            result.transform(transformer);
-        }
-    }
-
-    replaceSubroutines(subroutines: Subroutine[]): void {
-        // TODO: replace subroutines in a different way
-        this.subroutines.length = 0;
-        subroutines.forEach(s => this.subroutines.push(s));
-
-        this.localVariables.forEach(v => v.clearBinding());
-        this.subroutines.forEach(s => this.localVariables[s.localVarIdx].bind(s, s.localVarIdx));
-    
-        let shiftCount = 0;
-        for (let i = 0; i < this.localVariables.length; i++) {
-            let variable = this.localVariables[i];
-            if (!variable.isBound) {
-                this.localVariables.splice(i, 1);
-                shiftCount++;
-                i--;
-            }
-            else if (shiftCount > 0) {
-                let fromIdx = i + shiftCount;
-                this.transformExpressions(e => {
-                    if (e instanceof LoadExpression && e.binding instanceof Subroutine && e.index === fromIdx) {
-                        return new LoadExpression(e.binding, i);
-                    }
-                    return e;
-                }, 0);
-                this.subroutines.forEach(s => s.updateIndex(fromIdx, i));
-            }
-        }
-    }
-*/ 
 //# sourceMappingURL=AirProcedure.js.map

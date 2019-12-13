@@ -22,12 +22,12 @@ export abstract class ExecutionContext {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema: AirSchema) {
-        this.field = schema.field;
+    constructor(field: FiniteField, constants: ReadonlyArray<Constant>, functions: ReadonlyArray<AirFunction>) {
+        this.field = field;
         this.locals = [];
         this.declarationMap = new Map();
 
-        this.constants = schema.constants.map((constant, i) => {
+        this.constants = constants.map((constant, i) => {
             if (constant.handle) {
                 validate(!this.declarationMap.has(constant.handle), errors.duplicateHandle(constant.handle));
                 this.declarationMap.set(constant.handle, constant);
@@ -36,7 +36,7 @@ export abstract class ExecutionContext {
             return constant;
         });
 
-        this.functions = schema.functions.map((func, i) => {
+        this.functions = functions.map((func, i) => {
             if (func.handle) {
                 validate(!this.declarationMap.has(func.handle), errors.duplicateHandle(func.handle));
                 this.declarationMap.set(func.handle, func);

@@ -83,6 +83,21 @@ declare module '@guildofweavers/air-assembly' {
         /** An array of LiteralValue expressions describing constants defined for the computation. */
         readonly constants: ReadonlyArray<Constant>;
 
+        /**  */
+        readonly functions: ReadonlyArray<any>; // TODO
+
+        /** A map of components, where the key is the name of the component, and the value is a Component object. */
+        readonly components: ReadonlyMap<string, Component>;
+
+        constructor(type: 'prime', modulus: bigint);
+
+        addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void;
+        addFunction(context: any, statements: StoreOperation[], result: Expression, handle?: string): void; // TODO
+        addComponent(component: Component): void;
+    }
+
+    export interface Component {
+
         /** An array of StaticRegister objects describing static registers defined for the computation. */
         readonly staticRegisters: ReadonlyArray<StaticRegister>;
 
@@ -101,23 +116,15 @@ declare module '@guildofweavers/air-assembly' {
         /** An integer value specifying the highest degree of transition constraints defined for the computation. */
         readonly maxConstraintDegree: number;
 
-        /** A map of export declarations, where the key is the name of the export, and the value is an ExportDeclaration object. */
-        readonly exports: ReadonlyMap<string, ExportDeclaration>;
-
-        constructor(type: 'prime', modulus: bigint);
-
-        addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void;
         setStaticRegisters(registers: StaticRegisterSet): void;
-        addFunction(context: any, statements: StoreOperation[], result: Expression, handle?: string): void; // TODO
+        setTraceInitializer(context: any, statements: StoreOperation[], result: Expression): void;      // TODO
         setTransitionFunction(context: any, statements: StoreOperation[], result: Expression): void;      // TODO
         setConstraintEvaluator(context: any, statements: StoreOperation[], result: Expression): void;     // TODO
-        setExports(declarations: ExportDeclaration[]): void;
     }
 
-    export type ProcedureName = 'transition' | 'evaluation';
+    export type ProcedureName = 'init' | 'transition' | 'evaluation';
     export interface AirProcedure {
         readonly name           : ProcedureName;
-        readonly span           : number;
         readonly locals         : ReadonlyArray<Dimensions>;
         readonly statements     : ReadonlyArray<StoreOperation>;
         readonly result         : Expression;
@@ -134,18 +141,6 @@ declare module '@guildofweavers/air-assembly' {
         readonly target         : number;
         readonly dimensions     : Dimensions;
     }
-
-    export class ExportDeclaration {
-        readonly name           : string;
-        readonly cycleLength    : number;
-        readonly initializer?   : TraceInitializer;
-
-        readonly isMain         : boolean;
-
-        constructor(name: string, cycleLength: number, initializer?: LiteralValue | 'seed');
-    }
-
-    export type TraceInitializer = (field: FiniteField, seed?: bigint[]) => bigint[];
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
@@ -463,11 +458,20 @@ declare module '@guildofweavers/air-assembly' {
 
     // INTERNAL
     // --------------------------------------------------------------------------------------------
+    export interface TraceInitializer {
+        /**
+         * @param s Array with trace seed values
+         * @param k Array with values of static registers at last step
+         * @returns Array with values of execution trace at step 0
+         */
+        (s: bigint[], k: bigint[]): bigint[];
+    }
+
     export interface TransitionFunction {
         /**
          * @param r Array with values of trace registers at the current step
          * @param k Array with values of static registers at the current step
-         * @returns Array to hold values of trace registers for the next step
+         * @returns Array with values of trace registers for the next step
          */
         (r: bigint[], k: bigint[]): bigint[];
     }
@@ -477,7 +481,7 @@ declare module '@guildofweavers/air-assembly' {
          * @param r Array with values of trace registers at the current step
          * @param n Array with values of trace registers at the next step
          * @param k Array with values of static registers at the current step
-         * @readonly Array to hold values of constraint evaluated at the current step
+         * @returns Array with values of constraint evaluated at the current step
          */
         (r: bigint[], n: bigint[], k: bigint[]): bigint[];
     }

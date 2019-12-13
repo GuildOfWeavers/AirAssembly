@@ -1,11 +1,11 @@
 // IMPORTS
 // ================================================================================================
-import { AirSchema } from "../../AirSchema";
 import { ProcedureName } from "@guildofweavers/air-assembly";
 import { ExecutionContext } from "./ExecutionContext";
 import { LoadExpression, TraceSegment } from "../../expressions";
 import { LocalVariable } from "../LocalVariable";
 import { validate } from "../../utils";
+import { Component } from "../../Component";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -14,29 +14,24 @@ export class ProcedureContext extends ExecutionContext {
     readonly name              : ProcedureName;
     readonly traceRegisters    : TraceSegment;
     readonly staticRegisters   : TraceSegment;
-    readonly span              : number;
     readonly width             : number;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(name: ProcedureName, schema: AirSchema, span: number, width: number) {
-        super(schema);
+    constructor(name: ProcedureName, component: Component) {
+        super(component.field, component.constants, component.functions);
         this.name = name;
-        if (name === 'transition') {
-            this.span = span;
-            this.width = width;
-            this.traceRegisters = new TraceSegment('trace', width);
-            this.staticRegisters = new TraceSegment('static', schema.staticRegisterCount);
+        if (name === 'init' || name === 'transition') {
+            this.width = component.traceRegisterCount;
         }
         else if (name === 'evaluation') {
-            this.span = span;
-            this.width = width;
-            this.traceRegisters = new TraceSegment('trace', schema.traceRegisterCount);
-            this.staticRegisters = new TraceSegment('static', schema.staticRegisterCount);
+            this.width = component.constraintCount;
         }
         else {
             throw new Error(`procedure name '${name}' is not valid`);
         }
+        this.traceRegisters = new TraceSegment('trace', component.traceRegisterCount);
+        this.staticRegisters = new TraceSegment('static', component.staticRegisterCount);
     }
 
     // PUBLIC FUNCTIONS
@@ -61,7 +56,7 @@ export class ProcedureContext extends ExecutionContext {
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
         if (operation === 'load.trace') {
             validate(typeof indexOrHandle === 'number', errors.traceHandleInvalid(indexOrHandle));
-            validate(indexOrHandle < this.span, errors.traceOffsetInvalid(indexOrHandle, this.span));
+            this.validateTraceAccess(indexOrHandle);
             return new LoadExpression(this.traceRegisters, indexOrHandle);
         }
         else if (operation === 'load.static') {
@@ -73,6 +68,20 @@ export class ProcedureContext extends ExecutionContext {
             return super.buildLoadExpression(operation, indexOrHandle);
         }
     }
+
+    // PRIVATE FUNCTION
+    // --------------------------------------------------------------------------------------------
+    private validateTraceAccess(offset: number): void {
+        if (this.name === 'init') {
+            throw new Error(`cannot load trace row: trace table cannot be accessed in init procedures`);
+        }
+        else if (this.name === 'transition') {
+            validate(offset === 0, `cannot load trace row ${offset}: trace row offset cannot be greater than 0`);
+        }
+        else if (this.name === 'evaluation') {
+            validate(offset <= 1, `cannot load trace row ${offset}: trace row offset cannot be greater than 1`);
+        }
+    }
 }
 
 // ERRORS
@@ -80,7 +89,6 @@ export class ProcedureContext extends ExecutionContext {
 const errors = {
     duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
     traceHandleInvalid  : (t: any) => `cannot load trace row ${t}: trace row offset must be an integer`,
-    traceOffsetInvalid  : (t: any, s: any) => `cannot load trace row ${t}: trace row offset must be smaller than ${s}`,
     staticHandleInvalid : (t: any) => `cannot load static row ${t}: static row offset must be an integer`,
     staticOffsetInvalid : (t: any) => `cannot load static row ${t}: static row offset must be 0`
 };

@@ -1,8 +1,8 @@
 // IMPORTS
 // ================================================================================================
 import * as crypto from 'crypto';
-import { AirSchema } from "./AirSchema";
 import { FiniteField } from "@guildofweavers/galois";
+import { Component } from './Component';
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
@@ -15,8 +15,8 @@ export function isPowerOf2(value: number | bigint): boolean {
     }
 }
 
-export function getCompositionFactor(schema: AirSchema): number {
-    return 2**Math.ceil(Math.log2(schema.maxConstraintDegree));
+export function getCompositionFactor(component: Component): number {
+    return 2**Math.ceil(Math.log2(component.maxConstraintDegree));
 }
 
 // VALIDATORS

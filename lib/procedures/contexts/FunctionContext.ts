@@ -1,7 +1,6 @@
 // IMPORTS
 // ================================================================================================
 import { AirSchema } from "../../AirSchema";
-import { AirFunction } from "../AirFunction";
 import { ExecutionContext } from "./ExecutionContext";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
@@ -18,7 +17,7 @@ export class FunctionContext extends ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(schema: AirSchema, width: number) {
-        super(schema);
+        super(schema.field, schema.constants, schema.functions);
         this.width = width;
         this.parameters = [];
     }

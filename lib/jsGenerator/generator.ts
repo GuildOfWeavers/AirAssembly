@@ -2,7 +2,7 @@
 // ================================================================================================
 import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
 import { AirModule, AirModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
-import { AirSchema } from '../AirSchema';
+import { Component } from "../Component";
 import { AirProcedure, AirFunction } from '../procedures';
 import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
 import { getCompositionFactor } from "../utils";
@@ -12,35 +12,31 @@ import * as jsTemplate from './template';
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
+    init        : `initializeTrace(k)`, // TODO
     transition  : 'applyTransition(r, k)',
     evaluation  : 'evaluateConstraints(r, n, k)'
 }
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
-export function instantiateModule(schema: AirSchema, options: AirModuleOptions): AirModule {
+export function instantiateModule(component: Component, options: AirModuleOptions): AirModule {
     let code = `'use strict';\n\n`;
 
-    const mainExport = schema.exports.get('main');
-    if (!mainExport)
-        throw new Error(`cannot instantiate module: main export is undefined`);
-
     // set up module variables
-    code += `const traceCycleLength = ${mainExport.cycleLength};\n`;
-    code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
+    code += `const traceCycleLength = ${component.cycleLength};\n`;
+    code += `const traceRegisterCount = ${component.traceRegisterCount};\n`;
     code += `const extensionFactor = ${options.extensionFactor};\n`;
-    code += `const compositionFactor = ${getCompositionFactor(schema)};\n`;
+    code += `const compositionFactor = ${getCompositionFactor(component)};\n`;
 
     // build supporting functions
     code += '\n';
-    code += schema.functions.map((func, i) => generateFunctionCode(func, i)).join('\n');
+    code += component.functions.map((func, i) => generateFunctionCode(func, i)).join('\n');
 
-    // build transition function and constraint evaluator
+    // build trace initializer, transition function, and constraint evaluator
     code += '\n';
-    code += generateProcedureCode(schema.transitionFunction);
-    code += '\n';
-    code += generateProcedureCode(schema.constraintEvaluator);
-    code += '\n';
+    code += `${generateProcedureCode(component.traceInitializer)}\n`;
+    code += `${generateProcedureCode(component.transitionFunction)}\n`;
+    code += `${generateProcedureCode(component.constraintEvaluator)}\n`;
 
     // add functions from the template
     for (let prop in jsTemplate) {
@@ -52,25 +48,24 @@ export function instantiateModule(schema: AirSchema, options: AirModuleOptions):
     code += 'return {\n';
     code += `field: f,\n`;
     code += `traceRegisterCount: traceRegisterCount,\n`;
-    code += `staticRegisterCount: ${schema.staticRegisterCount},\n`;
+    code += `staticRegisterCount: ${component.staticRegisterCount},\n`;
     code += `inputDescriptors: staticRegisters.inputs,\n`;
-    code += `secretInputCount: ${schema.secretInputCount},\n`;
+    code += `secretInputCount: ${component.secretInputCount},\n`;
     code += `constraints: constraints,\n`;
-    code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
+    code += `maxConstraintDegree: ${component.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
     code += `initProvingContext,\n`;
     code += `initVerificationContext\n`;
     code += '};';
 
     // create and execute module builder function
-    const field = buildField(schema, options.wasmOptions);
-    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', 'initializeTrace', code);
+    const field = buildField(component, options.wasmOptions);
+    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', code);
     return buildModule(
         field,
-        buildConstants(schema, field),
-        schema.constraints,
-        buildStaticRegisters(schema),
-        mainExport.initializer
+        buildConstants(component, field),
+        component.constraints,
+        buildStaticRegisters(component)
     );
 }
 
@@ -100,32 +95,32 @@ function generateFunctionCode(func: AirFunction, index: number): string {
     return code;
 }
 
-function buildField(schema: AirSchema, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
-    if (schema.field.extensionDegree === 1) {
+function buildField(component: Component, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
+    if (component.field.extensionDegree === 1) {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
-            ? createPrimeField(schema.field.characteristic, wasmOptions)
-            : createPrimeField(schema.field.characteristic, wasmOptions);
+            ? createPrimeField(component.field.characteristic, wasmOptions)
+            : createPrimeField(component.field.characteristic, wasmOptions);
     }
     else {
         throw new Error('non-prime fields are not supported');
     }
 }
 
-function buildConstants(schema: AirSchema, field: FiniteField): (bigint | Vector | Matrix)[] {
-    return schema.constants.map(c => {
+function buildConstants(component: Component, field: FiniteField): (bigint | Vector | Matrix)[] {
+    return component.constants.map(c => {
         if (c.isScalar) return c.value.value as bigint;
         else if (c.isVector) return field.newVectorFrom(c.value.value as bigint[]);
         else return field.newMatrixFrom(c.value.value as bigint[][]);
     });
 }
 
-function buildStaticRegisters(schema: AirSchema) {
+function buildStaticRegisters(component: Component) {
     const inputs: InputDescriptor[] = [];
     const masked: MaskRegisterDescriptor[] = [];
     const cyclic: RegisterEvaluatorSpecs[] = [];
 
-    for (let register of schema.staticRegisters) {
+    for (let register of component.staticRegisters) {
         if (register instanceof InputRegister) {
             inputs.push({
                 rank    : register.rank,
@@ -140,7 +135,7 @@ function buildStaticRegisters(schema: AirSchema) {
             masked.push({ source: register.source, inverted: register.inverted });
         }
         else if (register instanceof CyclicRegister) {
-            cyclic.push({ cyclic: true, values: register.getValues(schema.field) });
+            cyclic.push({ cyclic: true, values: register.getValues(component.field) });
         }
     }
 

@@ -10,30 +10,27 @@ const jsTemplate = require("./template");
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
+    init: `initializeTrace(k)`,
     transition: 'applyTransition(r, k)',
     evaluation: 'evaluateConstraints(r, n, k)'
 };
 // PUBLIC FUNCTIONS
 // ================================================================================================
-function instantiateModule(schema, options) {
+function instantiateModule(component, options) {
     let code = `'use strict';\n\n`;
-    const mainExport = schema.exports.get('main');
-    if (!mainExport)
-        throw new Error(`cannot instantiate module: main export is undefined`);
     // set up module variables
-    code += `const traceCycleLength = ${mainExport.cycleLength};\n`;
-    code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
+    code += `const traceCycleLength = ${component.cycleLength};\n`;
+    code += `const traceRegisterCount = ${component.traceRegisterCount};\n`;
     code += `const extensionFactor = ${options.extensionFactor};\n`;
-    code += `const compositionFactor = ${utils_1.getCompositionFactor(schema)};\n`;
+    code += `const compositionFactor = ${utils_1.getCompositionFactor(component)};\n`;
     // build supporting functions
     code += '\n';
-    code += schema.functions.map((func, i) => generateFunctionCode(func, i)).join('\n');
-    // build transition function and constraint evaluator
+    code += component.functions.map((func, i) => generateFunctionCode(func, i)).join('\n');
+    // build trace initializer, transition function, and constraint evaluator
     code += '\n';
-    code += generateProcedureCode(schema.transitionFunction);
-    code += '\n';
-    code += generateProcedureCode(schema.constraintEvaluator);
-    code += '\n';
+    code += `${generateProcedureCode(component.traceInitializer)}\n`;
+    code += `${generateProcedureCode(component.transitionFunction)}\n`;
+    code += `${generateProcedureCode(component.constraintEvaluator)}\n`;
     // add functions from the template
     for (let prop in jsTemplate) {
         code += `${jsTemplate[prop].toString()}\n`;
@@ -43,19 +40,19 @@ function instantiateModule(schema, options) {
     code += 'return {\n';
     code += `field: f,\n`;
     code += `traceRegisterCount: traceRegisterCount,\n`;
-    code += `staticRegisterCount: ${schema.staticRegisterCount},\n`;
+    code += `staticRegisterCount: ${component.staticRegisterCount},\n`;
     code += `inputDescriptors: staticRegisters.inputs,\n`;
-    code += `secretInputCount: ${schema.secretInputCount},\n`;
+    code += `secretInputCount: ${component.secretInputCount},\n`;
     code += `constraints: constraints,\n`;
-    code += `maxConstraintDegree: ${schema.maxConstraintDegree},\n`;
+    code += `maxConstraintDegree: ${component.maxConstraintDegree},\n`;
     code += `extensionFactor: extensionFactor,\n`;
     code += `initProvingContext,\n`;
     code += `initVerificationContext\n`;
     code += '};';
     // create and execute module builder function
-    const field = buildField(schema, options.wasmOptions);
-    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', 'initializeTrace', code);
-    return buildModule(field, buildConstants(schema, field), schema.constraints, buildStaticRegisters(schema), mainExport.initializer);
+    const field = buildField(component, options.wasmOptions);
+    const buildModule = new Function('f', 'g', 'constraints', 'staticRegisters', code);
+    return buildModule(field, buildConstants(component, field), component.constraints, buildStaticRegisters(component));
 }
 exports.instantiateModule = instantiateModule;
 // HELPER FUNCTIONS
@@ -82,19 +79,19 @@ function generateFunctionCode(func, index) {
     code += '\n}\n';
     return code;
 }
-function buildField(schema, wasmOptions) {
-    if (schema.field.extensionDegree === 1) {
+function buildField(component, wasmOptions) {
+    if (component.field.extensionDegree === 1) {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
-            ? galois_1.createPrimeField(schema.field.characteristic, wasmOptions)
-            : galois_1.createPrimeField(schema.field.characteristic, wasmOptions);
+            ? galois_1.createPrimeField(component.field.characteristic, wasmOptions)
+            : galois_1.createPrimeField(component.field.characteristic, wasmOptions);
     }
     else {
         throw new Error('non-prime fields are not supported');
     }
 }
-function buildConstants(schema, field) {
-    return schema.constants.map(c => {
+function buildConstants(component, field) {
+    return component.constants.map(c => {
         if (c.isScalar)
             return c.value.value;
         else if (c.isVector)
@@ -103,11 +100,11 @@ function buildConstants(schema, field) {
             return field.newMatrixFrom(c.value.value);
     });
 }
-function buildStaticRegisters(schema) {
+function buildStaticRegisters(component) {
     const inputs = [];
     const masked = [];
     const cyclic = [];
-    for (let register of schema.staticRegisters) {
+    for (let register of component.staticRegisters) {
         if (register instanceof registers_1.InputRegister) {
             inputs.push({
                 rank: register.rank,
@@ -122,7 +119,7 @@ function buildStaticRegisters(schema) {
             masked.push({ source: register.source, inverted: register.inverted });
         }
         else if (register instanceof registers_1.CyclicRegister) {
-            cyclic.push({ cyclic: true, values: register.getValues(schema.field) });
+            cyclic.push({ cyclic: true, values: register.getValues(component.field) });
         }
     }
     return { inputs, masked, cyclic };
