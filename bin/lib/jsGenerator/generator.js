@@ -25,9 +25,15 @@ function instantiateModule(schema, options) {
     code += `const traceRegisterCount = ${schema.traceRegisterCount};\n`;
     code += `const extensionFactor = ${options.extensionFactor};\n`;
     code += `const compositionFactor = ${utils_1.getCompositionFactor(schema)};\n`;
+    // build supporting functions
+    code += '\n';
+    code += schema.functions.map((func, i) => generateFunctionCode(func, i)).join('\n');
     // build transition function and constraint evaluator
+    code += '\n';
     code += generateProcedureCode(schema.transitionFunction);
+    code += '\n';
     code += generateProcedureCode(schema.constraintEvaluator);
+    code += '\n';
     // add functions from the template
     for (let prop in jsTemplate) {
         code += `${jsTemplate[prop].toString()}\n`;
@@ -55,13 +61,24 @@ exports.instantiateModule = instantiateModule;
 // HELPER FUNCTIONS
 // ================================================================================================
 function generateProcedureCode(procedure) {
-    let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
+    let code = `function ${procedureSignatures[procedure.name]} {\n`;
     if (procedure.locals.length > 0) {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
         code += procedure.statements.map(a => `v${a.target} = ${expressions.toJsCode(a.expression)};`).join('\n');
         code += '\n';
     }
     code += `return ${expressions.toJsCode(procedure.result, { vectorAsArray: true })};`;
+    code += '\n}\n';
+    return code;
+}
+function generateFunctionCode(func, index) {
+    let code = `function func${index}(${func.parameters.map((p, i) => `p${i}`).join(', ')}) {\n`;
+    if (func.locals.length > 0) {
+        code += 'let ' + func.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
+        code += func.statements.map(a => `v${a.target} = ${expressions.toJsCode(a.expression)};`).join('\n');
+        code += '\n';
+    }
+    code += `return ${expressions.toJsCode(func.result)};`;
     code += '\n}\n';
     return code;
 }

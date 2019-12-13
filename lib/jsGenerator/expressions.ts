@@ -2,10 +2,10 @@
 // ================================================================================================
 import {
     ExpressionVisitor, Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
-    GetVectorElement, SliceVector, MakeMatrix, LoadExpression, TraceSegment 
+    GetVectorElement, SliceVector, MakeMatrix, LoadExpression, TraceSegment, CallExpression 
 } from "../expressions";
 import { getBinaryFunction, getUnaryFunction } from "./utils";
-import { StoreOperation, Constant } from "../procedures";
+import { StoreOperation, Constant, Parameter } from "../procedures";
 
 // INTERFACES
 // ================================================================================================
@@ -95,10 +95,23 @@ class ExpressionCodeGenerator extends ExpressionVisitor<string> {
             else if (e.binding instanceof StoreOperation) {
                 code = `v${e.index}`;
             }
+            else if (e.binding instanceof Parameter) {
+                code = `p${e.index}`;
+            }
 
             if (e.isVector && options.vectorAsArray) {
                 code = `${code}.toValues()`;
             }
+        }
+        return code;
+    }
+
+    // CALL EXPRESSION
+    // --------------------------------------------------------------------------------------------
+    callExpression(e: CallExpression, options: JsCodeOptions = {}): string {
+        let code = `func${e.index}(${e.parameters.map(p => this.visit(p)).join(', ')})`;
+        if (e.isVector && options.vectorAsArray) {
+            code = `${code}.toValues()`;
         }
         return code;
     }

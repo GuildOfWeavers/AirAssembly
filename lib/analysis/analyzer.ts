@@ -4,7 +4,7 @@ import { Degree, ProcedureAnalysisResult } from "@guildofweavers/air-assembly";
 import { AirProcedure } from "../procedures";
 import {
     ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
-    GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions
+    GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions, CallExpression
 } from "../expressions";
 import { getBinaryOperationDegree, getUnaryOperationDegree } from "./degree";
 import { analyzeBinaryOperation, analyzeUnaryOperation, OperationStats } from "./operations";
@@ -14,6 +14,7 @@ import { analyzeBinaryOperation, analyzeUnaryOperation, OperationStats } from ".
 interface AnalysisContext {
     degree: {
         const   : Degree[];
+        param   : Degree[];
         local   : Degree[];
         static  : Degree;
         trace   : Degree;
@@ -93,9 +94,33 @@ class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
     // --------------------------------------------------------------------------------------------
     loadExpression(e: LoadExpression, ctx: AnalysisContext): Degree {
         if (e.source === 'const') return ctx.degree.const[e.index];
+        else if (e.source === 'param') return ctx.degree.param[e.index];
         else if (e.source === 'local') return ctx.degree.local[e.index];
         else if (e.source === 'static') return ctx.degree.static;
         else return ctx.degree.trace;
+    }
+
+    // CALL EXPRESSION
+    // --------------------------------------------------------------------------------------------
+    callExpression(e: CallExpression, ctx: AnalysisContext): Degree {
+        const fnContext: AnalysisContext = {
+            degree  : { ...ctx.degree, param: [], local: [] },
+            stats   : ctx.stats
+        };
+
+        // analyze parameters
+        e.parameters.forEach((p, i) => {
+            const degree = this.visit(p, fnContext);
+            fnContext.degree.param[i] = degree;
+        });
+
+        // analyze statements
+        e.func.statements.forEach(s => {
+            const degree = this.visit(s.expression, fnContext);
+            fnContext.degree.local[s.target] = degree;
+        });
+
+        return this.visit(e.func.result, fnContext);
     }
 }
 
@@ -108,6 +133,7 @@ export function analyzeProcedure(procedure: AirProcedure): ProcedureAnalysisResu
     const context: AnalysisContext = {
         degree: {
             const   : procedure.constants.map(c => dimensionsToDegree(c.dimensions, 0n)),
+            param   : [],
             local   : new Array(procedure.locals.length),
             static  : dimensionsToDegree(procedure.staticRegisters.dimensions, 1n),
             trace   : dimensionsToDegree(procedure.traceRegisters.dimensions, 1n)
@@ -119,7 +145,7 @@ export function analyzeProcedure(procedure: AirProcedure): ProcedureAnalysisResu
     procedure.statements.forEach(s => {
         const degree = analyzer.visit(s.expression, context);
         context.degree.local[s.target] = degree;
-    })
+    });
 
     // analyze result and return
     const degree = analyzer.visit(procedure.result, context) as bigint[];

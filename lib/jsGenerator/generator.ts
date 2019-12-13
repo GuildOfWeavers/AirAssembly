@@ -3,7 +3,7 @@
 import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
 import { AirModule, AirModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
 import { AirSchema } from '../AirSchema';
-import { AirProcedure } from '../procedures';
+import { AirProcedure, AirFunction } from '../procedures';
 import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
 import { getCompositionFactor } from "../utils";
 import * as expressions from "./expressions";
@@ -31,9 +31,16 @@ export function instantiateModule(schema: AirSchema, options: AirModuleOptions):
     code += `const extensionFactor = ${options.extensionFactor};\n`;
     code += `const compositionFactor = ${getCompositionFactor(schema)};\n`;
 
+    // build supporting functions
+    code += '\n';
+    code += schema.functions.map((func, i) => generateFunctionCode(func, i)).join('\n');
+
     // build transition function and constraint evaluator
+    code += '\n';
     code += generateProcedureCode(schema.transitionFunction);
+    code += '\n';
     code += generateProcedureCode(schema.constraintEvaluator);
+    code += '\n';
 
     // add functions from the template
     for (let prop in jsTemplate) {
@@ -70,13 +77,25 @@ export function instantiateModule(schema: AirSchema, options: AirModuleOptions):
 // HELPER FUNCTIONS
 // ================================================================================================
 function generateProcedureCode(procedure: AirProcedure): string {
-    let code = `\nfunction ${procedureSignatures[procedure.name]} {\n`;
+    let code = `function ${procedureSignatures[procedure.name]} {\n`;
     if (procedure.locals.length > 0) {
         code += 'let ' + procedure.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
         code += procedure.statements.map(a => `v${a.target} = ${expressions.toJsCode(a.expression)};`).join('\n');
         code += '\n';
     }
     code += `return ${expressions.toJsCode(procedure.result, { vectorAsArray: true })};`;
+    code += '\n}\n';
+    return code;
+}
+
+function generateFunctionCode(func: AirFunction, index: number): string {
+    let code = `function func${index}(${func.parameters.map((p, i) => `p${i}`).join(', ')}) {\n`;
+    if (func.locals.length > 0) {
+        code += 'let ' + func.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
+        code += func.statements.map(a => `v${a.target} = ${expressions.toJsCode(a.expression)};`).join('\n');
+        code += '\n';
+    }
+    code += `return ${expressions.toJsCode(func.result)};`
     code += '\n}\n';
     return code;
 }

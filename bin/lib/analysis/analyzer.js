@@ -68,12 +68,33 @@ class ExpressionAnalyzer extends expressions_1.ExpressionVisitor {
     loadExpression(e, ctx) {
         if (e.source === 'const')
             return ctx.degree.const[e.index];
+        else if (e.source === 'param')
+            return ctx.degree.param[e.index];
         else if (e.source === 'local')
             return ctx.degree.local[e.index];
         else if (e.source === 'static')
             return ctx.degree.static;
         else
             return ctx.degree.trace;
+    }
+    // CALL EXPRESSION
+    // --------------------------------------------------------------------------------------------
+    callExpression(e, ctx) {
+        const fnContext = {
+            degree: { ...ctx.degree, param: [], local: [] },
+            stats: ctx.stats
+        };
+        // analyze parameters
+        e.parameters.forEach((p, i) => {
+            const degree = this.visit(p, fnContext);
+            fnContext.degree.param[i] = degree;
+        });
+        // analyze statements
+        e.func.statements.forEach(s => {
+            const degree = this.visit(s.expression, fnContext);
+            fnContext.degree.local[s.target] = degree;
+        });
+        return this.visit(e.func.result, fnContext);
     }
 }
 // PUBLIC FUNCTIONS
@@ -84,6 +105,7 @@ function analyzeProcedure(procedure) {
     const context = {
         degree: {
             const: procedure.constants.map(c => dimensionsToDegree(c.dimensions, 0n)),
+            param: [],
             local: new Array(procedure.locals.length),
             static: dimensionsToDegree(procedure.staticRegisters.dimensions, 1n),
             trace: dimensionsToDegree(procedure.traceRegisters.dimensions, 1n)

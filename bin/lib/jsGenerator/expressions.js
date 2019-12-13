@@ -78,9 +78,21 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
             else if (e.binding instanceof procedures_1.StoreOperation) {
                 code = `v${e.index}`;
             }
+            else if (e.binding instanceof procedures_1.Parameter) {
+                code = `p${e.index}`;
+            }
             if (e.isVector && options.vectorAsArray) {
                 code = `${code}.toValues()`;
             }
+        }
+        return code;
+    }
+    // CALL EXPRESSION
+    // --------------------------------------------------------------------------------------------
+    callExpression(e, options = {}) {
+        let code = `func${e.index}(${e.parameters.map(p => this.visit(p)).join(', ')})`;
+        if (e.isVector && options.vectorAsArray) {
+            code = `${code}.toValues()`;
         }
         return code;
     }
