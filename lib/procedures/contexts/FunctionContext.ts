@@ -4,22 +4,19 @@ import { AirSchema } from "../../AirSchema";
 import { ExecutionContext } from "./ExecutionContext";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
-import { LoadExpression } from "../../expressions";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class FunctionContext extends ExecutionContext {
 
-    readonly width      : number;
-    readonly parameters : Parameter[];
+    readonly width: number;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(schema: AirSchema, width: number) {
         super(schema.field, schema.constants, schema.functions);
         this.width = width;
-        this.parameters = [];
     }
 
     // PUBLIC METHODS
@@ -45,25 +42,10 @@ export class FunctionContext extends ExecutionContext {
             throw new Error(`${value} is not valid in function context`);
         }
     }
-
-    buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
-        if (operation === 'load.param') {
-            const parameter = this.getDeclaration(indexOrHandle, 'param');
-            validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
-            const index = this.parameters.indexOf(parameter);
-            validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
-            return new LoadExpression(parameter, index);
-        }
-        else {
-            return super.buildLoadExpression(operation, indexOrHandle);
-        }
-    }
 }
 
 // ERRORS
 // ================================================================================================
 const errors = {
-    duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
-    paramNotDeclared    : (p: any) => `cannot load parameter ${p}: parameter ${p} has not been declared`,
-    paramHandleInvalid  : (p: any) => `cannot load parameter ${p}: handle does not identify a parameter`
+    duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`
 };

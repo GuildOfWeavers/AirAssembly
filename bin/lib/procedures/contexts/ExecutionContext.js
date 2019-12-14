@@ -10,6 +10,7 @@ class ExecutionContext {
     // --------------------------------------------------------------------------------------------
     constructor(field, constants, functions) {
         this.field = field;
+        this.parameters = [];
         this.locals = [];
         this.declarationMap = new Map();
         this.constants = constants.map((constant, i) => {
@@ -38,7 +39,14 @@ class ExecutionContext {
         // TODO: implement
     }
     buildLoadExpression(operation, indexOrHandle) {
-        if (operation === 'load.const') {
+        if (operation === 'load.param') {
+            const parameter = this.getDeclaration(indexOrHandle, 'param');
+            utils_1.validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
+            const index = this.parameters.indexOf(parameter);
+            utils_1.validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
+            return new expressions_1.LoadExpression(parameter, index);
+        }
+        else if (operation === 'load.const') {
             const constant = this.getDeclaration(indexOrHandle, 'const');
             utils_1.validate(constant !== undefined, errors.constNotDeclared(indexOrHandle));
             const index = this.constants.indexOf(constant);
@@ -81,6 +89,8 @@ const errors = {
     duplicateHandle: (h) => `handle ${h} cannot be declared multiple times`,
     constNotDeclared: (p) => `cannot load constant ${p}: constant ${p} has not been declared`,
     constHandleInvalid: (p) => `cannot load constant ${p}: handle does not identify a constant`,
+    paramNotDeclared: (p) => `cannot load parameter ${p}: parameter ${p} has not been declared`,
+    paramHandleInvalid: (p) => `cannot load parameter ${p}: handle does not identify a parameter`,
     localNotDeclared: (v) => `cannot store into local variable ${v}: local variable ${v} has not been declared`,
     localHandleInvalid: (v) => `cannot store into local variable ${v}: handle does not identify a local variable`,
     funcNotDeclared: (f) => `cannot call function ${f}: function ${f} has not been declared`,

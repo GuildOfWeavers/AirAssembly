@@ -44,7 +44,7 @@ function initProvingContext(inputs = [], seed = []) {
             kValues[i] = kRegisters[i](lastPosition);
         }
         // initialize first row of the execution trace
-        let rValues = initializeTrace(kValues, seed);
+        let rValues = initializeTrace(kValues, f.newVectorFrom(seed));
         let nValues = new Array(traceRegisterCount).fill(f.zero);
         // initialize execution trace and copy over the first row
         const traceTable = new Array(traceRegisterCount);

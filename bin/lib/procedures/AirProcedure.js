@@ -7,6 +7,7 @@ class AirProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context, statements, result) {
         this.name = context.name;
+        this.parameters = context.parameters.slice();
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)
@@ -28,6 +29,8 @@ class AirProcedure {
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = ``;
+        if (this.parameters.length > 0)
+            code += `\n      ${this.parameters.map(v => v.toString()).join(' ')}`;
         if (this.localVariables.length > 0)
             code += `\n      ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)

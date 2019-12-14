@@ -10,7 +10,7 @@ const jsTemplate = require("./template");
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
-    init: `initializeTrace(k)`,
+    init: `initializeTrace(k, p0)`,
     transition: 'applyTransition(r, k)',
     evaluation: 'evaluateConstraints(r, n, k)'
 };

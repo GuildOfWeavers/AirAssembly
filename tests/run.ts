@@ -17,7 +17,7 @@ const schema = compile(Buffer.from(`
 			(mask inverted (input 0))
             (cycle (prng sha256 0x4d694d43 16)))
         (init
-            (vector (scalar 1)))
+            (slice (load.static 0) 0 0))
 		(transition
 			(call $mimcRound (load.trace 0) (get (load.static 0) 2)))
 		(evaluation
@@ -37,7 +37,7 @@ const inputs = [
 
 const air = instantiate(schema);
 
-const pContext = air.initProvingContext(inputs, [3n]);
+const pContext = air.initProvingContext(inputs);
 const trace = pContext.generateExecutionTrace();
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pContext.evaluationDomain);

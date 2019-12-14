@@ -12,7 +12,7 @@ import * as jsTemplate from './template';
 // MODULE VARIABLES
 // ================================================================================================
 const procedureSignatures = {
-    init        : `initializeTrace(k)`, // TODO
+    init        : `initializeTrace(k, p0)`,
     transition  : 'applyTransition(r, k)',
     evaluation  : 'evaluateConstraints(r, n, k)'
 }

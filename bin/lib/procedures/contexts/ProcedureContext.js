@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const ExecutionContext_1 = require("./ExecutionContext");
 const expressions_1 = require("../../expressions");
+const Parameter_1 = require("../Parameter");
 const LocalVariable_1 = require("../LocalVariable");
 const utils_1 = require("../../utils");
 // CLASS DEFINITION
@@ -27,18 +28,24 @@ class ProcedureContext extends ExecutionContext_1.ExecutionContext {
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
     add(value) {
+        // if local variable has a handle, set handle mapping
+        if (value.handle) {
+            utils_1.validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
+            this.declarationMap.set(value.handle, value);
+        }
         if (value instanceof LocalVariable_1.LocalVariable) {
-            // if local variable has a handle, set handle mapping
-            if (value.handle) {
-                utils_1.validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
-                this.declarationMap.set(value.handle, value);
-            }
             // set index mapping and add local variable to the list
             this.declarationMap.set(`local::${this.locals.length}`, value);
             this.locals.push(value);
         }
+        else if (value instanceof Parameter_1.Parameter && this.name === 'init') {
+            utils_1.validate(this.parameters.length === 0, errors.tooManyInitParams());
+            utils_1.validate(expressions_1.Dimensions.isVector(value.dimensions), errors.invalidInitParam());
+            this.declarationMap.set(`param::${this.parameters.length}`, value);
+            this.parameters.push(value);
+        }
         else {
-            throw new Error(`${value} is not allowed in procedure context`);
+            throw new Error(`${value} is not allowed in ${this.name} procedure context`);
         }
     }
     buildLoadExpression(operation, indexOrHandle) {
@@ -77,6 +84,8 @@ const errors = {
     duplicateHandle: (h) => `handle ${h} cannot be declared multiple times`,
     traceHandleInvalid: (t) => `cannot load trace row ${t}: trace row offset must be an integer`,
     staticHandleInvalid: (t) => `cannot load static row ${t}: static row offset must be an integer`,
-    staticOffsetInvalid: (t) => `cannot load static row ${t}: static row offset must be 0`
+    staticOffsetInvalid: (t) => `cannot load static row ${t}: static row offset must be 0`,
+    tooManyInitParams: () => `trace initializer procedure cannot have more than 1 parameter`,
+    invalidInitParam: () => `trace initializer procedure parameter must be a vector`
 };
 //# sourceMappingURL=ProcedureContext.js.map

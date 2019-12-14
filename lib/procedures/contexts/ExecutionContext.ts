@@ -1,7 +1,6 @@
 // IMPORTS
 // ================================================================================================
 import { FiniteField } from "@guildofweavers/galois";
-import { AirSchema } from "../../AirSchema";
 import { AirFunction } from "../AirFunction";
 import { Constant } from "../Constant";
 import { Parameter } from "../Parameter";
@@ -15,15 +14,17 @@ import { validate } from "../../utils";
 export abstract class ExecutionContext {
 
     readonly field          : FiniteField;
+    readonly parameters     : Parameter[];
     readonly locals         : LocalVariable[];
-    readonly constants      : Constant[];
-    readonly functions      : AirFunction[];
+    readonly constants      : ReadonlyArray<Constant>;
+    readonly functions      : ReadonlyArray<AirFunction>;
     readonly declarationMap : Map<string, AirFunction | Constant | Parameter | LocalVariable>;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(field: FiniteField, constants: ReadonlyArray<Constant>, functions: ReadonlyArray<AirFunction>) {
         this.field = field;
+        this.parameters = [];
         this.locals = [];
         this.declarationMap = new Map();
 
@@ -67,7 +68,14 @@ export abstract class ExecutionContext {
     }
 
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
-        if (operation === 'load.const') {
+        if (operation === 'load.param') {
+            const parameter = this.getDeclaration(indexOrHandle, 'param');
+            validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
+            const index = this.parameters.indexOf(parameter);
+            validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
+            return new LoadExpression(parameter, index);
+        }
+        else if (operation === 'load.const') {
             const constant = this.getDeclaration(indexOrHandle, 'const');
             validate(constant !== undefined, errors.constNotDeclared(indexOrHandle));
             const index = this.constants.indexOf(constant);
@@ -112,6 +120,8 @@ const errors = {
     duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
     constNotDeclared    : (p: any) => `cannot load constant ${p}: constant ${p} has not been declared`,
     constHandleInvalid  : (p: any) => `cannot load constant ${p}: handle does not identify a constant`,
+    paramNotDeclared    : (p: any) => `cannot load parameter ${p}: parameter ${p} has not been declared`,
+    paramHandleInvalid  : (p: any) => `cannot load parameter ${p}: handle does not identify a parameter`,
     localNotDeclared    : (v: any) => `cannot store into local variable ${v}: local variable ${v} has not been declared`,
     localHandleInvalid  : (v: any) => `cannot store into local variable ${v}: handle does not identify a local variable`,
     funcNotDeclared     : (f: any) => `cannot call function ${f}: function ${f} has not been declared`,

@@ -460,11 +460,11 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
     export interface TraceInitializer {
         /**
-         * @param s Array with trace seed values
          * @param k Array with values of static registers at last step
+         * @param s Vector with trace seed values
          * @returns Array with values of execution trace at step 0
          */
-        (s: bigint[], k: bigint[]): bigint[];
+        (k: bigint[], p0: Vector): bigint[];
     }
 
     export interface TransitionFunction {

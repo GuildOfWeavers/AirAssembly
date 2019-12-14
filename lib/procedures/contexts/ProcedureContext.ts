@@ -2,19 +2,20 @@
 // ================================================================================================
 import { ProcedureName } from "@guildofweavers/air-assembly";
 import { ExecutionContext } from "./ExecutionContext";
-import { LoadExpression, TraceSegment } from "../../expressions";
+import { LoadExpression, TraceSegment, Dimensions } from "../../expressions";
+import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
-import { validate } from "../../utils";
 import { Component } from "../../Component";
+import { validate } from "../../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class ProcedureContext extends ExecutionContext {
 
-    readonly name              : ProcedureName;
-    readonly traceRegisters    : TraceSegment;
-    readonly staticRegisters   : TraceSegment;
-    readonly width             : number;
+    readonly name               : ProcedureName;
+    readonly traceRegisters     : TraceSegment;
+    readonly staticRegisters    : TraceSegment;
+    readonly width              : number;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
@@ -36,20 +37,26 @@ export class ProcedureContext extends ExecutionContext {
 
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
-    add(value: LocalVariable): void {
-        if (value instanceof LocalVariable) {
-            // if local variable has a handle, set handle mapping
-            if (value.handle) {
-                validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
-                this.declarationMap.set(value.handle, value);
-            }
+    add(value: Parameter | LocalVariable): void {
+        // if local variable has a handle, set handle mapping
+        if (value.handle) {
+            validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
+            this.declarationMap.set(value.handle, value);
+        }
 
+        if (value instanceof LocalVariable) {
             // set index mapping and add local variable to the list
             this.declarationMap.set(`local::${this.locals.length}`, value);
             this.locals.push(value);
         }
+        else if (value instanceof Parameter && this.name === 'init') {
+            validate(this.parameters.length === 0, errors.tooManyInitParams());
+            validate(Dimensions.isVector(value.dimensions), errors.invalidInitParam());
+            this.declarationMap.set(`param::${this.parameters.length}`, value);
+            this.parameters.push(value);
+        }
         else {
-            throw new Error(`${value} is not allowed in procedure context`);
+            throw new Error(`${value} is not allowed in ${this.name} procedure context`);
         }
     }
 
@@ -90,5 +97,7 @@ const errors = {
     duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
     traceHandleInvalid  : (t: any) => `cannot load trace row ${t}: trace row offset must be an integer`,
     staticHandleInvalid : (t: any) => `cannot load static row ${t}: static row offset must be an integer`,
-    staticOffsetInvalid : (t: any) => `cannot load static row ${t}: static row offset must be 0`
+    staticOffsetInvalid : (t: any) => `cannot load static row ${t}: static row offset must be 0`,
+    tooManyInitParams   : () => `trace initializer procedure cannot have more than 1 parameter`,
+    invalidInitParam    : () => `trace initializer procedure parameter must be a vector`
 };

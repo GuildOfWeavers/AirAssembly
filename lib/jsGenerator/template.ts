@@ -65,13 +65,13 @@ export function initProvingContext(inputs: any[] = [], seed: bigint[] = []): Pro
         const kValues = new Array<bigint>(kRegisters.length).fill(f.zero);
 
         // compute values of static registers at the last step
-        const lastPosition = steps * compositionFactor;
+        const lastStep = steps * compositionFactor;
         for (let i = 0; i < kValues.length; i++) {
-            kValues[i] = kRegisters[i](lastPosition);
+            kValues[i] = kRegisters[i](lastStep);
         }
 
         // initialize first row of the execution trace
-        let rValues = initializeTrace(kValues, seed);
+        let rValues = initializeTrace(kValues, f.newVectorFrom(seed));
         let nValues = new Array<bigint>(traceRegisterCount).fill(f.zero);
 
         // initialize execution trace and copy over the first row

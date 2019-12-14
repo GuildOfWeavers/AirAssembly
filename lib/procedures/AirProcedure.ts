@@ -3,22 +3,24 @@
 import { AirProcedure as IProcedure, ProcedureName} from '@guildofweavers/air-assembly';
 import { ProcedureContext } from './contexts/ProcedureContext';
 import { Expression, TraceSegment } from "../expressions";
+import { Constant } from './Constant';
+import { Parameter } from './Parameter';
 import { LocalVariable } from "./LocalVariable";
 import { StoreOperation } from './StoreOperation';
 import { Dimensions } from "../expressions/utils";
-import { Constant } from './Constant';
 
 // CLASS DEFINITION
 // ================================================================================================
 export class AirProcedure implements IProcedure {
 
     readonly name               : ProcedureName;
-    readonly localVariables     : LocalVariable[];
+    readonly parameters         : ReadonlyArray<Parameter>;
+    readonly localVariables     : ReadonlyArray<LocalVariable>;
 
-    readonly statements         : StoreOperation[];
+    readonly statements         : ReadonlyArray<StoreOperation>;
     readonly result             : Expression;
 
-    readonly constants          : Constant[];
+    readonly constants          : ReadonlyArray<Constant>;
     readonly traceRegisters     : TraceSegment;
     readonly staticRegisters    : TraceSegment;
 
@@ -26,6 +28,7 @@ export class AirProcedure implements IProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context: ProcedureContext, statements: StoreOperation[], result: Expression) {
         this.name = context.name;
+        this.parameters = context.parameters.slice();
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)
@@ -50,6 +53,8 @@ export class AirProcedure implements IProcedure {
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = ``;
+        if (this.parameters.length > 0)
+            code += `\n      ${this.parameters.map(v => v.toString()).join(' ')}`;
         if (this.localVariables.length > 0)
             code += `\n      ${this.localVariables.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)
