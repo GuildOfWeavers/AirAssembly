@@ -13,7 +13,7 @@ const schema = compile(Buffer.from(`
     (export main
 		(registers 1) (constraints 1) (steps 16)
 		(static
-			(input secret vector (steps 16) (shift -1))
+			(input secret (steps 16) (shift -1))
 			(mask inverted (input 0))
             (cycle (prng sha256 0x4d694d43 16)))
         (init

@@ -195,7 +195,7 @@ class AirParser extends EmbeddedActionsParser {
     private staticRegisters = this.RULE('staticRegisters', (component: Component) => {
         this.CONSUME(LParen);
         this.CONSUME(Static);
-        const registers = new StaticRegisterSet(); // TODO: pass cycleLength
+        const registers = this.ACTION(() => new StaticRegisterSet(component.cycleLength));
         this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
         this.MANY2(() => this.SUBRULE(this.maskRegister,    { ARGS: [registers] }));
         this.MANY3(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
@@ -214,19 +214,15 @@ class AirParser extends EmbeddedActionsParser {
 
         const binary = this.OPTION1(() => this.CONSUME(Binary)) ? true : false;
 
-        const typeOrParent = this.OR2([
-            { ALT: () => this.CONSUME(Scalar).image },
-            { ALT: () => this.CONSUME(Vector).image },
-            { ALT: () => {
-                this.CONSUME2(LParen);
-                this.CONSUME(Parent);
-                const index = this.SUBRULE1(this.integerLiteral);
-                this.CONSUME2(RParen);
-                return index;
-            }}
-        ]);
+        const parent = this.OPTION2(() => {
+            this.CONSUME2(LParen);
+            this.CONSUME(Parent);
+            const index = this.SUBRULE1(this.integerLiteral);
+            this.CONSUME2(RParen);
+            return index;
+        });
 
-        const steps = this.OPTION2(() => {
+        const steps = this.OPTION3(() => {
             this.CONSUME3(LParen);
             this.CONSUME(Steps);
             const steps = this.SUBRULE2(this.integerLiteral);
@@ -234,7 +230,7 @@ class AirParser extends EmbeddedActionsParser {
             return steps;
         });
 
-        const offset = this.OPTION3(() => {
+        const offset = this.OPTION4(() => {
             this.CONSUME4(LParen);
             this.CONSUME(Shift);
             const slots = this.SUBRULE(this.signedIntegerLiteral);
@@ -243,7 +239,7 @@ class AirParser extends EmbeddedActionsParser {
         });
 
         this.CONSUME1(RParen);
-        this.ACTION(() => registers.addInput(scope, binary, typeOrParent, offset, steps));
+        this.ACTION(() => registers.addInput(scope, binary, parent, steps, offset));
     });
 
     private cyclicRegister = this.RULE('cyclicRegister', (registers: StaticRegisterSet) => {

@@ -190,7 +190,7 @@ declare module '@guildofweavers/air-assembly' {
 
         constructor();
 
-        addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
+        addInput(scope: string, binary: boolean, parent?: number, steps?: number, offset?: number): void;
         addCyclic(values: bigint[]): void;
         addMask(source: number, inverted: boolean): void;
 
@@ -198,7 +198,7 @@ declare module '@guildofweavers/air-assembly' {
         map<T>(callback: (register: StaticRegister, index: number) => T): T[];
         forEach(callback: (register: StaticRegister, index: number) => void): void;
 
-        getDanglingInputs(): number[];
+        // TODO: add validate()
     }
 
     // EXPRESSIONS

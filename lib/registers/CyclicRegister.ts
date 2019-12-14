@@ -3,6 +3,7 @@
 import { StaticRegister } from "./StaticRegister";
 import { FiniteField } from "@guildofweavers/galois";
 import { PrngSequence } from "./PrngSequence";
+import { validate, isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -13,7 +14,9 @@ export class CyclicRegister extends StaticRegister {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(values: bigint[] | PrngSequence) {
-        super();    
+        super();
+        validate(values.length > 1, errors.valueLengthSmallerThan2());
+        validate(isPowerOf2(values.length), errors.valueLengthNotPowerOf2());
         this.values = values;
     }
 
@@ -35,3 +38,10 @@ export class CyclicRegister extends StaticRegister {
         return `(cycle ${values})`;
     }
 }
+
+// ERRORS
+// ================================================================================================
+const errors = {
+    valueLengthNotPowerOf2  : () => `number of values in a cyclic register must be a power of 2`,
+    valueLengthSmallerThan2 : () => `number of values in a cyclic register must be greater than 1`
+};

@@ -165,7 +165,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.staticRegisters = this.RULE('staticRegisters', (component) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Static);
-            const registers = new registers_1.StaticRegisterSet(); // TODO: pass cycleLength
+            const registers = this.ACTION(() => new registers_1.StaticRegisterSet(component.cycleLength));
             this.MANY1(() => this.SUBRULE(this.inputRegister, { ARGS: [registers] }));
             this.MANY2(() => this.SUBRULE(this.maskRegister, { ARGS: [registers] }));
             this.MANY3(() => this.SUBRULE(this.cyclicRegister, { ARGS: [registers] }));
@@ -180,25 +180,21 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 { ALT: () => this.CONSUME(lexer_1.Public).image }
             ]);
             const binary = this.OPTION1(() => this.CONSUME(lexer_1.Binary)) ? true : false;
-            const typeOrParent = this.OR2([
-                { ALT: () => this.CONSUME(lexer_1.Scalar).image },
-                { ALT: () => this.CONSUME(lexer_1.Vector).image },
-                { ALT: () => {
-                        this.CONSUME2(lexer_1.LParen);
-                        this.CONSUME(lexer_1.Parent);
-                        const index = this.SUBRULE1(this.integerLiteral);
-                        this.CONSUME2(lexer_1.RParen);
-                        return index;
-                    } }
-            ]);
-            const steps = this.OPTION2(() => {
+            const parent = this.OPTION2(() => {
+                this.CONSUME2(lexer_1.LParen);
+                this.CONSUME(lexer_1.Parent);
+                const index = this.SUBRULE1(this.integerLiteral);
+                this.CONSUME2(lexer_1.RParen);
+                return index;
+            });
+            const steps = this.OPTION3(() => {
                 this.CONSUME3(lexer_1.LParen);
                 this.CONSUME(lexer_1.Steps);
                 const steps = this.SUBRULE2(this.integerLiteral);
                 this.CONSUME3(lexer_1.RParen);
                 return steps;
             });
-            const offset = this.OPTION3(() => {
+            const offset = this.OPTION4(() => {
                 this.CONSUME4(lexer_1.LParen);
                 this.CONSUME(lexer_1.Shift);
                 const slots = this.SUBRULE(this.signedIntegerLiteral);
@@ -206,7 +202,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 return this.ACTION(() => slots);
             });
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => registers.addInput(scope, binary, typeOrParent, offset, steps));
+            this.ACTION(() => registers.addInput(scope, binary, parent, steps, offset));
         });
         this.cyclicRegister = this.RULE('cyclicRegister', (registers) => {
             this.CONSUME(lexer_1.LParen);
