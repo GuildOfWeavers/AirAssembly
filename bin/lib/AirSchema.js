@@ -3,14 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const galois_1 = require("@guildofweavers/galois");
 const procedures_1 = require("./procedures");
 const expressions_1 = require("./expressions");
+const utils_1 = require("./utils");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(type, modulus) {
-        if (type !== 'prime')
-            throw new Error(`field type '${type}' is not supported`);
+        utils_1.validate(type === 'prime', errors.invalidFieldType(type));
         this._field = galois_1.createPrimeField(modulus);
         this._constants = [];
         this._functions = [];
@@ -32,9 +32,7 @@ class AirSchema {
     }
     addConstant(value, handle) {
         if (handle) {
-            if (this._handles.has(handle)) {
-                throw new Error(`handle ${handle} cannot be declared multiple times`);
-            }
+            utils_1.validate(!this._handles.has(handle), errors.duplicateHandle(handle));
             this._handles.add(handle);
         }
         const constant = new procedures_1.Constant(new expressions_1.LiteralValue(value), handle); // TODO: pass field
@@ -47,9 +45,7 @@ class AirSchema {
     }
     addFunction(context, statements, result, handle) {
         if (handle) {
-            if (this._handles.has(handle)) {
-                throw new Error(`handle ${handle} cannot be declared multiple times`);
-            }
+            utils_1.validate(!this._handles.has(handle), errors.duplicateHandle(handle));
             this._handles.add(handle);
         }
         const func = new procedures_1.AirFunction(context, statements, result, handle);
@@ -61,9 +57,7 @@ class AirSchema {
         return this._components;
     }
     addComponent(component) {
-        if (this._components.has(component.name)) {
-            throw new Error(`export with name '${component.name}' is declared more than once`);
-        }
+        utils_1.validate(!this._components.has(component.name), errors.duplicateComponent(component.name));
         this._components.set(component.name, component);
     }
     // CODE OUTPUT
@@ -80,12 +74,14 @@ exports.AirSchema = AirSchema;
 // HELPER FUNCTIONS
 // ================================================================================================
 function buildFieldExpression(field) {
-    if (field.extensionDegree === 1) {
-        // this is a prime field
-        return `(field prime ${field.characteristic})`;
-    }
-    else {
-        throw new Error('non-prime fields are not supported');
-    }
+    utils_1.validate(field.extensionDegree === 1, 'non-prime fields are not supported');
+    return `(field prime ${field.characteristic})`;
 }
+// ERRORS
+// ================================================================================================
+const errors = {
+    invalidFieldType: (t) => `field type '${t}' is not supported`,
+    duplicateHandle: (h) => `handle ${h} cannot be declared multiple times`,
+    duplicateComponent: (e) => `export with name '${e}' is declared more than once`
+};
 //# sourceMappingURL=AirSchema.js.map

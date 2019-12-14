@@ -39,9 +39,9 @@ function initProvingContext(inputs = [], seed = []) {
         const steps = traceLength - 1;
         const kValues = new Array(kRegisters.length).fill(f.zero);
         // compute values of static registers at the last step
-        const lastPosition = steps * compositionFactor;
+        const lastStep = steps * compositionFactor;
         for (let i = 0; i < kValues.length; i++) {
-            kValues[i] = kRegisters[i](lastPosition);
+            kValues[i] = kRegisters[i](lastStep);
         }
         // initialize first row of the execution trace
         let rValues = initializeTrace(kValues, f.newVectorFrom(seed));

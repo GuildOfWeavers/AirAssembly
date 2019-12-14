@@ -4,6 +4,11 @@ import * as crypto from 'crypto';
 import { FiniteField } from "@guildofweavers/galois";
 import { Component } from './Component';
 
+// CONSTANTS
+// ================================================================================================
+const MAX_HANDLE_LENGTH = 128;
+const HANDLE_REGEXP = /\$[a-zA-Z]\w*/g;
+
 // PUBLIC FUNCTIONS
 // ================================================================================================
 export function isPowerOf2(value: number | bigint): boolean {
@@ -26,7 +31,9 @@ export function validate(condition: any, errorMessage: string): asserts conditio
 }
 
 export function validateHandle(handle: string): string {
-    // TODO: implement
+    validate(handle.length <= MAX_HANDLE_LENGTH, `handle '${handle}' is invalid: handle length cannot exceed ${MAX_HANDLE_LENGTH} characters`);
+    const matches = handle.match(HANDLE_REGEXP);
+    validate(matches !== null && matches.length === 1, `handle '${handle}' is invalid`);
     return handle;
 }
 

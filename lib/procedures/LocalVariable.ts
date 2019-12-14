@@ -48,6 +48,6 @@ export class LocalVariable {
     // --------------------------------------------------------------------------------------------
     toString(): string {
         const handle = this.handle ? ` ${this.handle} ` : ' ';
-        return `(local${handle}${Dimensions.toTypeString(this.dimensions)})`;
+        return `(local${handle}${Dimensions.toExpressionString(this.dimensions)})`;
     }
 }

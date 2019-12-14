@@ -43,7 +43,7 @@ var Dimensions;
         return d1[0] === d2[0] && d1[1] === d2[1];
     }
     Dimensions.areSameDimensions = areSameDimensions;
-    function toTypeString(d) {
+    function toExpressionString(d) {
         if (Dimensions.isScalar(d))
             return `scalar`;
         else if (Dimensions.isVector(d))
@@ -53,6 +53,17 @@ var Dimensions;
         else
             throw new Error(`dimensions object ${d} is invalid`);
     }
-    Dimensions.toTypeString = toTypeString;
+    Dimensions.toExpressionString = toExpressionString;
+    function toString(d) {
+        if (Dimensions.isScalar(d))
+            return `scalar`;
+        else if (Dimensions.isVector(d))
+            return `vector[${d[0]}]`;
+        else if (Dimensions.isMatrix(d))
+            return `matrix[${d[0]},${d[1]}]`;
+        else
+            throw new Error(`dimensions object ${d} is invalid`);
+    }
+    Dimensions.toString = toString;
 })(Dimensions = exports.Dimensions || (exports.Dimensions = {}));
 //# sourceMappingURL=utils.js.map

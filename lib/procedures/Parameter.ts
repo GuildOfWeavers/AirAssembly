@@ -23,6 +23,6 @@ export class Parameter {
     // --------------------------------------------------------------------------------------------
     toString(): string {
         const handle = this.handle ? ` ${this.handle} ` : ' ';
-        return `(param${handle}${Dimensions.toTypeString(this.dimensions)})`;
+        return `(param${handle}${Dimensions.toExpressionString(this.dimensions)})`;
     }
 }

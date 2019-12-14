@@ -49,10 +49,17 @@ export namespace Dimensions {
         return d1[0] === d2[0] && d1[1] === d2[1];
     }
 
-    export function toTypeString(d: Dimensions): string {
+    export function toExpressionString(d: Dimensions): string {
         if (Dimensions.isScalar(d))         return `scalar`;
         else if (Dimensions.isVector(d))    return `vector ${d[0]}`;
         else if (Dimensions.isMatrix(d))    return `matrix ${d[0]} ${d[1]}`;
+        else throw new Error(`dimensions object ${d} is invalid`);
+    }
+
+    export function toString(d: Dimensions): string {
+        if (Dimensions.isScalar(d))         return `scalar`;
+        else if (Dimensions.isVector(d))    return `vector[${d[0]}]`;
+        else if (Dimensions.isMatrix(d))    return `matrix[${d[0]},${d[1]}]`;
         else throw new Error(`dimensions object ${d} is invalid`);
     }
 }

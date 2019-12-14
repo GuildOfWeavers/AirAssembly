@@ -5,6 +5,7 @@ import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { AirFunction, FunctionContext, Constant, StoreOperation } from "./procedures";
 import { Expression, LiteralValue } from "./expressions";
 import { Component } from "./Component";
+import { validate } from "./utils";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -20,7 +21,7 @@ export class AirSchema implements IAirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(type: 'prime', modulus: bigint) {
-        if (type !== 'prime') throw new Error(`field type '${type}' is not supported`);
+        validate(type === 'prime', errors.invalidFieldType(type));
         this._field = createPrimeField(modulus);
 
         this._constants = [];
@@ -47,9 +48,7 @@ export class AirSchema implements IAirSchema {
 
     addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void {
         if (handle) {
-            if (this._handles.has(handle)) {
-                throw new Error(`handle ${handle} cannot be declared multiple times`);
-            }
+            validate(!this._handles.has(handle), errors.duplicateHandle(handle));
             this._handles.add(handle);
         }
         const constant = new Constant(new LiteralValue(value), handle); // TODO: pass field
@@ -64,9 +63,7 @@ export class AirSchema implements IAirSchema {
 
     addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void {
         if (handle) {
-            if (this._handles.has(handle)) {
-                throw new Error(`handle ${handle} cannot be declared multiple times`);
-            }
+            validate(!this._handles.has(handle), errors.duplicateHandle(handle));
             this._handles.add(handle);
         }
         const func = new AirFunction(context, statements, result, handle);
@@ -80,9 +77,7 @@ export class AirSchema implements IAirSchema {
     }
 
     addComponent(component: Component): void {
-        if (this._components.has(component.name)) {
-            throw new Error(`export with name '${component.name}' is declared more than once`);
-        }
+        validate(!this._components.has(component.name), errors.duplicateComponent(component.name));
         this._components.set(component.name, component);
     }
 
@@ -100,11 +95,14 @@ export class AirSchema implements IAirSchema {
 // HELPER FUNCTIONS
 // ================================================================================================
 function buildFieldExpression(field: FiniteField): string {
-    if (field.extensionDegree === 1) {
-        // this is a prime field
-        return `(field prime ${field.characteristic})`;
-    }
-    else {
-        throw new Error('non-prime fields are not supported');
-    }
+    validate(field.extensionDegree === 1, 'non-prime fields are not supported');
+    return `(field prime ${field.characteristic})`;
 }
+
+// ERRORS
+// ================================================================================================
+const errors = {
+    invalidFieldType    : (t: any) => `field type '${t}' is not supported`,
+    duplicateHandle     : (h: any) => `handle ${h} cannot be declared multiple times`,
+    duplicateComponent  : (e: any) => `export with name '${e}' is declared more than once`
+};

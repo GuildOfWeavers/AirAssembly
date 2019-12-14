@@ -19,7 +19,7 @@ class Parameter {
     // --------------------------------------------------------------------------------------------
     toString() {
         const handle = this.handle ? ` ${this.handle} ` : ' ';
-        return `(param${handle}${utils_1.Dimensions.toTypeString(this.dimensions)})`;
+        return `(param${handle}${utils_1.Dimensions.toExpressionString(this.dimensions)})`;
     }
 }
 exports.Parameter = Parameter;

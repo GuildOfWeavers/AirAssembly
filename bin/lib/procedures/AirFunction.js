@@ -29,7 +29,7 @@ class AirFunction {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        let code = `\n    (result ${expressions_1.Dimensions.toTypeString(this.dimensions)})`;
+        let code = `\n    (result ${expressions_1.Dimensions.toExpressionString(this.dimensions)})`;
         if (this.parameters.length > 0)
             code += `\n    ${this.parameters.map(p => p.toString()).join(' ')}`;
         if (this.localVariables.length > 0)
