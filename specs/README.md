@@ -126,7 +126,7 @@ For example:
 Once defined, values of constants cannot be changed. To reference a constant in an [arithmetic expression](#Arithmetic-expressions) `load.const` operation can be used (see [load operations](#Load-operations) for more info).
 
 ### Function declarations
-Function declaration section defines a set of functions which can be used to encapsulate common arithmetic expressions. A function is a pure mathematical function which takes a set of parameters, performs arithmetic operations with these parameters, and outputs the result. A function declaration has the following form:
+Function declaration section defines a set of module functions which can be used to encapsulate common arithmetic expressions. A module function is a pure mathematical function which takes a set of parameters, performs arithmetic operations with these parameters, and outputs the result. A function declaration has the following form:
 ```
 (function <handle?> <result> <params> <locals?> <body>)
 ```
@@ -373,7 +373,7 @@ where:
 * `locals` section declares a set of zero or more local variables similar to [function locals](#Function-local-variables).
 * `body` section consists of a set of arithmetic expressions similar to [function bodies](#Function-body) but with the following differences:
   * Body of a trace initializer must always resolve to a vector. The length of the vector must equal to the number of dynamic registers as specified in the [component signature](#Component-signature).
-  * Unlike pure functions, trace initializers have access to the static register traces. These can be accessed by using `load.static` operation (see [load operations](#Load-operations) for more info).
+  * Unlike module functions, trace initializers have access to static register traces. These can be accessed by using `load.static` operation (see [load operations](#Load-operations) for more info).
 
 The initializer is executed before the [transition function](#Transition-function) is run (but after static register traces have been generated). Thus, the current step for the initializer is one before step `0` of the execution trace. This is interpreted as the last step of the execution trace (rather than step `-1` which does not exist).
 
@@ -399,7 +399,7 @@ where:
 * `locals` section declares a set of zero or more local variables similar to [function locals](#Function-local-variables).
 * `body` section consists of a set of arithmetic expressions similar to [function bodies](#Function-body) but with the following differences:
   * Body of a transition function must always resolve to a vector. The length of the vector must equal to the number of dynamic registers as specified in the [component signature](#Component-signature).
-  * Unlike pure functions, transition functions have access to the already generated rows of the execution trace table. These rows can be accessed with `load.trace` and `load.static` operations (see [load operations](#Load-operations) for more info).
+  * Unlike module functions, transition functions have access to the already generated rows of the execution trace table. These rows can be accessed with `load.trace` and `load.static` operations (see [load operations](#Load-operations) for more info).
 
 For example:
 ```
@@ -431,7 +431,7 @@ where:
 * `locals` section declares a set of zero or more local variables similar to [function locals](#Function-local-variables).
 * `body` section consists of a set of arithmetic expressions similar to [function bodies](#Function-body) but with the following differences:
   * Body of a constraint evaluator must always resolve to a vector. The length of the vector must equal to the number of constraints as specified in the [component signature](#Component-signature).
-  * Unlike pure functions, constraint evaluators have access to the future rows of the execution trace table. The table can be accessed with `load.trace` and `load.static` operations (see [load operations](#Load-operations) for more info).
+  * Unlike module functions, constraint evaluators have access to the future rows of the execution trace table. The table can be accessed with `load.trace` and `load.static` operations (see [load operations](#Load-operations) for more info).
 
 The code block below shows a simple example of a constraint evaluator which complements the example of a transition function described previously.
 ```
@@ -621,7 +621,7 @@ Some memory segments can be accessed only from certain contexts as shown in the 
 
 | Context              | const | param | local | static | trace |
 | -------------------- | :---: | :---: | :---: | :----: | :---: |
-| pure function        | Yes   |  Yes  |  Yes  | No     | No    |
+| module function      | Yes   |  Yes  |  Yes  | No     | No    |
 | trace initializer    | Yes   |  Yes  |  Yes  | yes    | No    |
 | transition function  | Yes   |  No   |  Yes  | Yes    | Yes   |
 | constraint evaluator | Yes   |  No   |  Yes  | Yes    | Yes   |
@@ -630,7 +630,7 @@ To summarize the table:
 * Global constants can be accessed from any context.
 * Transition functions and constraint evaluators cannot have declared parameters.
 * Local variables can be declared in any context.
-* Static registers cannot be accesses from pure functions.
+* Static registers cannot be accesses from module functions.
 * Trace registers can be accessed only from transition functions and constraint evaluators.
 
 **Note 1:** trying to load a value from a local variable that hasn't been initialized yet, will result in an error.
@@ -661,7 +661,7 @@ Value of a given local variable can be updated an unlimited number of times. Als
 **Note:** unlike other expressions, store expressions do not resolve to a value, and therefore, cannot be used as sub-expressions in other expressions.
 
 ### Function calls
-To invoke a [pure function](#Function-declarations), the following expression can be used:
+To invoke a [module function](#Function-declarations), the following expression can be used:
 ```
 (call <indexOrHandle> <parameters>)
 ```
@@ -791,4 +791,4 @@ register 4: [19, 0,  0,  0, 20,  0,  0,  0, 21,  0,  0,  0, 22,  0,  0,  0]
 ```
 
 # License
-[MIT](/../LICENSE) © 2019 Guild of Weavers
+[MIT](https://github.com/GuildOfWeavers/AirAssembly/blob/master/LICENSE) © 2019 Guild of Weavers
