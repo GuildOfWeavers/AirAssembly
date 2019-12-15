@@ -1,6 +1,6 @@
 # AirAssembly
 
-AirAssembly is a low-level language for encoding Algebraic Intermediate Representation (AIR) of computations. The goal of the language is to provide a minimal number of constructs required to fully express AIR for an arbitrary computation.
+AirAssembly is a low-level language for encoding Algebraic Intermediate Representation (AIR) of computations. The goal of the language is to provide a minimal number of constructs required to fully express AIR for arbitrary computations.
 
 AirAssembly is intended to be a compilation target for higher-level languages, and as such, expressivity and readability by humans are not explicit goals of the language. Instead, the language aims to:
 
@@ -9,56 +9,59 @@ AirAssembly is intended to be a compilation target for higher-level languages, a
 3. Avoid redundancy and implicit behavior. Ideally, there should be one right way to do things, and all parameters should be specified explicitly.
 
 ## AirAssembly module
-A module in AirAssembly is a self-contained unit which fully describes a computation. Its purpose is to specify:
+A module in AirAssembly is a self-contained unit which fully describes a set of computations. Its purpose is to specify:
 
-1. Inputs required by the computation.
-2. Logic for generating execution trace for the computation.
-3. Logic for evaluating transition constraints for the computation.
-4. Metadata needed to compose the computation with other computations.
+1. Inputs required by the computations.
+2. Logic for generating execution traces for the computations.
+3. Logic for evaluating transition constraints for the computations.
+4. Metadata needed to compose the computations with other computations.
 
 Module expression has the following form:
 ```
 (module
     <field declaration>
     <constant declarations>
-    <static registers>
-    <transition function>
-    <constraint evaluator>
-    <export declarations>)
+    <function declarations>
+    <component exports>)
 ```
 
 The code below illustrates AirAssembly module structure on an example of a [MiMC](https://vitalik.ca/general/2018/07/21/starks_part_3.html#mimc) computation:
 ```
 (module
     (field prime 340282366920938463463374607393113505793)
-    (const 
-        (scalar 3))
-    (static
-        (cycle (prng sha256 0x4d694d43 64)))
-    (transition
-        (span 1) (result vector 1)
-        (add
-            (exp (load.trace 0) (load.const 0))
-            (load.static 0)))
-    (evaluation
-        (span 2) (result vector 1)
-        (sub
-            (load.trace 1)
-            (add
-                (exp (load.trace 0) (load.const 0))
-                (load.static 0))))
-    (export mimc128 (steps 256))
-    (export mimc256 (steps 1024)))
+    (const scalar $alpha 3)
+    (function $mimcRound
+        (result vector 1)
+        (param $state vector 1) (param $roundKey scalar)
+        (add 
+            (exp (load.param $state) (load.const $alpha))
+            (load.param $roundKey)))
+    (export mimc
+        (registers 1) (constraints 1) (steps 1024)
+        (static
+            (cycle (prng sha256 0x4d694d43 64)))
+        (init
+            (param $seed vector 1)
+            (load.param $seed))
+        (transition
+            (call $mimcRound (load.trace 0) (get (load.static 0) 0)))
+        (evaluation
+            (sub
+                (load.trace 1)
+                (call $mimcRound (load.trace 0) (get (load.static 0) 0))))))
 ```
 
-The meaning of the components in the above example is as follows:
+The meaning of sections in the above example is as follows:
 
-* [Field declaration](#Field-declaration) specifies the finite field to be used for all arithmetic operations.
-* [Constant declarations](#Constant-declarations) define a set of constants that can be used in transition function and constraint evaluator.
-* [Static registers](#Static-registers) describe logic for building static registers, including logic for interpreting inputs.
-* [Transition function](#Transition-function) describes state transition logic for the computation.
-* [Constraint evaluator](#Constraint-evaluator) describes algebraic relation between steps of the computation.
-* [Export declarations](#Export-declarations) define endpoints which can be used to compose the computation with other computations.
+* [Field declaration](#Field-declaration) specifies the finite field to be used for all arithmetic operations within the module.
+* [Constant declarations](#Constant-declarations) define a set of constants which can be used in arithmetic operations within the module.
+* [Function declarations](#Function-declarations) define a set of functions which can be used to encapsulate common arithmetic expressions.
+* [Component exports](#Component-exports) define a set of computations exported by the module. Each component consists of the following sub-sections:
+  * [Signature](#Component-signature) defines basic properties of the computation.
+  * [Static registers](#Static-registers) describe logic for building static registers, including logic for interpreting inputs.
+  * [Trace initializer](#Trace-initializer) describes logic for initialing the first row of the execution trace.
+  * [Transition function](#Transition-function) describes state transition logic for the computation.
+  * [Constraint evaluator](#Constraint-evaluator) describes algebraic relation between steps of the computation.
 
 ## Execution model
 Executing an AirAssembly module against a set of inputs produces two outputs:
@@ -84,8 +87,8 @@ AirAssembly module execution process is illustrated in the picture below:
 
 (the funny shape of the Inputs drawing is not accidental; check out [nested input register](#Nested-input-registers) example to see why).
 
-## Module components
-The sections below provide detailed explanation of [AirAssembly module](#AirAssembly-module) components.
+## Module sections
+The sections below provide detailed explanation of [AirAssembly module](#AirAssembly-module) sections.
 
 ### Field declaration
 Field declaration section specifies a finite field to be used in all arithmetic expressions. The declaration expression has the following form:
@@ -103,29 +106,149 @@ For example:
 The above example defines a prime field with modulus = 2<sup>128</sup> - 9 * 2<sup>32</sup> + 1.
 
 ### Constant declarations
-Constant declaration section defines constants which can be used in transition functions and constraint evaluators. Constant declaration expression has the following form:
+Constant declaration section defines a set of constants which can be used in arithmetic operations within the module. A constant declaration expression has the following form:
 ```
-(const <constants>)
+(const <handle?> <value>)
 ```
 where:
-* `constants` is a list of constant declarations which can be scalars, vectors, and matrixes (see [value types](#Value-types) for more info).
+* `handle` is an optional name which can be used to reference the constant. If the handle is not provided, a constant can be referenced by its index (zero-based, in the order of declaration). A handle must start with `$` character followed by a letter, and can contain any combination of letters, numbers, and underscores.
+* `value` is the value of a constant which can be a scalar, a vector, or a matrix (see [value types](#Value-types) for more info).
 
 For example:
 ```
-(const (scalar 5))              # declares scalar constant with value 5
-(const (vector 1 2 3 4))        # declares vector constant with values [1, 2, 3, 4]
-(const (matrix (1 2) (3 4)))    # declares matrix constant with rows [1, 2] and [3, 4]
+(const scalar 5)              # declares scalar constant with value 5
+(const vector 1 2 3 4)        # declares vector constant with values [1, 2, 3, 4]
+(const matrix (1 2) (3 4))    # declares matrix constant with rows [1, 2] and [3, 4]
 ```
-Constants are un-named and can be referenced only by their indexes. For example, the following code block declares 3 constants with indexes 0, 1, and 2 (in the order of their declaration):
-```
-(const
-    (scalar 5)
-    (vector 1 2 3 4) 
-    (matrix (1 2) (3 4)))
-```
-Once defined, values of constants cannot be changed. To reference a constant in a transition function or a constraint evaluator `load.const` expression can be used (see [load operations](#Load-operations) for more info).
+Once defined, values of constants cannot be changed. To reference a constant in an [arithmetic expression](#Arithmetic-expressions) `load.const` operation can be used (see [load operations](#Load-operations) for more info).
 
-### Static registers
+### Function declarations
+Function declaration section defines a set of functions which can be used to encapsulate common arithmetic expressions. A function is a pure mathematical function which takes a set of parameters, performs arithmetic operations with these parameters, and outputs the result. A function declaration has the following form:
+```
+(function <handle?> <result> <params> <locals> <body>)
+```
+where:
+* `handle` is an optional name which can be used to reference the function. If the handle is not provided, a function can be referenced by its index (zero-based, in the order of declaration). A handle must start with `$` character followed by a letter, and can contain any combination of letters, numbers, and underscores.
+* `result` declares the return type of the function, which has the form: `(result <type>)`, where `type` can be either a scalar, a vector, or a matrix (see [value types](#Value-types) for more info). For non-scalar types, additional info must be supplied to specify the dimensions of the function return value.
+* `params` section declares a set of [parameters](#Function-parameters) expected by the function.
+* `locals` section declares a set of [local variables](#Function-local-variables) which can be used within the function body.
+* `body` section consists of a set of arithmetic expressions which define [function evaluation logic](#Function-body).
+
+For example:
+```
+(function $mimcRound
+    (result vector 1)
+    (param $state vector 1) (param $roundKey scalar)
+    (add 
+        (exp (load.param $state) (scalar 3))
+        (load.param $roundKey)))
+```
+The above code declares a function with the following properties:
+* The handle of the function is `$mimcRound`;
+* The function returns a vector of length 1;
+* The function expects 2 parameters: a vector of length 1 (`$state`) and a scalar (`$roundKey`);
+* The body of the function performs the following computation: `$state`<sup>3</sup> + `$roundKey`.
+
+If we call this function with parameters `$state = [3]` and `$roundKey = 33`, the function will return a vector `[60]`.
+
+To invoke a function, a `call` operation can be used (see [function calls](#Function-calls) for more info). A function can call other functions, but only if these functions have already been declared. Thus, recursive or circular function calls are not possible.
+
+#### Function parameters
+Params section of a function declares parameters which are expected by the function. Parameter declaration expression has the following form:
+```
+(param <handle?> <type>)
+```
+where:
+* `handle` is an optional name which can be used to reference the parameter. If the handle is not provided, a parameter can be referenced by its index (zero-based, in the order of declaration). A handle must start with `$` character followed by a letter, and can contain any combination of letters, numbers, and underscores.
+* Parameter `type` can be either a scalar, a vector, or a matrix (see [value types](#Value-types) for more info). For non-scalar types, additional info must be supplied to specify the dimensions of the parameter.
+
+For example:
+```
+(param $foo scalar)     # declares a scalar parameter with handle $foo
+(param vector 4)        # declares a vector parameter with length 4
+(param matrix 2 4)      # declares a matrix parameter with 2 rows and 4 columns
+```
+To read a value of a function parameters from within the function body, `load.param` operation can be used (see [load operations](#Load-operations) for more info). It is not possible to modify a value of a function parameter (parameters are immutable).
+
+#### Function local variables
+Locals section of a function declares variables which can be used in the function body. Variable declaration expression has the following form:
+```
+(local <handle?> <type>)
+```
+where:
+* `handle` is an optional name which can be used to reference the variable. If the handle is not provided, a variable can be referenced by its index (zero-based, in the order of declaration). A handle must start with `$` character followed by a letter, and can contain any combination of letters, numbers, and underscores.
+* Variable `type` can be either a scalar, a vector, or a matrix (see [value types](#Value-types) for more info). For non-scalar types, additional info must be supplied to specify the dimensions of the variable.
+
+For example:
+```
+(local $foo scalar)     # declares a scalar variable with handle $foo
+(local vector 4)        # declares a vector variable with length 4
+(local matrix 2 4)      # declares a matrix variable with 2 rows and 4 columns
+```
+
+To write a value into a local variable `store.local` operation can be used. To read a value of a local variable `load.local` operation can be used. See [store operations](#Store-operations) and [load operations](#Load-operations) for more info.
+
+#### Function body
+A function body consists of a list of [arithmetic expressions](#Arithmetic-expressions) such that:
+
+1. All expressions in the list, except the last one, must be [store operations](#Store-operations) which save the result of some arithmetic expression into a local variable.
+2. The last expression in the list evaluates to a value of the type which matches the return type of the function as specified by the `result` expression.
+
+For example, the body of the function below consists of a single expression:
+```
+(vector (add (scalar 1) (scalar 2)))    # resolves to vector [3]
+```
+Another example, where a local variable is used to store value of a common sub-expression:
+```
+(store 0 (add (scalar 1) (scalar 2)))   # stores value 3 into local variable 0
+(vector (load.local 0) (load.local 0))  # resolves to vector [3, 3]
+```
+
+### Component exports
+Component exports section defines a set of computations exported from the module. Each exported component defines a single computation, and a module can export one or more components. A component declaration has the following form:
+```
+(export <name>
+    <signature>
+    <static registers?>
+    <initializer>
+    <transition function>
+    <constraint evaluator>)
+```
+where:
+* `name` specifies the name under which the component is exported. The must start with a letter and can contain any combination of letters, numbers, and underscores.
+* [Signature](#Component-signature) defines basic properties of the computation.
+* [Static registers](#Static-registers) describe logic for building static registers, including logic for interpreting inputs.
+* [Trace initializer](#Trace-initializer) describes logic for initialing the first row of the execution trace.
+* [Transition function](#Transition-function) describes state transition logic for the computation.
+* [Constraint evaluator](#Constraint-evaluator) describes algebraic relation between steps of the computation.
+
+```
+(export mimc
+    (registers 1) (constraints 1) (steps 1024)
+    (static
+        (cycle (prng sha256 0x4d694d43 64)))
+    (init
+        (param $seed vector 1)
+        (load.param $seed))
+    (transition
+        (call $mimcRound (load.trace 0) (get (load.static 0) 0)))
+    (evaluation
+        (sub
+            (load.trace 1)
+            (call $mimcRound (load.trace 0) (get (load.static 0) 0)))))
+```
+
+#### Component signature
+Component signature section defines basic properties of a computation described by the component and has the following form:
+```
+(registers <registers>) (constraints <constraints>) (steps <steps>)
+```
+where:
+* `registers` specifies the number of dynamic registers in the execution trace. Must be an integer between `1` and `256`.
+* `constraints` specifies the number of transition constraints. Must be an integer between `1` and `1024`.
+* `steps` specifies minimum cycle length of the computation. Must be an integer greater than `1` which is a power of `2`.
+
+#### Static registers
 Static registers section defines logic for generating static register traces. These traces are computed before the execution of the transition function, and cannot be changed by the transition function or the constraint evaluator. Static section expression has the following form:
 ```
 (static <input registers> <mask registers> <cyclic registers>)
@@ -138,32 +261,32 @@ where:
 For example, the following code block declares 3 registers - one of each type:
 ```
 (static
-    (input public vector (steps 8))
+    (input public (steps 8))
     (mask (input 0))
     (cycle 1 2 3 4))
 ```
 A detailed explanation of each type of static register is provided in the following sections.
 
-#### Input registers
-Input register declarations specify what inputs are required by the computation, and describes the logic needed to transform these inputs into register traces. Input register declaration expression has the following form:
+##### Input registers
+Input register declarations define a set of non-scalar inputs required by the computation, and describes the logic needed to transform these inputs into register traces. Input register declaration expression has the following form:
 ```
-(input <scope> <binary?> <type> <steps?> <shift?>)
+(input <scope> <binary?> <parent?> <steps?> <shift?>)
 ```
 where:
 * `scope` can be either `secret` or `public`. Values for `secret` input registers are assumed to be known only to the prover and need to be provided only at the proof generation time. Values for `public` input registers must be known to both, the prover and the verifier, and must be provided at the time of proof generation, as well as, at the time of proof verification.
 * An optional `binary` attribute indicates whether the input register accepts only binary values (ones and zeros).
-* Input `type` can be `scalar`, `vector`, or a reference to a parent register. `scalar` input registers expect a single value; `vector` input registers expect a list of at least one value, and the length of the list must be a power of 2. References to parent registers have the form `(parent <index>)`, where `index` is the index of the parent register. This allows forming of nested inputs (see [examples](#Nested-input-registers) for more info).
+* An optional reference to a parent registers of the form: `(parent <index>)`, where `index` is the index of the parent register. This allows forming of nested inputs (see [examples](#Nested-input-registers) for more info).
 * `steps` expression has the form `(steps <count>)`, where `count` specifies the number of steps by which a register trace should be expanded for each input value. The number of steps must be a power of 2. `steps` expression can be provided only for "leaf" input registers (see [examples](#Nested-input-registers) for more info).
 * An optional `shift` expression specifies the number of steps by which an input value should be shifted in the execution trace. The expression has the form `(shift <steps>)`, where `steps` is a signed integer indicating the number of steps to shift by (see [examples](#Single-input-register) for more info).
 
 Detailed examples of how different types of input registers are transformed into register traces are available [here](#Input-register-trace-generation), but here are a few simple example of input register declarations:
 ```
-(input public scalar (steps 8))
-(input secret vector (shift -1))
+(input public (steps 8))
+(input secret (shift -1))
 (input public binary (parent 1) (steps 8))
 ```
 
-#### Mask registers
+##### Mask registers
 Mask registers are static registers that replace ("mask") values in an input register. Mask register declaration has the following form:
 ```
 (mask <inverted?> (input <register>))
@@ -185,13 +308,13 @@ register 1: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]    # mask
 register 2: [0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1]    # inverted mask
 ```
 
-#### Cyclic registers
+##### Cyclic registers
 Cyclic register are static registers that repeat a pre-defined pattern of values over an execution trace. Cyclic register declaration has the following form:
 ```
 (cycle <values | prng expression>)
 ```
 where:
-* `values` is the list of scalars which form the basis of the register trace. The list must contain at least two value, and the length of the list must be a power of 2.
+* `values` is the list of scalars which form the basis of the register trace. The list must contain at least 2 value, and the length of the list must be a power of 2.
 * `prng expression` is an expression which describes how a sequence of values can be generated pseudo-randomly from a given seed (see [here](#Prng-expression)).
 
 For example, the following code block declares two cyclic registers:
@@ -205,15 +328,15 @@ register 0: [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4]
 register 1: [1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1]
 ```
 
-##### Prng expression
+###### Prng expression
 Prng expression provides a succinct way to specify a sequence of pseudo-random values derived from a given seed. The expression has the following form:
 ```
 (prng <method> <seed> <count>)
 ```
 where:
 * `method` specifies how the `seed` is used to generate the pseudo-random sequence. Currently, the only allowed method is `sha256`.
-* `seed` is a hexadecimal value of the seed for PRNG.
-* `count` is the number of values to generate. `count` must be a power of 2, and must be greater than 1.
+* `seed` is a hexadecimal value of the seed for PRNG at most 20 bytes long.
+* `count` is the number of values to generate. `count` must be an integer between `1` and `32768` and must be a power of 2.
 
 For example, the code below will generate a sequence of 64 values:
 ```
@@ -230,100 +353,69 @@ The values are generated by applying SHA256 hash function to a combination of th
 ]
 ```
 
-### Transition function
-Transition function describes state transition logic needed to generate dynamic register traces. Transition function expression has the following form:
+#### Trace initializer
+Trace initializer section describes logic needed to generate the first row of the execution trace and has the following form:
 ```
-(transition <signature> <locals> <body>)
+(init <param?> <body>)
 ```
-Transition function components (`signature`, `locals`, `body`) are described in the following sections. The code block below shows a simple example of a transition function:
+where:
+* `param` is an optional parameter which can be passed to the initializer. The parameter expression is the same as for [function parameters](#Function-parameters) with the restriction that an initializer can accept only a single parameter and the type of the parameter must be a vector.
+* `body` section consists of a set of arithmetic expressions similar to [function bodies](#Function-body).
+
+The initializer is executed once right before the the [transition function](#Transition-function) is run but after the static registers traces are generated. Thus, the initializer can access static portion of the execution trace table. This can be done by using `load.static` operation TODO.
+
+```
+(init
+    (param $seed vector 1)
+    (load.param $seed))
+```
+
+#### Transition function
+Transition function describes state transition logic needed to generate dynamic register traces. That is, the return value of a transition function becomes the next row in the execution trace table. Transition function expression has the following form:
+```
+(transition <locals> <body>)
+```
+where:
+* `locals` section declares a set of local variables similar to how it is done in [pure functions](#Function-local-variables).
+* `body` section is also similar to [bodies of pure functions](#Function-body) with a the following differences:
+  * Body of a transition function must always resolve to a vector. The length of the vector must equal to the number of dynamic registers as specified in the [component signature](#Component-signature).
+  * Unlike pure functions, transition functions have access to the already generated rows of the execution trace table. These rows can be accessed with `load.trace` and `load.static` operations (see [load operations](#Load-operations) for more info).
+
+For example:
 ```
 (transition
-    (span 1) (result vector 2)      # function signature
-    (local scalar)                  # local variable declaration
-    (store 0                        # function body starts here
+    (local scalar)                      # local variable declaration
+    (store 0                            # function body starts here
         (add                        
-            (get (load.trace 0) 0)) 
-            (get (load.trace 0) 1))
+            (get (load.trace 0) 0))     # get 1st value from current row of execution trace
+            (get (load.trace 0) 1))     # get 2nd value from current row of execution trace
     (vector
-        (load.local 0)
+        (load.local 0)                  # load value of the local variable 0
         (add
             (load.local 0)
             (get (load.trace 0) 1))))
 ```
 The above transition function produces a trace table with 2 dynamic registers per row. The transition logic is as follows:
-* At each step, the values of the first and second registers are summed.
+* At each step, the values of the first and second registers are summed, and the result is stored in the local variable `0`.
 * Then this sum becomes the value of the first register for the next row,
 * And the value of the second register for the next row is set to the sum plus the value of the second register.
 
 (this is actually a somewhat convoluted way to describe a transition function for the Fibonacci sequence).
 
-### Transition function signature
-Transition function signature contains metadata for the transition function and has the following form:
+#### Constraint evaluator
+Constraint evaluator section describes transition constraint evaluation logic needed to generate a constraint evaluation table for the computation. That is, the return value of a constraint evaluator becomes the next row in the constraint evaluation table. Constraint evaluation expression has the following form:
 ```
-(span <length>) (result <type>)
-```
-where:
-* Span `length` is the number of consecutive trace table rows which can be accessed from within the transition function body. Currently, the only supported span length is `1`. To access the the dynamic segment of a trace table row `load.trace` expression can be used (see [load operations](#Load-operations) for more info).
-* Result `type` is the type of the value to which the transition function resolves. This must always be a vector, and the length of the vector defines the width of dynamic segment of the execution trace table.
-
-For example:
-```
-(span 1) (result vector 2)
-```
-The above signature specifies that:
-* The transition function can access only a single row of the trace table (the row at the current step).
-* Each row of the trace table contains 2 dynamic registers (the width of the dynamic segment of the trace table is 2).
-
-#### Transition function locals
-Locals section of a transition function declares variables which can be used in the function body. Variable declaration expression has the following form:
-```
-(local <type>)
+(evaluation <locals> <body>)
 ```
 where:
-* Variable `type` can be either a scalar, a vector, or a matrix (see [value types](#Value-types) for more info). For non-scalar types, additional info must be supplied to specify the dimensions of the variable.
-
-For example:
-```
-(local scalar)      # declares a scalar variable
-(local vector 4)    # declares a vector variable with length 4
-(local matrix 2 4)  # declares a matrix variable with 2 rows and 4 columns
-```
-Local variables are un-named and can be referenced only by their indexes. For example, the following code block declares 3 variables with indexes 0, 1, and 2 (in the order of their declaration):
-```
-(local scalar) (local vector 4) (local matrix 2 4)
-```
-To access these local variables `load.local` and `store.local` expressions can be used (see [load operations](#Load-operations) and [store operations](#Store-operations) for more info).
-
-#### Transition function body
-Transition function body consists of a list of [arithmetic expressions](#Arithmetic-expressions) such that:
-
-1. All expressions in the list, except the last one, must be [store operations](#Store-operations) which save the result of some arithmetic expression into a local variable.
-2. The last expression in the list must evaluate to a vector. The length of the vector must be equal to the length of the result vector specified in the transition function signature.
-
-For example, the body of the function below consists of a single expression:
-```
-(vector (add (scalar 1) (scalar 2)))    # resolves to vector [3]
-```
-Another example, where a local variable is used to store value of a common sub-expression:
-```
-(store 0 (add (scalar 1) (scalar 2)))   # stores value 3 into local variable 0
-(vector (load.local 0) (load.local 0))  # resolves to vector [3, 3]
-```
-
-### Constraint evaluator
-Constraint evaluator section describes transition constraint evaluation logic needed to generate a constraint evaluation table for the computation. Constraint evaluation expression has the following form:
-```
-(evaluation <signature> <locals> <body>)
-```
-Constraint evaluator components (`signature`, `locals`, `body`) are similar to their equivalents in [transition function](#Transition-function), except for the following differences:
-
-1. Constraint evaluator can access multiple rows of the execution trace table. To do this, set the `span` of the evaluator to a value greater than `1` (though, currently, `2` is the maximum allowed span value). Info about how to access future execution trace table rows can be found in [load operations](#Load-operations) section.
-2. The length of the result vector defines the number of transition constraints (the width of the constraint evaluation table).
+* `locals` section declares a set of local variables similar to how it is done in [pure functions](#Function-local-variables).
+* `body` section is also similar to [bodies of pure](#Function-body) with a the following differences:
+  * Body of a constraint evaluator must always resolve to a vector. The length of the vector must equal to the number of constraints as specified in the [component signature](#Component-signature).
+  * Unlike pure functions, constraint evaluators have access to the future rows of the execution trace table. The table can be accessed with `load.trace` and `load.static` operations (see [load operations](#Load-operations) for more info).
 
 The code block below shows a simple example of a constraint evaluator which complements the example of a transition function described previously.
 ```
 (evaluation
-    (span 2) (result vector 2)         # evaluator signature
     (local scalar)                     # local variable declaration
     (store 0                           # evaluator body starts here
         (add                        
@@ -338,47 +430,6 @@ The code block below shows a simple example of a constraint evaluator which comp
                 (get (load.trace 0) 1)))))
 ```
 The evaluator above loads the next row of the dynamic segment of the execution trace table, and subtracts the result of applying the transition function to the current row from it.
-
-### Export declarations
-Export declarations specify how the module can be executed either as a stand-alone computation or as a part of a composed computation. There can be many export declarations per module and each declaration expression has the following form:
-
-```
-(export <name> <initializer?> <trace cycle>)
-```
-where:
-* Export `name` defines a unique name for the exported endpoint. The name must start with a letter and can contain any combination of letters, numbers, and underscores. The name `main` has special meaning as described in the [main export](#Main-export) section below.
-* Trace `initializer` defines initialization logic for the first row of dynamic register traces. This item is relevant only for the `main` export. All other exports do not have control over initialization of the first trace row. The initialization expression is described in detail in the [main export](#Main-export) section below.
-* `trace cycle` defines the length of a single execution trace cycle required by the computation. Trace cycle expression has the following form `(steps <count>)`, where `count` specifies the number of required steps. The `count` parameter must be a power of 2 and also must be a multiple of the number of steps required to consume the smallest possible set of inputs. For example, if according to input register declarations, the smallest possible execution trace can be 64 steps, then the `count` parameter can be set to 64, 128, 256 etc.
-
-#### Main export
-When the name of an export is set to `main`, the export defines rules for how the computation can be run as a stand-alone module. This also requires that export expression includes an initializer which has the following form:
-```
-(init <initialization vector>)
-```
-where:
-* `initialization vector` is an expression that resolves to a vector of the same length as the length of the vector returned by the transition function (i.e. the number of dynamic trace registers).
-
-For example, if the execution trace has 4 dynamic trace registers, the `main` export expression may look like so:
-```
-(export main 
-    (init (vector 0 0 0 0)) (steps 64))
-```
-This will initialize the first row of dynamic register traces to all `0`'s.
-
-Trace initializer also resolve to a special `seed` vector like so:
-```
-(export main (init seed) (steps 64))
-```
-In such a case, values for the `seed` vector must be provided at the time of proof generation, and the length of the provided seed vector must equal to the number of dynamic trace registers.
-
-#### Interface exports
-When the name of an export is set to anything other than `main`, the export defines rules for how the module can be composed with other computations. In this case, only the `cycle length` expression is required to specify minimum possible trace cycle length.
-
-For example, the code block below declares two exports, with `mimc128` export requiring 256 steps to execute, and `mimc256` requiring 1024 steps to execute.
-```
-(export mimc128 (steps 256))
-(export mimc256 (steps 1024))
-```
 
 ## Arithmetic expressions
 Arithmetic expressions are the basic building blocks for the bodies of transition functions and transition constraint evaluators. These expressions usually perform some operation with one or more values, and resolve to a new value which is the result of the operation.
@@ -516,38 +567,61 @@ If the operand is a vector or a matrix, the operation is performed **element-wis
 ### Load operations
 To retrieve values from various sections of a program's memory, the following expression can be used:
 ```
-(load.<source> <index>)
+(load.<source> <indexOrHandle>)
 ```
 where:
 * **source** specifies the memory segment; can be one of the following values:
   * `const` - array of global constants.
+  * `param` - array of function parameters.
+  * `local` - array of local variables.
   * `static` - static segment of the execution trace table.
   * `trace` - dynamic segment of the execution trace table.
-  * `local` - array of local variables.
-* **index** specifies which value to retrieve from the specified source. The meaning of this parameter depends on the `source` parameter as follows:
-  * `const` - index of a global constant.
+* **indexOrHandle** specifies which value to retrieve from the specified source. The meaning of this parameter depends on the `source` parameter as follows:
+  * `const` - 0-based index of a global constant, or if the constant was declared with a handle, the handle can be used instead of the index.
+  * `param` - 0-based index of a parameter, or if the parameter was declared with a handle, the handle can be used instead of the index.
+  * `local` - 0-based index of a local variable, or if the local variable was declared with a handle, the handle can be used instead of the index.
   * `static` - row offset into the execution trace table, with 0 being the row at the current step, 1 being the row at the next step etc.
   * `trace` - row offset into the execution trace table, with 0 being the row at the current step, 1 being the row at the next step etc.
-  * `local` - index of a local variable.
 
 For example:
 ```
-(load.const 0)   # resolves to the value of the global constant at index 0
-(load.static 0)  # resolves to the static register row at the current step
-(load.trace 0)   # resolves to the dynamic register row at the current step
-(load.trace 1)   # resolves to the dynamic register row at the next step
-(load.local 0)   # resolves to the value of local variable at index 0
+(load.const 0)      # resolves to the value of the global constant at index 0
+(load.const $foo)   # resolves to the value of the global constant with handle $foo
+(load.param 0)      # resolves to the value of the parameter at index 0
+(load.local 0)      # resolves to the value of local variable at index 0
+(load.static 0)     # resolves to the static register row at the current step
+(load.trace 0)      # resolves to the dynamic register row at the current step
+(load.trace 1)      # resolves to the dynamic register row at the next step
+(load.trace -1)     # resolves to the dynamic register row at the previous step
 ```
 
-For `static` and `trace` sources, the result of a load operation is always a vector with each element of the vector corresponding to a single register. For `const` and `local` sources, the result could be a scalar, a vector, or a matrix - depending on the declared type of a global constant or a local variable.
+For `static` and `trace` sources, the result of a load operation is always a vector with each element of the vector corresponding to a single register. For `const`, `param`, and `local` sources, the result could be a scalar, a vector, or a matrix - depending on the declared type of a global constant, parameter, or a local variable.
 
-**Note:** trying to load a value from a local variable that hasn't been initialized yet, will result in an error.
+Some memory segments can be accessed only from certain contexts as shown in the following table:
+
+| Context              | const | param | local | static | trace |
+| -------------------- | :---: | :---: | :---: | :----: | :---: |
+| pure function        | Yes   |  Yes  |  Yes  | No     | No    |
+| trace initializer    | Yes   |  Yes  |  Yes  | yes    | No    |
+| transition function  | Yes   |  No   |  Yes  | Yes    | Yes   |
+| constraint evaluator | Yes   |  No   |  Yes  | Yes    | Yes   |
+
+To summarize the table:
+* Global constants can be accessed from any context.
+* Transition functions and constraint evaluators cannot have declared parameters.
+* Local variables can be declared in any context.
+* Static registers cannot be accesses from pure functions.
+* Trace registers can be accessed only from transition functions and constraint evaluators.
+
+**Note 1:** trying to load a value from a local variable that hasn't been initialized yet, will result in an error.
+
+**Note 2:** transition functions can access current and past rows of the execution trace table (offsets `0`, `-1`, `-2` etc.), while constraint evaluator can access current and future rows of the execution trace table (offsets `0`, `1`, `2` etc.).
 
 ### Store operations
 
 To update a value of a local variable, the following expression can be used:
 ```
-(store.local <index> <value>)
+(store.local <indexOrHandle> <value>)
 ```
 * **index** is a zero-based position of the variable in the local variables array;
 * **value** is an expression which resolves to a value to be assigned to the local variable. Type of the value must match the declared type of the local variable, otherwise an error will be thrown.
@@ -565,6 +639,12 @@ Value of a given local variable can be updated an unlimited number of times. Als
 (store.local 0 (add 2 (load.local 0)))  # stores 3 into local variable 0
 ```
 **Note:** unlike other expressions, store expressions do not resolve to a value, and therefore, cannot be used as sub-expressions in other expressions.
+
+### Function calls
+TODO
+```
+(call <indexOrHandle> <parameters>)
+```
 
 ## Input register trace generation
 Input register traces require two pieces of data to generate:
