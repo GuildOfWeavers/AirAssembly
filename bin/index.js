@@ -75,8 +75,10 @@ function compile(sourceOrPath, limits) {
     return schema;
 }
 exports.compile = compile;
-function instantiate(schema, options = {}) {
-    const component = schema.components.get('main'); // TODO
+function instantiate(schema, componentName, options = {}) {
+    const component = schema.components.get(componentName);
+    if (!component)
+        throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
     const compositionFactor = utils_1.getCompositionFactor(component);
     const vOptions = validateModuleOptions(options, compositionFactor);
     validateLimits(schema, vOptions.limits);
@@ -84,8 +86,10 @@ function instantiate(schema, options = {}) {
     return module;
 }
 exports.instantiate = instantiate;
-function analyze(schema) {
-    const component = schema.components.get('main'); // TODO
+function analyze(schema, componentName) {
+    const component = schema.components.get(componentName);
+    if (!component)
+        throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
     const transition = analysis_1.analyzeProcedure(component.transitionFunction);
     const evaluation = analysis_1.analyzeProcedure(component.constraintEvaluator);
     return { transition, evaluation };

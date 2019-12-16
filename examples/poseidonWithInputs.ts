@@ -86,8 +86,8 @@ const inputs = [
 
 // instantiate AirModule object
 const schema = compile(Buffer.from(source));
-const stats = analyze(schema);
-const air = instantiate(schema);
+const stats = analyze(schema, 'poseidon');
+const air = instantiate(schema, 'poseidon');
 
 // generate trace table
 const pContext = air.initProvingContext(inputs, [inputs[0][0], inputs[1][0], 0n]);

@@ -83,8 +83,13 @@ export class AirSchema implements IAirSchema {
         return this._components;
     }
 
+    createComponent(name: string, registers: number, constraints: number, steps: number): Component {
+        return new Component(name, this, registers, constraints, steps);
+    }
+
     addComponent(component: Component): void {
         validate(!this._components.has(component.name), errors.duplicateComponent(component.name));
+        // TODO: validate component structure
         this._components.set(component.name, component);
     }
 

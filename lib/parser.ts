@@ -4,9 +4,7 @@ import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { Component } from "./Component";
 import { StaticRegisterSet, PrngSequence } from "./registers";
-import {
-    ExecutionContext, ProcedureContext, FunctionContext, Parameter, LocalVariable, StoreOperation
-} from "./procedures";
+import { ExecutionContext, Parameter, LocalVariable, StoreOperation } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
@@ -174,7 +172,7 @@ class AirParser extends EmbeddedActionsParser {
         const steps = this.SUBRULE3(this.integerLiteral);
         this.CONSUME4(RParen);
         
-        const component = this.ACTION(() => new Component(name, schema, registers, constraints, steps));
+        const component = this.ACTION(() => schema.createComponent(name, registers, constraints, steps));
 
         this.OPTION(() => this.SUBRULE(this.staticRegisters,    { ARGS: [component] }));
         this.SUBRULE(this.traceInitializer,                     { ARGS: [component] });

@@ -35,7 +35,7 @@ const inputs = [
     [3n, 4n, 5n, 6n]
 ];
 
-const air = instantiate(schema);
+const air = instantiate(schema, 'main');
 
 const pContext = air.initProvingContext(inputs);
 const trace = pContext.generateExecutionTrace();

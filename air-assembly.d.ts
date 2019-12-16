@@ -47,31 +47,34 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
 
     /**
-     * Parses and compiles AirAssembly source code into an AirSchema object.
-     * @param path Path to the file containing AirAssembly source code.
-     * @param limits StarkLimits object against which the schema should be validated.
+     * Parses and compiles AirAssembly source code into an AirSchema object
+     * @param path Path to the file containing AirAssembly source code
+     * @param limits StarkLimits object against which the schema should be validated
      */
     export function compile(path: string, limits?: Partial<StarkLimits>): AirSchema;
 
     /**
-     * * Parses and compiles AirAssembly source code into an AirSchema object.
-     * @param source Buffer with AirAssembly source code (encoded in UTF8).
-     * @param limits StarkLimits object against which the schema should be validated.
+     * * Parses and compiles AirAssembly source code into an AirSchema object
+     * @param source Buffer with AirAssembly source code (encoded in UTF8)
+     * @param limits StarkLimits object against which the schema should be validated
      */
     export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
 
     /**
-     * Creates an AirModule object from the specified AirSchema.
-     * @param schema Schema from which to create the AirModule.
-     * @param options Additional options for the AirModule.
+     * Creates an AirModule object for the specified component
+     * @param schema Schema containing the component to instantiate
+     * @param component Name of the component to instantiate
+     * @param options Additional options for the AirModule
      */
-    export function instantiate(schema: AirSchema, options?: Partial<AirModuleOptions>): AirModule;
+    export function instantiate(schema: AirSchema, component: string, options?: Partial<AirModuleOptions>): AirModule;
 
     /** 
      * Performs basic analysis of the specified schema to infer such things as degree of transition
      * constraints, number of additions and multiplications needed to evaluate transition function etc.
+     * @param schema Schema containing the component to analyze
+     * @param component Name of the component to analyze
      */
-    export function analyze(schema: AirSchema): SchemaAnalysisResult;
+    export function analyze(schema: AirSchema, component: string): ComponentAnalysisResult;
 
     // AIR SCHEMA
     // --------------------------------------------------------------------------------------------
@@ -121,35 +124,53 @@ declare module '@guildofweavers/air-assembly' {
         addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void;
 
         /**
-         * 
-         * @param component 
+         * Creates a component for a new computation within the module
+         * @param name Name of the component
+         * @param registers Number of dynamic registers expected in the computation
+         * @param constraints Number of constraints expected in the computation
+         * @param steps Minimal cycle length possible for the computation
+         */
+        createComponent(name: string, registers: number, constraints: number, steps: number): Component;
+
+        /**
+         * Adds a component to the module
+         * @param component Component to add to the module
          */
         addComponent(component: Component): void;
     }
 
     export interface Component {
 
-        /** An array of StaticRegister objects describing static registers defined for the computation. */
+        /** Name of the computation */
+        readonly name: string;
+
+        /** Static registers defined for the computation */
         readonly staticRegisters: ReadonlyArray<StaticRegister>;
 
         /** Number of secret input registers defined for the computation */
         readonly secretInputCount: number;
 
-        /** */
+        /** Trace initialization procedure defined for the computation */
         readonly traceInitializer: AirProcedure;
 
-        /** A Procedure object describing transition function expression defined for the computation. */
+        /** Transition function procedure defined for the computation */
         readonly transitionFunction: AirProcedure;
 
-        /** A Procedure object describing transition constraint evaluator expression defined for the computation. */
+        /** Transition constraint evaluator procedure defined for the computation. */
         readonly constraintEvaluator: AirProcedure;
 
-        /** An array of constraint descriptors with metadata for the defined transition constraints */
+        /** Transition constraint properties */
         readonly constraints: ConstraintDescriptor[];
 
-        /** An integer value specifying the highest degree of transition constraints defined for the computation. */
+        /** Highest degree of transition constraints defined for the computation. */
         readonly maxConstraintDegree: number;
 
+        /**
+         * Creates a new procedure context from the current state of the component
+         * @param name Name of the procedure
+         * @param locals Expected procedure local variables
+         * @param params Expected procedure parameters
+         */
         createProcedureContext(name: ProcedureName, locals: LocalVariable[], params?: Parameter[]): ProcedureContext;
 
         setStaticRegisters(registers: StaticRegisterSet): void;
@@ -171,7 +192,8 @@ declare module '@guildofweavers/air-assembly' {
     export type ProcedureName = 'init' | 'transition' | 'evaluation';
     export interface AirProcedure {
         readonly name           : ProcedureName;
-        readonly locals         : ReadonlyArray<Dimensions>;
+        readonly params         : ReadonlyArray<Parameter>
+        readonly locals         : ReadonlyArray<LocalVariable>;
         readonly statements     : ReadonlyArray<StoreOperation>;
         readonly result         : Expression;
     }
@@ -378,7 +400,7 @@ declare module '@guildofweavers/air-assembly' {
         };
     }
 
-    export interface SchemaAnalysisResult {
+    export interface ComponentAnalysisResult {
         readonly transition : ProcedureAnalysisResult;
         readonly evaluation : ProcedureAnalysisResult;
     }

@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // ================================================================================================
 const chevrotain_1 = require("chevrotain");
 const AirSchema_1 = require("./AirSchema");
-const Component_1 = require("./Component");
 const registers_1 = require("./registers");
 const procedures_1 = require("./procedures");
 const lexer_1 = require("./lexer");
@@ -146,7 +145,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Steps);
             const steps = this.SUBRULE3(this.integerLiteral);
             this.CONSUME4(lexer_1.RParen);
-            const component = this.ACTION(() => new Component_1.Component(name, schema, registers, constraints, steps));
+            const component = this.ACTION(() => schema.createComponent(name, registers, constraints, steps));
             this.OPTION(() => this.SUBRULE(this.staticRegisters, { ARGS: [component] }));
             this.SUBRULE(this.traceInitializer, { ARGS: [component] });
             this.SUBRULE(this.transitionFunction, { ARGS: [component] });

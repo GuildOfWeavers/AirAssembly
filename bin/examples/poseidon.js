@@ -72,8 +72,8 @@ const source = `
 const inputs = [42n, 43n, 0n];
 // instantiate AirModule object
 const schema = index_1.compile(Buffer.from(source));
-const stats = index_1.analyze(schema);
-const air = index_1.instantiate(schema);
+const stats = index_1.analyze(schema, 'poseidon');
+const air = index_1.instantiate(schema, 'poseidon');
 // generate trace table
 const pContext = air.initProvingContext([], inputs);
 const trace = pContext.generateExecutionTrace();

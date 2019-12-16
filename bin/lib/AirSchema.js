@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const galois_1 = require("@guildofweavers/galois");
 const procedures_1 = require("./procedures");
 const expressions_1 = require("./expressions");
+const Component_1 = require("./Component");
 const utils_1 = require("./utils");
 // CLASS DEFINITION
 // ================================================================================================
@@ -62,8 +63,12 @@ class AirSchema {
     get components() {
         return this._components;
     }
+    createComponent(name, registers, constraints, steps) {
+        return new Component_1.Component(name, this, registers, constraints, steps);
+    }
     addComponent(component) {
         utils_1.validate(!this._components.has(component.name), errors.duplicateComponent(component.name));
+        // TODO: validate component structure
         this._components.set(component.name, component);
     }
     // CODE OUTPUT

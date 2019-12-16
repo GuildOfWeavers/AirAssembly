@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirModule, StarkLimits, AirModuleOptions, SchemaAnalysisResult } from '@guildofweavers/air-assembly';
+import { AirModule, StarkLimits, AirModuleOptions, ComponentAnalysisResult } from '@guildofweavers/air-assembly';
 import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
 import { lexer } from './lib/lexer';
@@ -75,8 +75,9 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
     return schema;
 }
 
-export function instantiate(schema: AirSchema, options: Partial<AirModuleOptions> = {}): AirModule {
-    const component = schema.components.get('main')!; // TODO
+export function instantiate(schema: AirSchema, componentName: string, options: Partial<AirModuleOptions> = {}): AirModule {
+    const component = schema.components.get(componentName)!;
+    if (!component) throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
     const compositionFactor = getCompositionFactor(component);
     const vOptions = validateModuleOptions(options, compositionFactor);
     validateLimits(schema, vOptions.limits as StarkLimits);
@@ -84,8 +85,9 @@ export function instantiate(schema: AirSchema, options: Partial<AirModuleOptions
     return module;
 }
 
-export function analyze(schema: AirSchema): SchemaAnalysisResult {
-    const component = schema.components.get('main')!; // TODO
+export function analyze(schema: AirSchema, componentName: string): ComponentAnalysisResult {
+    const component = schema.components.get(componentName)!;
+    if (!component) throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
     const transition = analyzeProcedure(component.transitionFunction);
     const evaluation = analyzeProcedure(component.constraintEvaluator);
     return { transition, evaluation };

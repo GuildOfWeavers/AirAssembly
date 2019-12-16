@@ -14,8 +14,8 @@ import { Dimensions } from "../expressions/utils";
 export class AirProcedure implements IProcedure {
 
     readonly name               : ProcedureName;
-    readonly parameters         : ReadonlyArray<Parameter>;
-    readonly localVariables     : ReadonlyArray<LocalVariable>;
+    readonly params             : ReadonlyArray<Parameter>;
+    readonly locals             : ReadonlyArray<LocalVariable>;
 
     readonly statements         : ReadonlyArray<StoreOperation>;
     readonly result             : Expression;
@@ -28,8 +28,8 @@ export class AirProcedure implements IProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context: ProcedureContext, statements: StoreOperation[], result: Expression) {
         this.name = context.name;
-        this.parameters = context.params.slice();
-        this.localVariables = context.locals.slice();
+        this.params = context.params.slice();
+        this.locals = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)
             throw new Error(`${this.name} procedure must resolve to a vector of ${context.width} elements`);
@@ -45,18 +45,14 @@ export class AirProcedure implements IProcedure {
         return this.result.dimensions;
     }
 
-    get locals(): ReadonlyArray<Dimensions> {
-        return this.localVariables.map(v => v.dimensions);
-    }
-
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = ``;
-        if (this.parameters.length > 0)
-            code += `\n      ${this.parameters.map(v => v.toString()).join(' ')}`;
-        if (this.localVariables.length > 0)
-            code += `\n      ${this.localVariables.map(v => v.toString()).join(' ')}`;
+        if (this.params.length > 0)
+            code += `\n      ${this.params.map(v => v.toString()).join(' ')}`;
+        if (this.locals.length > 0)
+            code += `\n      ${this.locals.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)
             code += `\n      ${this.statements.map(s => s.toString()).join('\n    ')}`;
         code += `\n      ${this.result.toString()}`

@@ -7,8 +7,8 @@ class AirProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context, statements, result) {
         this.name = context.name;
-        this.parameters = context.params.slice();
-        this.localVariables = context.locals.slice();
+        this.params = context.params.slice();
+        this.locals = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)
             throw new Error(`${this.name} procedure must resolve to a vector of ${context.width} elements`);
@@ -22,17 +22,14 @@ class AirProcedure {
     get dimensions() {
         return this.result.dimensions;
     }
-    get locals() {
-        return this.localVariables.map(v => v.dimensions);
-    }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = ``;
-        if (this.parameters.length > 0)
-            code += `\n      ${this.parameters.map(v => v.toString()).join(' ')}`;
-        if (this.localVariables.length > 0)
-            code += `\n      ${this.localVariables.map(v => v.toString()).join(' ')}`;
+        if (this.params.length > 0)
+            code += `\n      ${this.params.map(v => v.toString()).join(' ')}`;
+        if (this.locals.length > 0)
+            code += `\n      ${this.locals.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)
             code += `\n      ${this.statements.map(s => s.toString()).join('\n    ')}`;
         code += `\n      ${this.result.toString()}`;
