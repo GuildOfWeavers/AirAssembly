@@ -4,7 +4,7 @@ import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { Component } from "./Component";
 import { StaticRegisterSet, PrngSequence } from "./registers";
-import { ExecutionContext, Parameter, LocalVariable, StoreOperation } from "./procedures";
+import { ExecutionContext, StoreOperation } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
@@ -89,7 +89,7 @@ class AirParser extends EmbeddedActionsParser {
 
         // build function context
         const resultType = this.SUBRULE(this.functionResultType);
-        const context = this.ACTION(() => schema.createFunctionContext(resultType));
+        const context = this.ACTION(() => schema.createFunctionContext(resultType, handle));
         this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
         this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
         
@@ -99,7 +99,7 @@ class AirParser extends EmbeddedActionsParser {
         const result = this.SUBRULE(this.expression, { ARGS: [context] });
         this.CONSUME(RParen);
 
-        this.ACTION(() => schema.addFunction(context, statements, result, handle));
+        this.ACTION(() => schema.addFunction(context, statements, result));
     });
 
     private functionResultType = this.RULE<Dimensions>('functionResultType', () => {

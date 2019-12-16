@@ -44,15 +44,15 @@ class AirSchema {
     get functions() {
         return this._functions;
     }
-    createFunctionContext(resultType) {
-        return new procedures_1.FunctionContext(this, resultType);
+    createFunctionContext(resultType, handle) {
+        return new procedures_1.FunctionContext(this, resultType, handle);
     }
-    addFunction(context, statements, result, handle) {
-        if (handle) {
-            utils_1.validate(!this._handles.has(handle), errors.duplicateHandle(handle));
-            this._handles.add(handle);
+    addFunction(context, statements, result) {
+        if (context.handle) {
+            utils_1.validate(!this._handles.has(context.handle), errors.duplicateHandle(context.handle));
+            this._handles.add(context.handle);
         }
-        const func = new procedures_1.AirFunction(context, statements, result, handle);
+        const func = new procedures_1.AirFunction(context, statements, result);
         this._functions.push(func);
     }
     // EXPORT DECLARATIONS

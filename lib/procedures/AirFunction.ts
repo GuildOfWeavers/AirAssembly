@@ -6,7 +6,6 @@ import { Parameter } from './Parameter';
 import { LocalVariable } from "./LocalVariable";
 import { StoreOperation } from './StoreOperation';
 import { Expression, Dimensions } from "../expressions";
-import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -22,7 +21,7 @@ export class AirFunction implements IAirFunction {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string) {
+    constructor(context: FunctionContext, statements: StoreOperation[], result: Expression) {
         this.params = context.params.slice();
         this.locals = context.locals.slice();
         this.statements = statements.slice();
@@ -30,10 +29,7 @@ export class AirFunction implements IAirFunction {
         if (!result.isVector || !Dimensions.areSameDimensions(result.dimensions, context.result))
             throw new Error(`function must resolve to a ${Dimensions.toString(context.result)} value`);
         this.result = result;
-        
-        if (handle !== undefined) {
-            this.handle = validateHandle(handle);
-        }
+        this.handle = context.handle;
     }
 
     // ACCESSORS

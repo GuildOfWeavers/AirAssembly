@@ -72,7 +72,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             // build function context
             const resultType = this.SUBRULE(this.functionResultType);
-            const context = this.ACTION(() => schema.createFunctionContext(resultType));
+            const context = this.ACTION(() => schema.createFunctionContext(resultType, handle));
             this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
             this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build function body
@@ -80,7 +80,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
             const result = this.SUBRULE(this.expression, { ARGS: [context] });
             this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => schema.addFunction(context, statements, result, handle));
+            this.ACTION(() => schema.addFunction(context, statements, result));
         });
         this.functionResultType = this.RULE('functionResultType', () => {
             this.CONSUME2(lexer_1.LParen);

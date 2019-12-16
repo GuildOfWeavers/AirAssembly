@@ -61,16 +61,16 @@ export class AirSchema implements IAirSchema {
         return this._functions;
     }
 
-    createFunctionContext(resultType: Dimensions): FunctionContext {
-        return new FunctionContext(this, resultType);
+    createFunctionContext(resultType: Dimensions, handle?: string): FunctionContext {
+        return new FunctionContext(this, resultType, handle);
     }
 
-    addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void {
-        if (handle) {
-            validate(!this._handles.has(handle), errors.duplicateHandle(handle));
-            this._handles.add(handle);
+    addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression): void {
+        if (context.handle) {
+            validate(!this._handles.has(context.handle), errors.duplicateHandle(context.handle));
+            this._handles.add(context.handle);
         }
-        const func = new AirFunction(context, statements, result, handle);
+        const func = new AirFunction(context, statements, result);
         this._functions.push(func);
     }
 

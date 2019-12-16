@@ -1,22 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const expressions_1 = require("../expressions");
-const utils_1 = require("../utils");
 // CLASS DEFINITION
 // ================================================================================================
 class AirFunction {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(context, statements, result, handle) {
+    constructor(context, statements, result) {
         this.params = context.params.slice();
         this.locals = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || !expressions_1.Dimensions.areSameDimensions(result.dimensions, context.result))
             throw new Error(`function must resolve to a ${expressions_1.Dimensions.toString(context.result)} value`);
         this.result = result;
-        if (handle !== undefined) {
-            this.handle = utils_1.validateHandle(handle);
-        }
+        this.handle = context.handle;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------

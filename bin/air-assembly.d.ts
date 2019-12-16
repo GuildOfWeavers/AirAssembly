@@ -109,17 +109,17 @@ declare module '@guildofweavers/air-assembly' {
         /**
          * Creates a new function context from the current state of the schema
          * @param resultType Dimensions of the expected function return value
+         * @param handle Optional function handle
          */
-        createFunctionContext(resultType: Dimensions): FunctionContext; // TODO: pass handle here
+        createFunctionContext(resultType: Dimensions, handle?: string): FunctionContext;
 
         /**
          * Adds a function to the module
          * @param context Function context, including parameters and local variables
          * @param statements A list of store operations within the function body
          * @param result The return expression of the function
-         * @param handle Optional function handle
          */
-        addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void;
+        addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression): void;
 
         /**
          * Creates a component for a new computation within the module
