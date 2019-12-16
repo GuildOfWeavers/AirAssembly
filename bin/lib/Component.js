@@ -51,6 +51,15 @@ class Component {
         registers.validate();
         registers.forEach((r, i) => this._staticRegisters.push(r));
     }
+    // PROCEDURES
+    // --------------------------------------------------------------------------------------------
+    createProcedureContext(name, locals, params) {
+        const context = new procedures_1.ProcedureContext(name, this);
+        if (params)
+            params.forEach(p => context.add(p)); // TODO: move into constructor
+        locals.forEach(v => context.add(v)); // TODO: move into constructor
+        return context;
+    }
     // INITIALIZER
     // --------------------------------------------------------------------------------------------
     get traceInitializer() {

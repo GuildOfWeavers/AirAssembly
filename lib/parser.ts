@@ -90,15 +90,11 @@ class AirParser extends EmbeddedActionsParser {
         const handle = this.OPTION(() => this.CONSUME(Handle).image);
 
         // build function context
-        this.CONSUME2(LParen);
-        this.CONSUME(Result);
-        this.CONSUME(Vector);
-        const width = this.SUBRULE2(this.integerLiteral);
-        this.CONSUME2(RParen);
-        
-        const context = this.ACTION(() => new FunctionContext(schema, [width, 0])); // TODO
-        this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
-        this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+        const resultType = this.SUBRULE(this.functionResultType);
+        const params: Parameter[] = [], locals: LocalVariable[] = [];
+        this.MANY1(() => params.push(this.SUBRULE(this.paramDeclaration)));
+        this.MANY2(() => locals.push(this.SUBRULE(this.localDeclaration)));
+        const context = this.ACTION(() => schema.createFunctionContext(params, locals, resultType));
 
         // build function body
         const statements: StoreOperation[] = [];
@@ -109,53 +105,52 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => schema.addFunction(context, statements, result, handle));
     });
 
-    private paramDeclaration = this.RULE('paramDeclaration', (ctx: ExecutionContext) => {
+    private functionResultType = this.RULE<Dimensions>('functionResultType', () => {
+        this.CONSUME2(LParen);
+        this.CONSUME(Result);
+        const resultType = this.SUBRULE(this.typeDimensions);
+        this.CONSUME2(RParen);
+        return resultType;
+    });
+
+    private paramDeclaration = this.RULE<Parameter>('paramDeclaration', () => {
         this.CONSUME(LParen);
         this.CONSUME(Param);
         const handle = this.OPTION(() => this.CONSUME(Handle).image);
-        this.OR([
-            { ALT: () => {
-                this.CONSUME(Scalar);
-                return this.ACTION(() => ctx.add(new Parameter(Dimensions.scalar(), handle)));
-            }},
-            { ALT: () => {
-                this.CONSUME(Vector);
-                const length = this.SUBRULE1(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new Parameter(Dimensions.vector(length), handle)));
-            }},
-            { ALT: () => {
-                this.CONSUME(Matrix);
-                const rowCount = this.SUBRULE2(this.integerLiteral);
-                const colCount = this.SUBRULE3(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new Parameter(Dimensions.matrix(rowCount, colCount), handle)));
-            }}
-        ]);
+        const dimensions = this.SUBRULE(this.typeDimensions);
         this.CONSUME(RParen);
+        return this.ACTION(() => new Parameter(dimensions, handle));
     });
 
-    private localDeclaration = this.RULE('localDeclaration', (ctx: ExecutionContext) => {
+    private localDeclaration = this.RULE<LocalVariable>('localDeclaration', () => {
         this.CONSUME(LParen);
         this.CONSUME(Local);
         const handle = this.OPTION(() => this.CONSUME(Handle).image);
-        this.OR([
+        const dimensions = this.SUBRULE(this.typeDimensions);
+        this.CONSUME(RParen);
+        return this.ACTION(() => new LocalVariable(dimensions, handle));
+    });
+
+    private typeDimensions = this.RULE<Dimensions>('typeDimensions', () => {
+        const dimensions = this.OR([
             { ALT: () => {
                 this.CONSUME(Scalar);
-                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.scalar(), handle)));
+                return this.ACTION(() => Dimensions.scalar());
             }},
             { ALT: () => {
                 this.CONSUME(Vector);
                 const length = this.SUBRULE1(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.vector(length), handle)));
+                return this.ACTION(() => Dimensions.vector(length));
             }},
             { ALT: () => {
                 this.CONSUME(Matrix);
                 const rowCount = this.SUBRULE2(this.integerLiteral);
                 const colCount = this.SUBRULE3(this.integerLiteral);
-                return this.ACTION(() => ctx.add(new LocalVariable(Dimensions.matrix(rowCount, colCount), handle)));
+                return this.ACTION(() => Dimensions.matrix(rowCount, colCount));
             }}
         ]);
-        this.CONSUME(RParen);
-    });
+        return dimensions;
+    })
 
     // COMPONENTS
     // --------------------------------------------------------------------------------------------
@@ -282,9 +277,10 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Init);
 
         // build context
-        const context = this.ACTION(() => new ProcedureContext('init', component));
-        this.OPTION(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
-        this.MANY1(() => this.SUBRULE(this.localDeclaration,  { ARGS: [context] }));
+        const params: Parameter[] = [], locals: LocalVariable[] = [];
+        this.OPTION(() => params.push(this.SUBRULE(this.paramDeclaration)));
+        this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
+        const context = this.ACTION(() => component.createProcedureContext('init', locals, params));
 
         // build body
         const statements: StoreOperation[] = [];
@@ -296,12 +292,13 @@ class AirParser extends EmbeddedActionsParser {
     });
 
     private transitionFunction = this.RULE('transitionFunction', (component: Component) => {
-        this.CONSUME1(LParen);
+        this.CONSUME(LParen);
         this.CONSUME(Transition);
 
         // build context
-        const context = this.ACTION(() => new ProcedureContext('transition', component));
-        this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+        const locals: LocalVariable[] = [];
+        this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
+        const context = this.ACTION(() => component.createProcedureContext('transition', locals));
 
         // build body
         const statements: StoreOperation[] = [];
@@ -316,8 +313,10 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(LParen);
         this.CONSUME(Evaluation);
         
-        const context = this.ACTION(() => new ProcedureContext('evaluation', component));
-        this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+        // build context
+        const locals: LocalVariable[] = [];
+        this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
+        const context = this.ACTION(() => component.createProcedureContext('evaluation', locals));
         
         // build body
         const statements: StoreOperation[] = [];

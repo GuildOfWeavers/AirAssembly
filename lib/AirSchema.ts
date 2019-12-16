@@ -2,8 +2,8 @@
 // ================================================================================================
 import { AirSchema as IAirSchema } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
-import { AirFunction, FunctionContext, Constant, StoreOperation } from "./procedures";
-import { Expression, LiteralValue } from "./expressions";
+import { AirFunction, FunctionContext, Constant, StoreOperation, LocalVariable, Parameter } from "./procedures";
+import { Expression, LiteralValue, Dimensions } from "./expressions";
 import { Component } from "./Component";
 import { validate } from "./utils";
 
@@ -59,6 +59,13 @@ export class AirSchema implements IAirSchema {
     // --------------------------------------------------------------------------------------------
     get functions(): ReadonlyArray<AirFunction> {
         return this._functions;
+    }
+
+    createFunctionContext(params: Parameter[], locals: LocalVariable[], resultType: Dimensions): FunctionContext {
+        const context = new FunctionContext(this, resultType);
+        params.forEach(p => context.add(p));    // TODO: move into constructor
+        locals.forEach(v => context.add(v));    // TODO: move into constructor
+        return context;
     }
 
     addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void {

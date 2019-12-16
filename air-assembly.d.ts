@@ -104,6 +104,14 @@ declare module '@guildofweavers/air-assembly' {
         addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void;
 
         /**
+         * Creates a new function context from the current state of the schema
+         * @param params Expected function parameters
+         * @param locals Expected function local variables
+         * @param resultType Dimensions of the expected function return value
+         */
+        createFunctionContext(params: Parameter[], locals: LocalVariable[], resultType: Dimensions): FunctionContext;
+
+        /**
          * Adds a function to the module
          * @param context Function context, including parameters and local variables
          * @param statements A list of store operations within the function body
@@ -142,10 +150,12 @@ declare module '@guildofweavers/air-assembly' {
         /** An integer value specifying the highest degree of transition constraints defined for the computation. */
         readonly maxConstraintDegree: number;
 
+        createProcedureContext(name: ProcedureName, locals: LocalVariable[], params?: Parameter[]): ProcedureContext;
+
         setStaticRegisters(registers: StaticRegisterSet): void;
-        setTraceInitializer(context: any, statements: StoreOperation[], result: Expression): void;      // TODO
-        setTransitionFunction(context: any, statements: StoreOperation[], result: Expression): void;      // TODO
-        setConstraintEvaluator(context: any, statements: StoreOperation[], result: Expression): void;     // TODO
+        setTraceInitializer(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
+        setTransitionFunction(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
+        setConstraintEvaluator(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
     }
 
     // FUNCTIONS AND PROCEDURES
@@ -156,20 +166,6 @@ declare module '@guildofweavers/air-assembly' {
         readonly locals         : ReadonlyArray<LocalVariable>;
         readonly statements     : ReadonlyArray<StoreOperation>;
         readonly result         : Expression;
-    }
-
-    export interface FunctionContext {
-        readonly field          : FiniteField;
-        readonly constants      : ReadonlyArray<Constant>;
-        readonly functions      : ReadonlyArray<AirFunction>;
-        readonly params         : ReadonlyArray<Parameter>;
-        readonly locals         : ReadonlyArray<LocalVariable>;
-        readonly result         : Dimensions;
-
-        buildLiteralValue(value: bigint | bigint[] | bigint[]): LiteralValue;
-        buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
-        buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation;
-        buildCallExpression(indexOrHandle: number | string, params: Expression[]): CallExpression;
     }
 
     export type ProcedureName = 'init' | 'transition' | 'evaluation';
@@ -186,20 +182,48 @@ declare module '@guildofweavers/air-assembly' {
         readonly handle?    : string;
     }
 
-    export interface Parameter {
+    export class Parameter {
         readonly dimensions : Dimensions;
         readonly handle?    : string;
+
+        constructor(dimensions: Dimensions, handle?: string);
     }
 
-    export interface LocalVariable {
+    export class LocalVariable {
         readonly dimensions : Dimensions;
         readonly handle?    : string;
+
+        constructor(dimensions: Dimensions, handle?: string);
     }
 
     export interface StoreOperation {
         readonly expression     : Expression;
         readonly target         : number;
         readonly dimensions     : Dimensions;
+    }
+
+    export interface ExecutionContext {
+        readonly field          : FiniteField;
+        readonly constants      : ReadonlyArray<Constant>;
+        readonly functions      : ReadonlyArray<AirFunction>;
+        readonly params         : ReadonlyArray<Parameter>;
+        readonly locals         : ReadonlyArray<LocalVariable>;
+
+        buildLiteralValue(value: bigint | bigint[] | bigint[]): LiteralValue;
+        buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
+        buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation;
+        buildCallExpression(indexOrHandle: number | string, params: Expression[]): CallExpression;
+    }
+
+    export interface FunctionContext extends ExecutionContext{        
+        readonly result         : Dimensions;
+    }
+
+    export interface ProcedureContext extends ExecutionContext {
+        readonly name           : ProcedureName;
+        readonly traceRegisters : any;
+        readonly staticRegisters: any;
+        readonly width          : number;
     }
 
     // STATIC REGISTERS

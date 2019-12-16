@@ -1,10 +1,10 @@
 // IMPORTS
 // ================================================================================================
 import { FiniteField } from "@guildofweavers/galois";
-import { Component as IComponent, ConstraintDescriptor } from "@guildofweavers/air-assembly";
+import { Component as IComponent, ConstraintDescriptor, ProcedureName } from "@guildofweavers/air-assembly";
 import { AirSchema } from "./AirSchema";
 import { StaticRegister, StaticRegisterSet, InputRegister } from "./registers";
-import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction } from "./procedures";
+import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction, LocalVariable, Parameter } from "./procedures";
 import { Expression } from "./expressions";
 import { analyzeProcedure } from "./analysis";
 import { isPowerOf2, validate } from "./utils";
@@ -84,6 +84,15 @@ export class Component implements IComponent {
         validate(this.staticRegisterCount === 0, errors.sRegistersAlreadySet());
         registers.validate();
         registers.forEach((r, i) => this._staticRegisters.push(r));
+    }
+
+    // PROCEDURES
+    // --------------------------------------------------------------------------------------------
+    createProcedureContext(name: ProcedureName, locals: LocalVariable[], params?: Parameter[]): ProcedureContext {
+        const context = new ProcedureContext(name, this);
+        if (params) params.forEach(p => context.add(p));    // TODO: move into constructor
+        locals.forEach(v => context.add(v));                // TODO: move into constructor
+        return context;
     }
 
     // INITIALIZER
