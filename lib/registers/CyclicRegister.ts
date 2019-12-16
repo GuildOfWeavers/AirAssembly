@@ -10,15 +10,20 @@ import { validate, isPowerOf2 } from "../utils";
 // ================================================================================================
 export class CyclicRegister extends StaticRegister implements ICyclicRegister {
 
-    readonly values: bigint[] | PrngSequence;
+    readonly field  : FiniteField;
+    readonly values : bigint[] | PrngSequence;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(values: bigint[] | PrngSequence) {
+    constructor(values: bigint[] | PrngSequence, field: FiniteField) {
         super();
         validate(values.length > 1, errors.valueLengthSmallerThan2());
         validate(isPowerOf2(values.length), errors.valueLengthNotPowerOf2());
+        if (Array.isArray(values)) {
+            values.forEach(v => validate(field.isElement(v), errors.valueNotFieldElement(v)));
+        }
         this.values = values;
+        this.field = field;
     }
 
     // ACCESSORS
@@ -29,9 +34,9 @@ export class CyclicRegister extends StaticRegister implements ICyclicRegister {
 
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    getValues(field: FiniteField): bigint[] {
+    getValues(): bigint[] {
         if (this.values instanceof PrngSequence) {
-            return this.values.getValues(field);
+            return this.values.getValues(this.field);
         }
         else {
             return this.values;
@@ -49,6 +54,7 @@ export class CyclicRegister extends StaticRegister implements ICyclicRegister {
 // ERRORS
 // ================================================================================================
 const errors = {
+    valueNotFieldElement    : (v: bigint) => `${v} is not a valid field element`,
     valueLengthNotPowerOf2  : () => `number of values in a cyclic register must be a power of 2`,
     valueLengthSmallerThan2 : () => `number of values in a cyclic register must be greater than 1`
 };

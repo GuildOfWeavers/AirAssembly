@@ -4,7 +4,7 @@ import { AirSchema as IAirSchema } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
 import { AirFunction, FunctionContext, Constant, StoreOperation, LocalVariable, Parameter } from "./procedures";
 import { Expression, LiteralValue, Dimensions } from "./expressions";
-import { Component } from "./Component";
+import { AirComponent } from "./AirComponent";
 import { validate } from "./utils";
 
 // CLASS DEFINITION
@@ -14,7 +14,7 @@ export class AirSchema implements IAirSchema {
     private readonly _field         : FiniteField;
     private readonly _constants     : Constant[];
     private readonly _functions     : AirFunction[];
-    private readonly _components    : Map<string, Component>;
+    private readonly _components    : Map<string, AirComponent>;
     
     private readonly _handles       : Set<string>;
 
@@ -76,17 +76,17 @@ export class AirSchema implements IAirSchema {
 
     // EXPORT DECLARATIONS
     // --------------------------------------------------------------------------------------------
-    get components(): Map<string, Component> {
+    get components(): Map<string, AirComponent> {
         return this._components;
     }
 
-    createComponent(name: string, registers: number, constraints: number, steps: number): Component {
-        return new Component(name, this, registers, constraints, steps);
+    createComponent(name: string, registers: number, constraints: number, steps: number): AirComponent {
+        return new AirComponent(name, this, registers, constraints, steps);
     }
 
-    addComponent(component: Component): void {
+    addComponent(component: AirComponent): void {
         validate(!this._components.has(component.name), errors.duplicateComponent(component.name));
-        // TODO: validate component structure
+        component.validate();
         this._components.set(component.name, component);
     }
 

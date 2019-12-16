@@ -90,7 +90,7 @@ declare module '@guildofweavers/air-assembly' {
         readonly functions: ReadonlyArray<AirFunction>;
 
         /** Components defined for the module exposed as a map keyed by component name */
-        readonly components: ReadonlyMap<string, Component>;
+        readonly components: ReadonlyMap<string, AirComponent>;
 
         /**
          * Creates a new AirSchema object
@@ -128,16 +128,16 @@ declare module '@guildofweavers/air-assembly' {
          * @param constraints Number of constraints expected in the computation
          * @param steps Minimal cycle length possible for the computation
          */
-        createComponent(name: string, registers: number, constraints: number, steps: number): Component;
+        createComponent(name: string, registers: number, constraints: number, steps: number): AirComponent;
 
         /**
          * Adds a component to the module
          * @param component Component to add to the module
          */
-        addComponent(component: Component): void;
+        addComponent(component: AirComponent): void;
     }
 
-    export interface Component {
+    export interface AirComponent {
 
         /** Name of the computation */
         readonly name: string;
@@ -273,7 +273,7 @@ declare module '@guildofweavers/air-assembly' {
     export interface CyclicRegister extends StaticRegister {
         readonly cycleLength: number;
 
-        getValues(field: FiniteField): bigint[];
+        getValues(): bigint[];
     }
 
     export class PrngSequence {

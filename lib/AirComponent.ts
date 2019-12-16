@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { FiniteField } from "@guildofweavers/galois";
-import { Component as IComponent, ConstraintDescriptor, ProcedureName } from "@guildofweavers/air-assembly";
+import { AirComponent as IComponent, ConstraintDescriptor, ProcedureName } from "@guildofweavers/air-assembly";
 import { AirSchema } from "./AirSchema";
 import { StaticRegister, InputRegister, MaskRegister, CyclicRegister, PrngSequence } from "./registers";
 import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction } from "./procedures";
@@ -16,7 +16,7 @@ const NAME_REGEXP = /[a-zA-Z]\w*/g;
 
 // CLASS DECLARATION
 // ================================================================================================
-export class Component implements IComponent {
+export class AirComponent implements IComponent {
 
     readonly name                   : string
     readonly traceRegisterCount     : number;
@@ -120,7 +120,7 @@ export class Component implements IComponent {
 
     addCyclicRegister(values: bigint[] | PrngSequence): void {
         validate(values.length <= this.cycleLength, errors.cyclicValuesTooMany(this.cycleLength));
-        const register = new CyclicRegister(values); // TODO: validate values are field elements
+        const register = new CyclicRegister(values, this.field);
         this._staticRegisters.push(register);
     }
 
@@ -201,8 +201,16 @@ export class Component implements IComponent {
         return `(export ${this.name}\n${code})`;
     }
 
-    // PRIVATE METHODS
+    // VALIDATION
     // --------------------------------------------------------------------------------------------
+    validate(): void {
+        const danglingInputs = this.getDanglingInputRegisters();
+        validate(danglingInputs.length === 0, errors.danglingInputRegisters(danglingInputs));
+        validate(this._traceInitializer, errors.transitionNotSet());
+        validate(this._transitionFunction, errors.transitionNotSet());
+        validate(this._constraintEvaluator, errors.evaluatorNotSet());
+    }
+
     private getDanglingInputRegisters(): number[] {
         const registers = new Set<InputRegister>(this._inputRegisters);
         const leaves = this._inputRegisters.filter(r => r.isLeaf);
@@ -236,6 +244,7 @@ const errors = {
     invalidInputParentIndex : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is undefined`,
     inputParentNotInputReg  : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is not an input register`,
     inputParentIsLeafReg    : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is a leaf register`,
+    danglingInputRegisters  : (d: any[]) => `cycle length for input registers ${d.join(', ')} is not defined`,
     maskRegOutOfOrder       : () => `mask registers cannot be preceded by cyclic registers`,
     invalidMaskSourceIndex  : (r: any, s: any) => `invalid source for mask register ${r}: register ${s} is undefined`,
     maskSourceNotInputReg   : (r: any, s: any) => `invalid source for mask register ${r}: register ${s} is not an input register`,

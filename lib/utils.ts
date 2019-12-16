@@ -2,7 +2,7 @@
 // ================================================================================================
 import * as crypto from 'crypto';
 import { FiniteField } from "@guildofweavers/galois";
-import { Component } from './Component';
+import { AirComponent } from './AirComponent';
 
 // CONSTANTS
 // ================================================================================================
@@ -20,7 +20,7 @@ export function isPowerOf2(value: number | bigint): boolean {
     }
 }
 
-export function getCompositionFactor(component: Component): number {
+export function getCompositionFactor(component: AirComponent): number {
     return 2**Math.ceil(Math.log2(component.maxConstraintDegree));
 }
 

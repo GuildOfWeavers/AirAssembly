@@ -2,7 +2,7 @@
 // ================================================================================================
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
-import { Component } from "./Component";
+import { AirComponent } from "./AirComponent";
 import { PrngSequence } from "./registers";
 import { ExecutionContext, StoreOperation } from "./procedures";
 import {
@@ -184,7 +184,7 @@ class AirParser extends EmbeddedActionsParser {
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    private staticRegisters = this.RULE('staticRegisters', (component: Component) => {
+    private staticRegisters = this.RULE('staticRegisters', (component: AirComponent) => {
         this.CONSUME(LParen);
         this.CONSUME(Static);
         this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [component] }));
@@ -193,7 +193,7 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(RParen);
     });
 
-    private inputRegister = this.RULE('inputRegister', (component: Component) => {
+    private inputRegister = this.RULE('inputRegister', (component: AirComponent) => {
         this.CONSUME1(LParen);
         this.CONSUME(Input);
 
@@ -232,7 +232,7 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => component.addInputRegister(scope, binary, parent, steps, offset));
     });
 
-    private maskRegister = this.RULE('maskRegister', (component: Component) => {
+    private maskRegister = this.RULE('maskRegister', (component: AirComponent) => {
         this.CONSUME1(LParen);
         this.CONSUME(Mask);
         const inverted = this.OPTION(() => this.CONSUME(Inverted)) ? true : false;
@@ -244,7 +244,7 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => component.addMaskRegister(Number(source), inverted));
     });
 
-    private cyclicRegister = this.RULE('cyclicRegister', (component: Component) => {
+    private cyclicRegister = this.RULE('cyclicRegister', (component: AirComponent) => {
         this.CONSUME(LParen);
         this.CONSUME(Cycle);
         const values = this.OR([
@@ -267,7 +267,7 @@ class AirParser extends EmbeddedActionsParser {
 
     // PROCEDURES
     // --------------------------------------------------------------------------------------------
-    private traceInitializer = this.RULE('traceInitializer', (component: Component) => {
+    private traceInitializer = this.RULE('traceInitializer', (component: AirComponent) => {
         this.CONSUME(LParen);
         this.CONSUME(Init);
 
@@ -285,7 +285,7 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => component.setTraceInitializer(context, statements, result));
     });
 
-    private transitionFunction = this.RULE('transitionFunction', (component: Component) => {
+    private transitionFunction = this.RULE('transitionFunction', (component: AirComponent) => {
         this.CONSUME(LParen);
         this.CONSUME(Transition);
 
@@ -302,7 +302,7 @@ class AirParser extends EmbeddedActionsParser {
         this.ACTION(() => component.setTransitionFunction(context, statements, result));
     });
 
-    private transitionConstraints = this.RULE('transitionConstraints', (component: Component) => {
+    private transitionConstraints = this.RULE('transitionConstraints', (component: AirComponent) => {
         this.CONSUME(LParen);
         this.CONSUME(Evaluation);
         

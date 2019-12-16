@@ -10,7 +10,7 @@ const MAX_NAME_LENGTH = 128;
 const NAME_REGEXP = /[a-zA-Z]\w*/g;
 // CLASS DECLARATION
 // ================================================================================================
-class Component {
+class AirComponent {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
     constructor(name, schema, registers, constraints, steps) {
@@ -80,7 +80,7 @@ class Component {
     }
     addCyclicRegister(values) {
         utils_1.validate(values.length <= this.cycleLength, errors.cyclicValuesTooMany(this.cycleLength));
-        const register = new registers_1.CyclicRegister(values); // TODO: validate values are field elements
+        const register = new registers_1.CyclicRegister(values, this.field);
         this._staticRegisters.push(register);
     }
     // PROCEDURES
@@ -150,8 +150,15 @@ class Component {
         code += this.constraintEvaluator.toString();
         return `(export ${this.name}\n${code})`;
     }
-    // PRIVATE METHODS
+    // VALIDATION
     // --------------------------------------------------------------------------------------------
+    validate() {
+        const danglingInputs = this.getDanglingInputRegisters();
+        utils_1.validate(danglingInputs.length === 0, errors.danglingInputRegisters(danglingInputs));
+        utils_1.validate(this._traceInitializer, errors.transitionNotSet());
+        utils_1.validate(this._transitionFunction, errors.transitionNotSet());
+        utils_1.validate(this._constraintEvaluator, errors.evaluatorNotSet());
+    }
     getDanglingInputRegisters() {
         const registers = new Set(this._inputRegisters);
         const leaves = this._inputRegisters.filter(r => r.isLeaf);
@@ -169,7 +176,7 @@ class Component {
         return result;
     }
 }
-exports.Component = Component;
+exports.AirComponent = AirComponent;
 // ERRORS
 // ================================================================================================
 const errors = {
@@ -183,6 +190,7 @@ const errors = {
     invalidInputParentIndex: (r, s) => `invalid parent for input register ${r}: register ${s} is undefined`,
     inputParentNotInputReg: (r, s) => `invalid parent for input register ${r}: register ${s} is not an input register`,
     inputParentIsLeafReg: (r, s) => `invalid parent for input register ${r}: register ${s} is a leaf register`,
+    danglingInputRegisters: (d) => `cycle length for input registers ${d.join(', ')} is not defined`,
     maskRegOutOfOrder: () => `mask registers cannot be preceded by cyclic registers`,
     invalidMaskSourceIndex: (r, s) => `invalid source for mask register ${r}: register ${s} is undefined`,
     maskSourceNotInputReg: (r, s) => `invalid source for mask register ${r}: register ${s} is not an input register`,
@@ -197,4 +205,4 @@ const errors = {
     evaluatorAlreadySet: () => `constraint evaluator has already been set`,
     invalidEvaluatorName: (n) => `constraint evaluator cannot be set to a ${n} procedure`
 };
-//# sourceMappingURL=Component.js.map
+//# sourceMappingURL=AirComponent.js.map

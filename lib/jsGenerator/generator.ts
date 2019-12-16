@@ -1,8 +1,10 @@
 // IMPORTS
 // ================================================================================================
 import { createPrimeField, FiniteField, WasmOptions, Vector, Matrix } from "@guildofweavers/galois";
-import { AirModule, AirModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs } from "@guildofweavers/air-assembly";
-import { Component } from "../Component";
+import {
+    AirModule, AirModuleOptions, InputDescriptor, MaskRegisterDescriptor, RegisterEvaluatorSpecs
+} from "@guildofweavers/air-assembly";
+import { AirComponent } from "../AirComponent";
 import { AirProcedure, AirFunction } from '../procedures';
 import { InputRegister, CyclicRegister, MaskRegister } from "../registers";
 import { getCompositionFactor } from "../utils";
@@ -19,7 +21,7 @@ const procedureSignatures = {
 
 // PUBLIC FUNCTIONS
 // ================================================================================================
-export function instantiateModule(component: Component, options: AirModuleOptions): AirModule {
+export function instantiateModule(component: AirComponent, options: AirModuleOptions): AirModule {
     let code = `'use strict';\n\n`;
 
     // set up module variables
@@ -95,7 +97,7 @@ function generateFunctionCode(func: AirFunction, index: number): string {
     return code;
 }
 
-function buildField(component: Component, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
+function buildField(component: AirComponent, wasmOptions?: Partial<WasmOptions> | boolean): FiniteField {
     if (component.field.extensionDegree === 1) {
         // needed for type checking to work
         return (typeof wasmOptions === 'boolean')
@@ -107,7 +109,7 @@ function buildField(component: Component, wasmOptions?: Partial<WasmOptions> | b
     }
 }
 
-function buildConstants(component: Component, field: FiniteField): (bigint | Vector | Matrix)[] {
+function buildConstants(component: AirComponent, field: FiniteField): (bigint | Vector | Matrix)[] {
     return component.constants.map(c => {
         if (c.isScalar) return c.value.value as bigint;
         else if (c.isVector) return field.newVectorFrom(c.value.value as bigint[]);
@@ -115,7 +117,7 @@ function buildConstants(component: Component, field: FiniteField): (bigint | Vec
     });
 }
 
-function buildStaticRegisters(component: Component) {
+function buildStaticRegisters(component: AirComponent) {
     const inputs: InputDescriptor[] = [];
     const masked: MaskRegisterDescriptor[] = [];
     const cyclic: RegisterEvaluatorSpecs[] = [];
@@ -135,7 +137,7 @@ function buildStaticRegisters(component: Component) {
             masked.push({ source: register.source, inverted: register.inverted });
         }
         else if (register instanceof CyclicRegister) {
-            cyclic.push({ cyclic: true, values: register.getValues(component.field) });
+            cyclic.push({ cyclic: true, values: register.getValues() });
         }
     }
 

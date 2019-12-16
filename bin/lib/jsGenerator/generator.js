@@ -119,7 +119,7 @@ function buildStaticRegisters(component) {
             masked.push({ source: register.source, inverted: register.inverted });
         }
         else if (register instanceof registers_1.CyclicRegister) {
-            cyclic.push({ cyclic: true, values: register.getValues(component.field) });
+            cyclic.push({ cyclic: true, values: register.getValues() });
         }
     }
     return { inputs, masked, cyclic };

@@ -4,7 +4,7 @@ import { ProcedureName, ProcedureContext as IProcedureContext } from "@guildofwe
 import { ExecutionContext } from "./ExecutionContext";
 import { LoadExpression, TraceSegment, Dimensions } from "../../expressions";
 import { Parameter } from "../Parameter";
-import { Component } from "../../Component";
+import { AirComponent } from "../../AirComponent";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
@@ -18,7 +18,7 @@ export class ProcedureContext extends ExecutionContext implements IProcedureCont
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(name: ProcedureName, component: Component) {
+    constructor(name: ProcedureName, component: AirComponent) {
         super(component.field, component.constants, component.functions);
         this.name = name;
         if (name === 'init' || name === 'transition') {
