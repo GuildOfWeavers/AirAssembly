@@ -23,11 +23,7 @@ const DEFAULT_LIMITS: StarkLimits = {
 // RE-EXPORTS
 // ================================================================================================
 export { AirSchema } from './lib/AirSchema';
-export {
-    LiteralValue, BinaryOperation, UnaryOperation, MakeVector, GetVectorElement, SliceVector, MakeMatrix,
-    LoadExpression
-} from './lib/expressions';
-export { StaticRegister, InputRegister, CyclicRegister, MaskRegister, StaticRegisterSet } from './lib/registers';
+export { PrngSequence } from './lib/registers';
 export { AssemblyError } from './lib/errors';
 
 export const prng = {

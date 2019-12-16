@@ -1,13 +1,14 @@
 // IMPORTS
 // ================================================================================================
-import { StaticRegister } from "./StaticRegister";
+import { CyclicRegister as ICyclicRegister } from '@guildofweavers/air-assembly';
 import { FiniteField } from "@guildofweavers/galois";
+import { StaticRegister } from "./StaticRegister";
 import { PrngSequence } from "./PrngSequence";
 import { validate, isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class CyclicRegister extends StaticRegister {
+export class CyclicRegister extends StaticRegister implements ICyclicRegister {
 
     readonly values: bigint[] | PrngSequence;
 
@@ -18,6 +19,12 @@ export class CyclicRegister extends StaticRegister {
         validate(values.length > 1, errors.valueLengthSmallerThan2());
         validate(isPowerOf2(values.length), errors.valueLengthNotPowerOf2());
         this.values = values;
+    }
+
+    // ACCESSORS
+    // --------------------------------------------------------------------------------------------
+    get cycleLength(): number {
+        return this.values.length;
     }
 
     // PUBLIC METHODS

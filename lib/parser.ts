@@ -3,7 +3,7 @@
 import { EmbeddedActionsParser } from "chevrotain";
 import { AirSchema } from "./AirSchema";
 import { Component } from "./Component";
-import { StaticRegisterSet, PrngSequence } from "./registers";
+import { PrngSequence } from "./registers";
 import { ExecutionContext, StoreOperation } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
@@ -187,15 +187,13 @@ class AirParser extends EmbeddedActionsParser {
     private staticRegisters = this.RULE('staticRegisters', (component: Component) => {
         this.CONSUME(LParen);
         this.CONSUME(Static);
-        const registers = this.ACTION(() => new StaticRegisterSet(component.cycleLength));
-        this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [registers] }));
-        this.MANY2(() => this.SUBRULE(this.maskRegister,    { ARGS: [registers] }));
-        this.MANY3(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [registers] }));
+        this.MANY1(() => this.SUBRULE(this.inputRegister,   { ARGS: [component] }));
+        this.MANY2(() => this.SUBRULE(this.maskRegister,    { ARGS: [component] }));
+        this.MANY3(() => this.SUBRULE(this.cyclicRegister,  { ARGS: [component] }));
         this.CONSUME(RParen);
-        this.ACTION(() => component.setStaticRegisters(registers));
     });
 
-    private inputRegister = this.RULE('inputRegister', (registers: StaticRegisterSet) => {
+    private inputRegister = this.RULE('inputRegister', (component: Component) => {
         this.CONSUME1(LParen);
         this.CONSUME(Input);
 
@@ -231,21 +229,10 @@ class AirParser extends EmbeddedActionsParser {
         });
 
         this.CONSUME1(RParen);
-        this.ACTION(() => registers.addInput(scope, binary, parent, steps, offset));
+        this.ACTION(() => component.addInputRegister(scope, binary, parent, steps, offset));
     });
 
-    private cyclicRegister = this.RULE('cyclicRegister', (registers: StaticRegisterSet) => {
-        this.CONSUME(LParen);
-        this.CONSUME(Cycle);
-        const values = this.OR([
-            { ALT: () => this.SUBRULE(this.prngSequence)    },
-            { ALT: () => this.SUBRULE(this.fieldElementSequence) }
-        ]);
-        this.CONSUME(RParen);
-        this.ACTION(() => registers.addCyclic(values));
-    });
-
-    private maskRegister = this.RULE('maskRegister', (registers: StaticRegisterSet) => {
+    private maskRegister = this.RULE('maskRegister', (component: Component) => {
         this.CONSUME1(LParen);
         this.CONSUME(Mask);
         const inverted = this.OPTION(() => this.CONSUME(Inverted)) ? true : false;
@@ -254,7 +241,18 @@ class AirParser extends EmbeddedActionsParser {
         const source = this.CONSUME(Literal).image;
         this.CONSUME2(RParen);
         this.CONSUME1(RParen);
-        this.ACTION(() => registers.addMask(Number(source), inverted));
+        this.ACTION(() => component.addMaskRegister(Number(source), inverted));
+    });
+
+    private cyclicRegister = this.RULE('cyclicRegister', (component: Component) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Cycle);
+        const values = this.OR([
+            { ALT: () => this.SUBRULE(this.prngSequence)    },
+            { ALT: () => this.SUBRULE(this.fieldElementSequence) }
+        ]);
+        this.CONSUME(RParen);
+        this.ACTION(() => component.addCyclicRegister(values));
     });
 
     private prngSequence = this.RULE<PrngSequence>('prngExpression', () => {

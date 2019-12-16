@@ -156,14 +156,12 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.staticRegisters = this.RULE('staticRegisters', (component) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Static);
-            const registers = this.ACTION(() => new registers_1.StaticRegisterSet(component.cycleLength));
-            this.MANY1(() => this.SUBRULE(this.inputRegister, { ARGS: [registers] }));
-            this.MANY2(() => this.SUBRULE(this.maskRegister, { ARGS: [registers] }));
-            this.MANY3(() => this.SUBRULE(this.cyclicRegister, { ARGS: [registers] }));
+            this.MANY1(() => this.SUBRULE(this.inputRegister, { ARGS: [component] }));
+            this.MANY2(() => this.SUBRULE(this.maskRegister, { ARGS: [component] }));
+            this.MANY3(() => this.SUBRULE(this.cyclicRegister, { ARGS: [component] }));
             this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => component.setStaticRegisters(registers));
         });
-        this.inputRegister = this.RULE('inputRegister', (registers) => {
+        this.inputRegister = this.RULE('inputRegister', (component) => {
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Input);
             const scope = this.OR1([
@@ -193,19 +191,9 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 return this.ACTION(() => slots);
             });
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => registers.addInput(scope, binary, parent, steps, offset));
+            this.ACTION(() => component.addInputRegister(scope, binary, parent, steps, offset));
         });
-        this.cyclicRegister = this.RULE('cyclicRegister', (registers) => {
-            this.CONSUME(lexer_1.LParen);
-            this.CONSUME(lexer_1.Cycle);
-            const values = this.OR([
-                { ALT: () => this.SUBRULE(this.prngSequence) },
-                { ALT: () => this.SUBRULE(this.fieldElementSequence) }
-            ]);
-            this.CONSUME(lexer_1.RParen);
-            this.ACTION(() => registers.addCyclic(values));
-        });
-        this.maskRegister = this.RULE('maskRegister', (registers) => {
+        this.maskRegister = this.RULE('maskRegister', (component) => {
             this.CONSUME1(lexer_1.LParen);
             this.CONSUME(lexer_1.Mask);
             const inverted = this.OPTION(() => this.CONSUME(lexer_1.Inverted)) ? true : false;
@@ -214,7 +202,17 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const source = this.CONSUME(lexer_1.Literal).image;
             this.CONSUME2(lexer_1.RParen);
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => registers.addMask(Number(source), inverted));
+            this.ACTION(() => component.addMaskRegister(Number(source), inverted));
+        });
+        this.cyclicRegister = this.RULE('cyclicRegister', (component) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Cycle);
+            const values = this.OR([
+                { ALT: () => this.SUBRULE(this.prngSequence) },
+                { ALT: () => this.SUBRULE(this.fieldElementSequence) }
+            ]);
+            this.CONSUME(lexer_1.RParen);
+            this.ACTION(() => component.addCyclicRegister(values));
         });
         this.prngSequence = this.RULE('prngExpression', () => {
             this.CONSUME(lexer_1.LParen);

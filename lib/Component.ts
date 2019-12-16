@@ -3,8 +3,8 @@
 import { FiniteField } from "@guildofweavers/galois";
 import { Component as IComponent, ConstraintDescriptor, ProcedureName } from "@guildofweavers/air-assembly";
 import { AirSchema } from "./AirSchema";
-import { StaticRegister, StaticRegisterSet, InputRegister } from "./registers";
-import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction, LocalVariable, Parameter } from "./procedures";
+import { StaticRegister, InputRegister, MaskRegister, CyclicRegister, PrngSequence } from "./registers";
+import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction } from "./procedures";
 import { Expression } from "./expressions";
 import { analyzeProcedure } from "./analysis";
 import { isPowerOf2, validate } from "./utils";
@@ -27,6 +27,7 @@ export class Component implements IComponent {
     readonly constants              : ReadonlyArray<Constant>;
     readonly functions              : ReadonlyArray<AirFunction>;
 
+    private _inputRegisters         : InputRegister[];
     private _staticRegisters        : StaticRegister[];
 
     private _traceInitializer?      : AirProcedure;
@@ -57,6 +58,7 @@ export class Component implements IComponent {
         this.constants = schema.constants;
         this.functions = schema.functions;
 
+        this._inputRegisters = [];
         this._staticRegisters = [];
     }
 
@@ -80,10 +82,46 @@ export class Component implements IComponent {
         return result;
     }
 
-    setStaticRegisters(registers: StaticRegisterSet) {
-        validate(this.staticRegisterCount === 0, errors.sRegistersAlreadySet());
-        registers.validate();
-        registers.forEach((r, i) => this._staticRegisters.push(r));
+    addInputRegister(scope: string, binary: boolean, parentIdx?: number, steps?: number, offset?: number): void {
+        const registerIdx = this.staticRegisterCount;
+        validate(registerIdx === this._inputRegisters.length, errors.inputRegOutOfOrder());
+
+        let rank = 0;
+        if (typeof parentIdx === 'number') {
+            const parent = this._inputRegisters[parentIdx];
+            validate(parent, errors.invalidInputParentIndex(registerIdx, parentIdx));
+            validate(parent instanceof InputRegister, errors.inputParentNotInputReg(registerIdx, parentIdx));
+            validate(!parent.isLeaf, errors.inputParentIsLeafReg(registerIdx, parentIdx));
+            rank = parent.rank + 1;
+        }
+        else {
+            rank = 1;
+        }
+
+        if (steps !== undefined) {
+            validate(steps <= this.cycleLength, errors.inputCycleTooBig(steps, this.cycleLength));
+        }
+    
+        const register = new InputRegister(scope, rank, binary, parentIdx, steps, offset);
+        this._inputRegisters.push(register);
+        this._staticRegisters.push(register);
+    }
+
+    addMaskRegister(sourceIdx: number, inverted: boolean): void {
+        const source = this._inputRegisters[sourceIdx];
+        const registerIdx = this.staticRegisterCount;
+        validate(source, errors.invalidMaskSourceIndex(registerIdx, sourceIdx));
+        validate(source instanceof InputRegister, errors.maskSourceNotInputReg(registerIdx, sourceIdx));
+        const lastRegister = this._staticRegisters[registerIdx - 1];
+        validate(!(lastRegister instanceof CyclicRegister), errors.maskRegOutOfOrder());
+        const register = new MaskRegister(sourceIdx, inverted);
+        this._staticRegisters.push(register);
+    }
+
+    addCyclicRegister(values: bigint[] | PrngSequence): void {
+        validate(values.length <= this.cycleLength, errors.cyclicValuesTooMany(this.cycleLength));
+        const register = new CyclicRegister(values); // TODO: validate values are field elements
+        this._staticRegisters.push(register);
     }
 
     // PROCEDURES
@@ -162,6 +200,27 @@ export class Component implements IComponent {
         code += this.constraintEvaluator.toString();
         return `(export ${this.name}\n${code})`;
     }
+
+    // PRIVATE METHODS
+    // --------------------------------------------------------------------------------------------
+    private getDanglingInputRegisters(): number[] {
+        const registers = new Set<InputRegister>(this._inputRegisters);
+        const leaves = this._inputRegisters.filter(r => r.isLeaf);
+
+        for (let leaf of leaves) {
+            let register : InputRegister | undefined = leaf;
+            while (register) {
+                registers.delete(register);
+                register = register.parent !== undefined
+                    ? this._inputRegisters[register.parent]
+                    : undefined;
+            }
+        }
+
+        const result: number[] = [];
+        registers.forEach(r => result.push(this._inputRegisters.indexOf(r)));
+        return result;
+    }
 }
 
 // ERRORS
@@ -172,7 +231,15 @@ const errors = {
     cycleLengthNotInteger   : (n: any) => `trace cycle length for export '${n}' is invalid: cycle length must be an integer`,
     cycleLengthTooSmall     : (n: any) => `trace cycle length for export '${n}' is invalid: cycle length must be greater than 0`,
     cycleLengthNotPowerOf2  : (n: any) => `trace cycle length for export '${n}' is invalid: cycle length must be a power of 2`,
-    sRegistersAlreadySet    : () => `static registers have already been set`,
+    inputRegOutOfOrder      : () => `input register cannot be preceded by other register types`,
+    inputCycleTooBig        : (c: any, t: any) => `input cycle length (${c}) cannot be greater than trace cycle length (${t})`,
+    invalidInputParentIndex : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is undefined`,
+    inputParentNotInputReg  : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is not an input register`,
+    inputParentIsLeafReg    : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is a leaf register`,
+    maskRegOutOfOrder       : () => `mask registers cannot be preceded by cyclic registers`,
+    invalidMaskSourceIndex  : (r: any, s: any) => `invalid source for mask register ${r}: register ${s} is undefined`,
+    maskSourceNotInputReg   : (r: any, s: any) => `invalid source for mask register ${r}: register ${s} is not an input register`,
+    cyclicValuesTooMany     : (t: any) => `number of values in cyclic register must be smaller than trace cycle length (${t})`,
     initializerNotSet       : () => `trace initializer hasn't been set yet`,
     initializerAlreadySet   : () => `trace initializer has already been set`,
     invalidInitializerName  : (n: any) => `trace initializer cannot be set to a ${n} procedure`,

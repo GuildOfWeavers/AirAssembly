@@ -27,6 +27,7 @@ class Component {
         this.field = schema.field;
         this.constants = schema.constants;
         this.functions = schema.functions;
+        this._inputRegisters = [];
         this._staticRegisters = [];
     }
     // STATIC REGISTERS
@@ -46,10 +47,41 @@ class Component {
         }
         return result;
     }
-    setStaticRegisters(registers) {
-        utils_1.validate(this.staticRegisterCount === 0, errors.sRegistersAlreadySet());
-        registers.validate();
-        registers.forEach((r, i) => this._staticRegisters.push(r));
+    addInputRegister(scope, binary, parentIdx, steps, offset) {
+        const registerIdx = this.staticRegisterCount;
+        utils_1.validate(registerIdx === this._inputRegisters.length, errors.inputRegOutOfOrder());
+        let rank = 0;
+        if (typeof parentIdx === 'number') {
+            const parent = this._inputRegisters[parentIdx];
+            utils_1.validate(parent, errors.invalidInputParentIndex(registerIdx, parentIdx));
+            utils_1.validate(parent instanceof registers_1.InputRegister, errors.inputParentNotInputReg(registerIdx, parentIdx));
+            utils_1.validate(!parent.isLeaf, errors.inputParentIsLeafReg(registerIdx, parentIdx));
+            rank = parent.rank + 1;
+        }
+        else {
+            rank = 1;
+        }
+        if (steps !== undefined) {
+            utils_1.validate(steps <= this.cycleLength, errors.inputCycleTooBig(steps, this.cycleLength));
+        }
+        const register = new registers_1.InputRegister(scope, rank, binary, parentIdx, steps, offset);
+        this._inputRegisters.push(register);
+        this._staticRegisters.push(register);
+    }
+    addMaskRegister(sourceIdx, inverted) {
+        const source = this._inputRegisters[sourceIdx];
+        const registerIdx = this.staticRegisterCount;
+        utils_1.validate(source, errors.invalidMaskSourceIndex(registerIdx, sourceIdx));
+        utils_1.validate(source instanceof registers_1.InputRegister, errors.maskSourceNotInputReg(registerIdx, sourceIdx));
+        const lastRegister = this._staticRegisters[registerIdx - 1];
+        utils_1.validate(!(lastRegister instanceof registers_1.CyclicRegister), errors.maskRegOutOfOrder());
+        const register = new registers_1.MaskRegister(sourceIdx, inverted);
+        this._staticRegisters.push(register);
+    }
+    addCyclicRegister(values) {
+        utils_1.validate(values.length <= this.cycleLength, errors.cyclicValuesTooMany(this.cycleLength));
+        const register = new registers_1.CyclicRegister(values); // TODO: validate values are field elements
+        this._staticRegisters.push(register);
     }
     // PROCEDURES
     // --------------------------------------------------------------------------------------------
@@ -118,6 +150,24 @@ class Component {
         code += this.constraintEvaluator.toString();
         return `(export ${this.name}\n${code})`;
     }
+    // PRIVATE METHODS
+    // --------------------------------------------------------------------------------------------
+    getDanglingInputRegisters() {
+        const registers = new Set(this._inputRegisters);
+        const leaves = this._inputRegisters.filter(r => r.isLeaf);
+        for (let leaf of leaves) {
+            let register = leaf;
+            while (register) {
+                registers.delete(register);
+                register = register.parent !== undefined
+                    ? this._inputRegisters[register.parent]
+                    : undefined;
+            }
+        }
+        const result = [];
+        registers.forEach(r => result.push(this._inputRegisters.indexOf(r)));
+        return result;
+    }
 }
 exports.Component = Component;
 // ERRORS
@@ -128,7 +178,15 @@ const errors = {
     cycleLengthNotInteger: (n) => `trace cycle length for export '${n}' is invalid: cycle length must be an integer`,
     cycleLengthTooSmall: (n) => `trace cycle length for export '${n}' is invalid: cycle length must be greater than 0`,
     cycleLengthNotPowerOf2: (n) => `trace cycle length for export '${n}' is invalid: cycle length must be a power of 2`,
-    sRegistersAlreadySet: () => `static registers have already been set`,
+    inputRegOutOfOrder: () => `input register cannot be preceded by other register types`,
+    inputCycleTooBig: (c, t) => `input cycle length (${c}) cannot be greater than trace cycle length (${t})`,
+    invalidInputParentIndex: (r, s) => `invalid parent for input register ${r}: register ${s} is undefined`,
+    inputParentNotInputReg: (r, s) => `invalid parent for input register ${r}: register ${s} is not an input register`,
+    inputParentIsLeafReg: (r, s) => `invalid parent for input register ${r}: register ${s} is a leaf register`,
+    maskRegOutOfOrder: () => `mask registers cannot be preceded by cyclic registers`,
+    invalidMaskSourceIndex: (r, s) => `invalid source for mask register ${r}: register ${s} is undefined`,
+    maskSourceNotInputReg: (r, s) => `invalid source for mask register ${r}: register ${s} is not an input register`,
+    cyclicValuesTooMany: (t) => `number of values in cyclic register must be smaller than trace cycle length (${t})`,
     initializerNotSet: () => `trace initializer hasn't been set yet`,
     initializerAlreadySet: () => `trace initializer has already been set`,
     invalidInitializerName: (n) => `trace initializer cannot be set to a ${n} procedure`,

@@ -1,11 +1,12 @@
 // IMPORTS
 // ================================================================================================
+import { InputRegister as IInputRegister } from '@guildofweavers/air-assembly';
 import { StaticRegister } from "./StaticRegister";
 import { validate, isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class InputRegister extends StaticRegister {
+export class InputRegister extends StaticRegister implements IInputRegister {
 
     readonly secret     : boolean;
     readonly rank       : number;

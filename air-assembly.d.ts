@@ -163,13 +163,16 @@ declare module '@guildofweavers/air-assembly' {
         /** Highest degree of transition constraints defined for the computation. */
         readonly maxConstraintDegree: number;
 
+        addInputRegister(scope: string, binary: boolean, parentIdx?: number, steps?: number, offset?: number): void;
+        addMaskRegister(sourceIdx: number, inverted: boolean): void;
+        addCyclicRegister(values: bigint[] | PrngSequence): void;
+        
         /**
          * Creates a new procedure context from the current state of the component
          * @param name Name of the procedure
          */
         createProcedureContext(name: ProcedureName): ProcedureContext;
 
-        setStaticRegisters(registers: StaticRegisterSet): void;
         setTraceInitializer(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
         setTransitionFunction(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
         setConstraintEvaluator(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
@@ -251,61 +254,36 @@ declare module '@guildofweavers/air-assembly' {
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    export abstract class StaticRegister { }
+    export interface StaticRegister {}
 
-    export class InputRegister extends StaticRegister {
+    export interface InputRegister extends StaticRegister {
         readonly secret     : boolean;
         readonly rank       : number;
         readonly binary     : boolean;
         readonly offset     : number;
         readonly parent?    : number;
         readonly steps?     : number;
-
-        private constructor();
     }
 
-    export class CyclicRegister extends StaticRegister {
-        
-        private constructor();
+    export interface MaskRegister extends StaticRegister {
+        readonly source     : number;
+        readonly inverted   : boolean;
+    }
+
+    export interface CyclicRegister extends StaticRegister {
+        readonly cycleLength: number;
 
         getValues(field: FiniteField): bigint[];
     }
 
-    export class PrngValues {
+    export class PrngSequence {
         readonly method : 'sha256';
         readonly seed   : Buffer;
-        readonly count  : number;
+        readonly length : number;
 
         constructor(method: string, seed: bigint, count: number);
 
         getValues(field: FiniteField): bigint[];
-    }
-
-    export class MaskRegister extends StaticRegister {
-        readonly source     : number;
-        readonly inverted   : boolean;
-
-        private constructor();
-    }
-
-    export class StaticRegisterSet {
-                
-        readonly inputs : ReadonlyArray<InputRegister>;
-        readonly cyclic : ReadonlyArray<CyclicRegister>;
-        readonly masked : ReadonlyArray<MaskRegister>;
-        readonly size   : number;
-
-        constructor();
-
-        addInput(scope: string, binary: boolean, parent?: number, steps?: number, offset?: number): void;
-        addCyclic(values: bigint[]): void;
-        addMask(source: number, inverted: boolean): void;
-
-        get(index: number): StaticRegister;
-        map<T>(callback: (register: StaticRegister, index: number) => T): T[];
-        forEach(callback: (register: StaticRegister, index: number) => void): void;
-
-        // TODO: add validate()
     }
 
     // EXPRESSIONS
