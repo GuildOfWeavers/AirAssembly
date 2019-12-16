@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { ProcedureName } from "@guildofweavers/air-assembly";
+import { ProcedureName, ProcedureContext as IProcedureContext } from "@guildofweavers/air-assembly";
 import { ExecutionContext } from "./ExecutionContext";
 import { LoadExpression, TraceSegment, Dimensions } from "../../expressions";
 import { Parameter } from "../Parameter";
@@ -9,7 +9,7 @@ import { validate } from "../../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class ProcedureContext extends ExecutionContext {
+export class ProcedureContext extends ExecutionContext implements IProcedureContext {
 
     readonly name               : ProcedureName;
     readonly traceRegisters     : TraceSegment;

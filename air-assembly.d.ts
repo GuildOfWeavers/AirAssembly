@@ -110,7 +110,7 @@ declare module '@guildofweavers/air-assembly' {
          * Creates a new function context from the current state of the schema
          * @param resultType Dimensions of the expected function return value
          */
-        createFunctionContext(resultType: Dimensions): FunctionContext;
+        createFunctionContext(resultType: Dimensions): FunctionContext; // TODO: pass handle here
 
         /**
          * Adds a function to the module
@@ -227,6 +227,12 @@ declare module '@guildofweavers/air-assembly' {
         addLocal(dimensions: Dimensions, handle?: string): void;
 
         buildLiteralValue(value: bigint | bigint[] | bigint[]): LiteralValue;
+        buildBinaryOperation(operation: string, lhs: Expression, rhs: Expression): BinaryOperation;
+        buildUnaryOperation(operation: string, operand: Expression): UnaryOperation;
+        buildMakeVectorExpression(elements: Expression[]): MakeVector;
+        buildGetVectorElementExpression(source: Expression, index: number): GetVectorElement;
+        buildSliceVectorExpression(source: Expression, start: number, end: number): SliceVector;
+        buildMakeMatrixExpression(elements: Expression[][]): MakeMatrix;
         buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
         buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation;
         buildCallExpression(indexOrHandle: number | string, params: Expression[]): CallExpression;
@@ -311,11 +317,9 @@ declare module '@guildofweavers/air-assembly' {
     export type BinaryOperationType = 'add' | 'sub' | 'mul' | 'div' | 'exp' | 'prod';
     export type UnaryOperationType = 'neg' | 'inv';
 
-    export abstract class Expression {
+    export interface Expression {
         readonly dimensions : Dimensions;
         readonly children   : Expression[];
-
-        constructor(dimensions: Dimensions, children?: Expression[]);
 
         readonly isScalar   : boolean;
         readonly isVector   : boolean;
@@ -324,63 +328,49 @@ declare module '@guildofweavers/air-assembly' {
         readonly isStatic   : boolean;
     }
 
-    export class LiteralValue extends Expression {
+    export interface LiteralValue extends Expression {
         readonly value      : bigint | bigint[] | bigint[][];
-
-        constructor(value: bigint | bigint[] | bigint[][]);
     }
 
-    export class BinaryOperation extends Expression {
+    export interface BinaryOperation extends Expression {
         readonly operation  : BinaryOperationType;
         readonly lhs        : Expression;
         readonly rhs        : Expression;
-
-        constructor(operation: string, lhs: Expression, rhs: Expression);
     }
 
-    export class UnaryOperation extends Expression {
+    export interface UnaryOperation extends Expression {
         readonly operation  : UnaryOperationType;
         readonly operand    : Expression;
-
-        constructor(operation: string, operand: Expression);
     }
 
-    export class MakeVector extends Expression {
+    export interface MakeVector extends Expression {
         readonly elements   : Expression[];
-
-        constructor(elements: Expression[]);
     }
 
-    export class GetVectorElement extends Expression {
+    export interface GetVectorElement extends Expression {
         readonly source     : Expression;
         readonly index      : number;
-
-        constructor(source: Expression, index: number);
     }
 
-    export class SliceVector extends Expression {
+    export interface SliceVector extends Expression {
         readonly source     : Expression;
         readonly start      : number;
         readonly end        : number;
-
-        constructor(source: Expression, start: number, end: number);
     }
 
-    export class MakeMatrix extends Expression {
+    export interface MakeMatrix extends Expression {
         readonly elements   : Expression[][];
-
-        constructor(elements: Expression[][]);
     }
 
-    export class LoadExpression extends Expression {
-        readonly source : LoadSource;
-        readonly index  : number;
+    export interface LoadExpression extends Expression {
+        readonly source     : LoadSource;
+        readonly index      : number;
     }
 
-    export class CallExpression extends Expression {
-        readonly func   : AirFunction;
-        readonly index  : number;
-        readonly params : Expression[];
+    export interface CallExpression extends Expression {
+        readonly func       : AirFunction;
+        readonly index      : number;
+        readonly params     : Expression[];
     }
 
     // ANALYSIS

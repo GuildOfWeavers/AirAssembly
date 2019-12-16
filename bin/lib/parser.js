@@ -289,14 +289,14 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const lhs = this.SUBRULE1(this.expression, { ARGS: [ctx] });
             const rhs = this.SUBRULE2(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.BinaryOperation(op, lhs, rhs));
+            return this.ACTION(() => ctx.buildBinaryOperation(op, lhs, rhs));
         });
         this.unaryOperation = this.RULE('unaryOperation', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             const op = this.CONSUME(lexer_1.UnaryOp).image;
             const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.UnaryOperation(op, value));
+            return this.ACTION(() => ctx.buildUnaryOperation(op, value));
         });
         this.scalarLiteral = this.RULE('scalarLiteral', (ctx) => {
             this.CONSUME(lexer_1.LParen);
@@ -313,7 +313,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             this.AT_LEAST_ONE(() => elements.push(this.SUBRULE(this.expression, { ARGS: [ctx] })));
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.MakeVector(elements));
+            return this.ACTION(() => ctx.buildMakeVectorExpression(elements));
         });
         this.getVectorElement = this.RULE('getVectorElement', (ctx) => {
             this.CONSUME(lexer_1.LParen);
@@ -321,7 +321,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const source = this.SUBRULE(this.expression, { ARGS: [ctx] });
             const index = this.SUBRULE(this.integerLiteral);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.GetVectorElement(source, index));
+            return this.ACTION(() => ctx.buildGetVectorElementExpression(source, index));
         });
         this.sliceVector = this.RULE('sliceVector', (ctx) => {
             this.CONSUME(lexer_1.LParen);
@@ -330,7 +330,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const startIdx = this.SUBRULE1(this.integerLiteral);
             const endIdx = this.SUBRULE2(this.integerLiteral);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.SliceVector(source, startIdx, endIdx));
+            return this.ACTION(() => ctx.buildSliceVectorExpression(source, startIdx, endIdx));
         });
         this.makeMatrix = this.RULE('makeMatrix', (ctx) => {
             const rows = [];
@@ -344,7 +344,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 rows.push(row);
             });
             this.CONSUME1(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.MakeMatrix(rows));
+            return this.ACTION(() => ctx.buildMakeMatrixExpression(rows));
         });
         // LOAD AND STORE
         // --------------------------------------------------------------------------------------------

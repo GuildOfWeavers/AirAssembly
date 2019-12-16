@@ -1,17 +1,21 @@
 // IMPORTS
 // ================================================================================================
+import { ExecutionContext as IExecutionContext } from '@guildofweavers/air-assembly';
 import { FiniteField } from "@guildofweavers/galois";
 import { AirFunction } from "../AirFunction";
 import { Constant } from "../Constant";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
 import { StoreOperation } from "../StoreOperation";
-import { Expression, LoadExpression, CallExpression, LiteralValue, Dimensions } from "../../expressions";
+import {
+    Expression, LiteralValue, Dimensions, BinaryOperation, UnaryOperation, MakeVector, GetVectorElement,
+    SliceVector, MakeMatrix, LoadExpression, CallExpression
+} from "../../expressions";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export abstract class ExecutionContext {
+export abstract class ExecutionContext implements IExecutionContext {
 
     readonly field          : FiniteField;
     readonly params         : Parameter[];
@@ -91,6 +95,30 @@ export abstract class ExecutionContext {
     // --------------------------------------------------------------------------------------------
     buildLiteralValue(value: bigint | bigint[] | bigint[][]): LiteralValue {
         return new LiteralValue(value, this.field);
+    }
+
+    buildBinaryOperation(operation: string, lhs: Expression, rhs: Expression): BinaryOperation {
+        return new BinaryOperation(operation, lhs, rhs);
+    }
+
+    buildUnaryOperation(operation: string, operand: Expression): UnaryOperation {
+        return new UnaryOperation(operation, operand);
+    }
+
+    buildMakeVectorExpression(elements: Expression[]): MakeVector {
+        return new MakeVector(elements);
+    }
+
+    buildGetVectorElementExpression(source: Expression, index: number): GetVectorElement {
+        return new GetVectorElement(source, index);
+    }
+
+    buildSliceVectorExpression(source: Expression, start: number, end: number): SliceVector {
+        return new SliceVector(source, start, end);
+    }
+
+    buildMakeMatrixExpression(elements: Expression[][]): MakeMatrix {
+        return new MakeMatrix(elements);
     }
 
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {

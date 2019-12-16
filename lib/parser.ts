@@ -344,7 +344,7 @@ class AirParser extends EmbeddedActionsParser {
         const lhs = this.SUBRULE1(this.expression, { ARGS: [ctx] });
         const rhs = this.SUBRULE2(this.expression, { ARGS: [ctx] });
         this.CONSUME(RParen);
-        return this.ACTION(() => new BinaryOperation(op, lhs, rhs));
+        return this.ACTION(() => ctx.buildBinaryOperation(op, lhs, rhs));
     });
 
     private unaryOperation = this.RULE<UnaryOperation>('unaryOperation', (ctx: ExecutionContext) => {
@@ -352,7 +352,7 @@ class AirParser extends EmbeddedActionsParser {
         const op = this.CONSUME(UnaryOp).image;
         const value = this.SUBRULE(this.expression, { ARGS: [ctx] });
         this.CONSUME(RParen);
-        return this.ACTION(() => new UnaryOperation(op, value));
+        return this.ACTION(() => ctx.buildUnaryOperation(op, value));
     });
 
     private scalarLiteral = this.RULE<LiteralValue>('scalarLiteral', (ctx: ExecutionContext) => {
@@ -371,7 +371,7 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Vector);
         this.AT_LEAST_ONE(() => elements.push(this.SUBRULE(this.expression, { ARGS: [ctx] })));
         this.CONSUME(RParen);
-        return this.ACTION(() => new MakeVector(elements));
+        return this.ACTION(() => ctx.buildMakeVectorExpression(elements));
     });
 
     private getVectorElement = this.RULE<GetVectorElement>('getVectorElement', (ctx: ExecutionContext) => {
@@ -380,7 +380,7 @@ class AirParser extends EmbeddedActionsParser {
         const source = this.SUBRULE(this.expression, { ARGS: [ctx] });
         const index = this.SUBRULE(this.integerLiteral);
         this.CONSUME(RParen);
-        return this.ACTION(() => new GetVectorElement(source, index));
+        return this.ACTION(() => ctx.buildGetVectorElementExpression(source, index));
     });
 
     private sliceVector = this.RULE<SliceVector>('sliceVector', (ctx: ExecutionContext) => {
@@ -390,7 +390,7 @@ class AirParser extends EmbeddedActionsParser {
         const startIdx = this.SUBRULE1(this.integerLiteral);
         const endIdx = this.SUBRULE2(this.integerLiteral);
         this.CONSUME(RParen);
-        return this.ACTION(() => new SliceVector(source, startIdx, endIdx));
+        return this.ACTION(() => ctx.buildSliceVectorExpression(source, startIdx, endIdx));
     });
 
     private makeMatrix = this.RULE<MakeMatrix>('makeMatrix', (ctx: ExecutionContext) => {
@@ -405,7 +405,7 @@ class AirParser extends EmbeddedActionsParser {
             rows.push(row);
         });
         this.CONSUME1(RParen);
-        return this.ACTION(() => new MakeMatrix(rows));
+        return this.ACTION(() => ctx.buildMakeMatrixExpression(rows));
     });
 
     // LOAD AND STORE

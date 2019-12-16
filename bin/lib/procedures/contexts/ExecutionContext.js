@@ -66,6 +66,24 @@ class ExecutionContext {
     buildLiteralValue(value) {
         return new expressions_1.LiteralValue(value, this.field);
     }
+    buildBinaryOperation(operation, lhs, rhs) {
+        return new expressions_1.BinaryOperation(operation, lhs, rhs);
+    }
+    buildUnaryOperation(operation, operand) {
+        return new expressions_1.UnaryOperation(operation, operand);
+    }
+    buildMakeVectorExpression(elements) {
+        return new expressions_1.MakeVector(elements);
+    }
+    buildGetVectorElementExpression(source, index) {
+        return new expressions_1.GetVectorElement(source, index);
+    }
+    buildSliceVectorExpression(source, start, end) {
+        return new expressions_1.SliceVector(source, start, end);
+    }
+    buildMakeMatrixExpression(elements) {
+        return new expressions_1.MakeMatrix(elements);
+    }
     buildLoadExpression(operation, indexOrHandle) {
         if (operation === 'load.param') {
             const parameter = this.getDeclaration(indexOrHandle, 'param');
