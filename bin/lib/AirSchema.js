@@ -44,11 +44,8 @@ class AirSchema {
     get functions() {
         return this._functions;
     }
-    createFunctionContext(params, locals, resultType) {
-        const context = new procedures_1.FunctionContext(this, resultType);
-        params.forEach(p => context.add(p)); // TODO: move into constructor
-        locals.forEach(v => context.add(v)); // TODO: move into constructor
-        return context;
+    createFunctionContext(resultType) {
+        return new procedures_1.FunctionContext(this, resultType);
     }
     addFunction(context, statements, result, handle) {
         if (handle) {

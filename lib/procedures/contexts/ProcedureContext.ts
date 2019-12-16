@@ -4,7 +4,6 @@ import { ProcedureName } from "@guildofweavers/air-assembly";
 import { ExecutionContext } from "./ExecutionContext";
 import { LoadExpression, TraceSegment, Dimensions } from "../../expressions";
 import { Parameter } from "../Parameter";
-import { LocalVariable } from "../LocalVariable";
 import { Component } from "../../Component";
 import { validate } from "../../utils";
 
@@ -37,29 +36,24 @@ export class ProcedureContext extends ExecutionContext {
 
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
-    add(value: Parameter | LocalVariable): void {
-        // if local variable has a handle, set handle mapping
-        if (value.handle) {
-            validate(!this.declarationMap.has(value.handle), errors.duplicateHandle(value.handle));
-            this.declarationMap.set(value.handle, value);
+    addParam(dimensions: Dimensions, handle?: string): void {
+        validate(this.params.length === 0, errors.tooManyInitParams());
+        validate(Dimensions.isVector(dimensions), errors.invalidInitParam());
+        const param = new Parameter(dimensions, handle);
+
+        // if the parameter has a handle, set handle mapping
+        if (handle) {
+            validate(!this.declarationMap.has(handle), errors.duplicateHandle(handle));
+            this.declarationMap.set(handle, param);
         }
 
-        if (value instanceof LocalVariable) {
-            // set index mapping and add local variable to the list
-            this.declarationMap.set(`local::${this.locals.length}`, value);
-            this.locals.push(value);
-        }
-        else if (value instanceof Parameter && this.name === 'init') {
-            validate(this.params.length === 0, errors.tooManyInitParams());
-            validate(Dimensions.isVector(value.dimensions), errors.invalidInitParam());
-            this.declarationMap.set(`param::${this.params.length}`, value);
-            this.params.push(value);
-        }
-        else {
-            throw new Error(`${value} is not allowed in ${this.name} procedure context`);
-        }
+        // set index mapping and add parameter to the list
+        this.declarationMap.set(`param::${this.params.length}`, param);
+        this.params.push(param);
     }
 
+    // EXPRESSION BUILDERS
+    // --------------------------------------------------------------------------------------------
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
         if (operation === 'load.trace') {
             validate(typeof indexOrHandle === 'number', errors.traceHandleInvalid(indexOrHandle));

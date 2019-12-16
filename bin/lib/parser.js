@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const chevrotain_1 = require("chevrotain");
 const AirSchema_1 = require("./AirSchema");
 const registers_1 = require("./registers");
-const procedures_1 = require("./procedures");
 const lexer_1 = require("./lexer");
 const expressions_1 = require("./expressions");
 const errors_1 = require("./errors");
@@ -73,10 +72,9 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             // build function context
             const resultType = this.SUBRULE(this.functionResultType);
-            const params = [], locals = [];
-            this.MANY1(() => params.push(this.SUBRULE(this.paramDeclaration)));
-            this.MANY2(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            const context = this.ACTION(() => schema.createFunctionContext(params, locals, resultType));
+            const context = this.ACTION(() => schema.createFunctionContext(resultType));
+            this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+            this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build function body
             const statements = [];
             this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
@@ -91,21 +89,21 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME2(lexer_1.RParen);
             return resultType;
         });
-        this.paramDeclaration = this.RULE('paramDeclaration', () => {
+        this.paramDeclaration = this.RULE('paramDeclaration', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Param);
             const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             const dimensions = this.SUBRULE(this.typeDimensions);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new procedures_1.Parameter(dimensions, handle));
+            this.ACTION(() => ctx.addParam(dimensions, handle));
         });
-        this.localDeclaration = this.RULE('localDeclaration', () => {
+        this.localDeclaration = this.RULE('localDeclaration', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Local);
             const handle = this.OPTION(() => this.CONSUME(lexer_1.Handle).image);
             const dimensions = this.SUBRULE(this.typeDimensions);
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new procedures_1.LocalVariable(dimensions, handle));
+            this.ACTION(() => ctx.addLocal(dimensions, handle));
         });
         this.typeDimensions = this.RULE('typeDimensions', () => {
             const dimensions = this.OR([
@@ -233,10 +231,9 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Init);
             // build context
-            const params = [], locals = [];
-            this.OPTION(() => params.push(this.SUBRULE(this.paramDeclaration)));
-            this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            const context = this.ACTION(() => component.createProcedureContext('init', locals, params));
+            const context = this.ACTION(() => component.createProcedureContext('init'));
+            this.OPTION(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+            this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
             const statements = [];
             this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
@@ -248,9 +245,8 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Transition);
             // build context
-            const locals = [];
-            this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            const context = this.ACTION(() => component.createProcedureContext('transition', locals));
+            const context = this.ACTION(() => component.createProcedureContext('transition'));
+            this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
             const statements = [];
             this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
@@ -262,9 +258,8 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Evaluation);
             // build context
-            const locals = [];
-            this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-            const context = this.ACTION(() => component.createProcedureContext('evaluation', locals));
+            const context = this.ACTION(() => component.createProcedureContext('evaluation'));
+            this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build body
             const statements = [];
             this.MANY2(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));

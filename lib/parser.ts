@@ -89,11 +89,10 @@ class AirParser extends EmbeddedActionsParser {
 
         // build function context
         const resultType = this.SUBRULE(this.functionResultType);
-        const params: Parameter[] = [], locals: LocalVariable[] = [];
-        this.MANY1(() => params.push(this.SUBRULE(this.paramDeclaration)));
-        this.MANY2(() => locals.push(this.SUBRULE(this.localDeclaration)));
-        const context = this.ACTION(() => schema.createFunctionContext(params, locals, resultType));
-
+        const context = this.ACTION(() => schema.createFunctionContext(resultType));
+        this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+        this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
+        
         // build function body
         const statements: StoreOperation[] = [];
         this.MANY3(() => statements.push(this.SUBRULE(this.storeOperation, { ARGS: [context] })));
@@ -111,22 +110,22 @@ class AirParser extends EmbeddedActionsParser {
         return resultType;
     });
 
-    private paramDeclaration = this.RULE<Parameter>('paramDeclaration', () => {
+    private paramDeclaration = this.RULE('paramDeclaration', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         this.CONSUME(Param);
         const handle = this.OPTION(() => this.CONSUME(Handle).image);
         const dimensions = this.SUBRULE(this.typeDimensions);
         this.CONSUME(RParen);
-        return this.ACTION(() => new Parameter(dimensions, handle));
+        this.ACTION(() => ctx.addParam(dimensions, handle));
     });
 
-    private localDeclaration = this.RULE<LocalVariable>('localDeclaration', () => {
+    private localDeclaration = this.RULE('localDeclaration', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         this.CONSUME(Local);
         const handle = this.OPTION(() => this.CONSUME(Handle).image);
         const dimensions = this.SUBRULE(this.typeDimensions);
         this.CONSUME(RParen);
-        return this.ACTION(() => new LocalVariable(dimensions, handle));
+        this.ACTION(() => ctx.addLocal(dimensions, handle));
     });
 
     private typeDimensions = this.RULE<Dimensions>('typeDimensions', () => {
@@ -275,10 +274,9 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Init);
 
         // build context
-        const params: Parameter[] = [], locals: LocalVariable[] = [];
-        this.OPTION(() => params.push(this.SUBRULE(this.paramDeclaration)));
-        this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-        const context = this.ACTION(() => component.createProcedureContext('init', locals, params));
+        const context = this.ACTION(() => component.createProcedureContext('init'));
+        this.OPTION(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
+        this.MANY1(() => this.SUBRULE(this.localDeclaration,  { ARGS: [context] }));
 
         // build body
         const statements: StoreOperation[] = [];
@@ -294,9 +292,8 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Transition);
 
         // build context
-        const locals: LocalVariable[] = [];
-        this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-        const context = this.ACTION(() => component.createProcedureContext('transition', locals));
+        const context = this.ACTION(() => component.createProcedureContext('transition'));
+        this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 
         // build body
         const statements: StoreOperation[] = [];
@@ -312,9 +309,8 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(Evaluation);
         
         // build context
-        const locals: LocalVariable[] = [];
-        this.MANY1(() => locals.push(this.SUBRULE(this.localDeclaration)));
-        const context = this.ACTION(() => component.createProcedureContext('evaluation', locals));
+        const context = this.ACTION(() => component.createProcedureContext('evaluation'));
+        this.MANY1(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
         
         // build body
         const statements: StoreOperation[] = [];

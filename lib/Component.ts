@@ -88,11 +88,8 @@ export class Component implements IComponent {
 
     // PROCEDURES
     // --------------------------------------------------------------------------------------------
-    createProcedureContext(name: ProcedureName, locals: LocalVariable[], params?: Parameter[]): ProcedureContext {
-        const context = new ProcedureContext(name, this);
-        if (params) params.forEach(p => context.add(p));    // TODO: move into constructor
-        locals.forEach(v => context.add(v));                // TODO: move into constructor
-        return context;
+    createProcedureContext(name: ProcedureName): ProcedureContext {
+        return new ProcedureContext(name, this);
     }
 
     // INITIALIZER

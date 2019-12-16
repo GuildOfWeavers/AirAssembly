@@ -53,12 +53,8 @@ class Component {
     }
     // PROCEDURES
     // --------------------------------------------------------------------------------------------
-    createProcedureContext(name, locals, params) {
-        const context = new procedures_1.ProcedureContext(name, this);
-        if (params)
-            params.forEach(p => context.add(p)); // TODO: move into constructor
-        locals.forEach(v => context.add(v)); // TODO: move into constructor
-        return context;
+    createProcedureContext(name) {
+        return new procedures_1.ProcedureContext(name, this);
     }
     // INITIALIZER
     // --------------------------------------------------------------------------------------------

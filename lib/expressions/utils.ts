@@ -1,21 +1,3 @@
-// IMPORTS
-// ================================================================================================
-import { StoreTarget, LoadSource } from "@guildofweavers/air-assembly";
-
-// STORE TARGET
-// ================================================================================================
-const targets: { [index: string]: StoreTarget } = {
-    'store.local': 'local'
-};
-
-export function getStoreTarget(operation: string): StoreTarget {
-    const target = targets[operation];
-    if (!target) {
-        throw new Error(`${operation} is not a valid store operation`);
-    }
-    return target;
-}
-
 // DIMENSIONS
 // ================================================================================================
 export type Dimensions = [number, number];

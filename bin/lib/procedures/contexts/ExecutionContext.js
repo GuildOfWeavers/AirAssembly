@@ -1,5 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Parameter_1 = require("../Parameter");
+const LocalVariable_1 = require("../LocalVariable");
 const StoreOperation_1 = require("../StoreOperation");
 const expressions_1 = require("../../expressions");
 const utils_1 = require("../../utils");
@@ -30,11 +32,37 @@ class ExecutionContext {
             return func;
         });
     }
+    // PUBLIC FUNCTIONS
+    // --------------------------------------------------------------------------------------------
+    addParam(dimensions, handle) {
+        const param = new Parameter_1.Parameter(dimensions, handle);
+        // if the parameter has a handle, set handle mapping
+        if (handle) {
+            utils_1.validate(!this.declarationMap.has(handle), errors.duplicateHandle(handle));
+            this.declarationMap.set(handle, param);
+        }
+        // set index mapping and add parameter to the list
+        this.declarationMap.set(`param::${this.params.length}`, param);
+        this.params.push(param);
+    }
+    addLocal(dimensions, handle) {
+        const variable = new LocalVariable_1.LocalVariable(dimensions, handle);
+        // if the variable has a handle, set handle mapping
+        if (handle) {
+            utils_1.validate(!this.declarationMap.has(handle), errors.duplicateHandle(handle));
+            this.declarationMap.set(handle, variable);
+        }
+        // set index mapping and add local variable to the list
+        this.declarationMap.set(`local::${this.locals.length}`, variable);
+        this.locals.push(variable);
+    }
     getDeclaration(indexOrHandle, kind) {
         return (typeof indexOrHandle === 'string')
             ? this.declarationMap.get(indexOrHandle)
             : this.declarationMap.get(`${kind}::${indexOrHandle}`);
     }
+    // EXPRESSION BUILDERS
+    // --------------------------------------------------------------------------------------------
     buildLiteralValue(value) {
         return new expressions_1.LiteralValue(value, this.field);
     }

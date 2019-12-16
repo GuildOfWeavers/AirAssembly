@@ -108,11 +108,9 @@ declare module '@guildofweavers/air-assembly' {
 
         /**
          * Creates a new function context from the current state of the schema
-         * @param params Expected function parameters
-         * @param locals Expected function local variables
          * @param resultType Dimensions of the expected function return value
          */
-        createFunctionContext(params: Parameter[], locals: LocalVariable[], resultType: Dimensions): FunctionContext;
+        createFunctionContext(resultType: Dimensions): FunctionContext;
 
         /**
          * Adds a function to the module
@@ -168,10 +166,8 @@ declare module '@guildofweavers/air-assembly' {
         /**
          * Creates a new procedure context from the current state of the component
          * @param name Name of the procedure
-         * @param locals Expected procedure local variables
-         * @param params Expected procedure parameters
          */
-        createProcedureContext(name: ProcedureName, locals: LocalVariable[], params?: Parameter[]): ProcedureContext;
+        createProcedureContext(name: ProcedureName): ProcedureContext;
 
         setStaticRegisters(registers: StaticRegisterSet): void;
         setTraceInitializer(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
@@ -204,18 +200,14 @@ declare module '@guildofweavers/air-assembly' {
         readonly handle?    : string;
     }
 
-    export class Parameter {
+    export interface Parameter {
         readonly dimensions : Dimensions;
         readonly handle?    : string;
-
-        constructor(dimensions: Dimensions, handle?: string);
     }
 
-    export class LocalVariable {
+    export interface LocalVariable {
         readonly dimensions : Dimensions;
         readonly handle?    : string;
-
-        constructor(dimensions: Dimensions, handle?: string);
     }
 
     export interface StoreOperation {
@@ -230,6 +222,9 @@ declare module '@guildofweavers/air-assembly' {
         readonly functions      : ReadonlyArray<AirFunction>;
         readonly params         : ReadonlyArray<Parameter>;
         readonly locals         : ReadonlyArray<LocalVariable>;
+
+        addParam(dimensions: Dimensions, handle?: string): void;
+        addLocal(dimensions: Dimensions, handle?: string): void;
 
         buildLiteralValue(value: bigint | bigint[] | bigint[]): LiteralValue;
         buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
@@ -311,7 +306,6 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
     export type Dimensions = [number, number];
     export type Degree = bigint | bigint[] | bigint[][];
-    export type StoreTarget = 'local';
     export type LoadSource = 'const' | 'trace' | 'static' | 'param' | 'local';
 
     export type BinaryOperationType = 'add' | 'sub' | 'mul' | 'div' | 'exp' | 'prod';

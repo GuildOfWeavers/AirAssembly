@@ -6,7 +6,7 @@ import { Constant } from "../Constant";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
 import { StoreOperation } from "../StoreOperation";
-import { Expression, LoadExpression, CallExpression, LiteralValue } from "../../expressions";
+import { Expression, LoadExpression, CallExpression, LiteralValue, Dimensions } from "../../expressions";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
@@ -47,12 +47,36 @@ export abstract class ExecutionContext {
         });
     }
 
-    // ABSTRACT FUNCTIONS
-    // --------------------------------------------------------------------------------------------
-    abstract add(value: Parameter | LocalVariable): void;
-    
     // PUBLIC FUNCTIONS
     // --------------------------------------------------------------------------------------------
+    addParam(dimensions: Dimensions, handle?: string): void {
+        const param = new Parameter(dimensions, handle);
+
+        // if the parameter has a handle, set handle mapping
+        if (handle) {
+            validate(!this.declarationMap.has(handle), errors.duplicateHandle(handle));
+            this.declarationMap.set(handle, param);
+        }
+
+        // set index mapping and add parameter to the list
+        this.declarationMap.set(`param::${this.params.length}`, param);
+        this.params.push(param);
+    }
+
+    addLocal(dimensions: Dimensions, handle?: string): void {
+        const variable = new LocalVariable(dimensions, handle);
+
+        // if the variable has a handle, set handle mapping
+        if (handle) {
+            validate(!this.declarationMap.has(handle), errors.duplicateHandle(handle));
+            this.declarationMap.set(handle, variable);
+        }
+
+        // set index mapping and add local variable to the list
+        this.declarationMap.set(`local::${this.locals.length}`, variable);
+        this.locals.push(variable);
+    }
+
     getDeclaration(indexOrHandle: number | string, kind: 'const'): Constant | undefined;
     getDeclaration(indexOrHandle: number | string, kind: 'param'): Parameter | undefined;
     getDeclaration(indexOrHandle: number | string, kind: 'local'): LocalVariable | undefined;
@@ -63,6 +87,8 @@ export abstract class ExecutionContext {
             : this.declarationMap.get(`${kind}::${indexOrHandle}`);
     }
 
+    // EXPRESSION BUILDERS
+    // --------------------------------------------------------------------------------------------
     buildLiteralValue(value: bigint | bigint[] | bigint[][]): LiteralValue {
         return new LiteralValue(value, this.field);
     }

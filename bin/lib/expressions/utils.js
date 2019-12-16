@@ -1,18 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// STORE TARGET
-// ================================================================================================
-const targets = {
-    'store.local': 'local'
-};
-function getStoreTarget(operation) {
-    const target = targets[operation];
-    if (!target) {
-        throw new Error(`${operation} is not a valid store operation`);
-    }
-    return target;
-}
-exports.getStoreTarget = getStoreTarget;
 var Dimensions;
 (function (Dimensions) {
     function scalar() {

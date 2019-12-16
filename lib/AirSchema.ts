@@ -61,11 +61,8 @@ export class AirSchema implements IAirSchema {
         return this._functions;
     }
 
-    createFunctionContext(params: Parameter[], locals: LocalVariable[], resultType: Dimensions): FunctionContext {
-        const context = new FunctionContext(this, resultType);
-        params.forEach(p => context.add(p));    // TODO: move into constructor
-        locals.forEach(v => context.add(v));    // TODO: move into constructor
-        return context;
+    createFunctionContext(resultType: Dimensions): FunctionContext {
+        return new FunctionContext(this, resultType);
     }
 
     addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void {
