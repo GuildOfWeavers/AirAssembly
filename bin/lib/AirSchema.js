@@ -9,9 +9,9 @@ const utils_1 = require("./utils");
 class AirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(type, modulus) {
-        utils_1.validate(type === 'prime', errors.invalidFieldType(type));
-        this._field = galois_1.createPrimeField(modulus);
+    constructor(fieldType, fieldModulus) {
+        utils_1.validate(fieldType === 'prime', errors.invalidFieldType(fieldType));
+        this._field = galois_1.createPrimeField(fieldModulus);
         this._constants = [];
         this._functions = [];
         this._components = new Map();

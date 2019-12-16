@@ -20,9 +20,9 @@ export class AirSchema implements IAirSchema {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(type: 'prime', modulus: bigint) {
-        validate(type === 'prime', errors.invalidFieldType(type));
-        this._field = createPrimeField(modulus);
+    constructor(fieldType: 'prime', fieldModulus: bigint) {
+        validate(fieldType === 'prime', errors.invalidFieldType(fieldType));
+        this._field = createPrimeField(fieldModulus);
 
         this._constants = [];
         this._functions = [];

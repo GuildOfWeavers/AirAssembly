@@ -28,7 +28,7 @@ export class AirProcedure implements IProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context: ProcedureContext, statements: StoreOperation[], result: Expression) {
         this.name = context.name;
-        this.parameters = context.parameters.slice();
+        this.parameters = context.params.slice();
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)

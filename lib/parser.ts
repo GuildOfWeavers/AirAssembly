@@ -96,7 +96,7 @@ class AirParser extends EmbeddedActionsParser {
         const width = this.SUBRULE2(this.integerLiteral);
         this.CONSUME2(RParen);
         
-        const context = this.ACTION(() => new FunctionContext(schema, width));
+        const context = this.ACTION(() => new FunctionContext(schema, [width, 0])); // TODO
         this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
         this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
 

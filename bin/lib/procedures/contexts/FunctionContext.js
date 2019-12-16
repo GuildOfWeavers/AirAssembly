@@ -9,9 +9,9 @@ const utils_1 = require("../../utils");
 class FunctionContext extends ExecutionContext_1.ExecutionContext {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(schema, width) {
+    constructor(schema, result) {
         super(schema.field, schema.constants, schema.functions);
-        this.width = width;
+        this.result = result;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
@@ -23,8 +23,8 @@ class FunctionContext extends ExecutionContext_1.ExecutionContext {
         }
         if (value instanceof Parameter_1.Parameter) {
             // set index mapping and add parameter to the list
-            this.declarationMap.set(`param::${this.parameters.length}`, value);
-            this.parameters.push(value);
+            this.declarationMap.set(`param::${this.params.length}`, value);
+            this.params.push(value);
         }
         else if (value instanceof LocalVariable_1.LocalVariable) {
             // set index mapping and add local variable to the list

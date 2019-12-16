@@ -6,7 +6,7 @@ import { Constant } from "../Constant";
 import { Parameter } from "../Parameter";
 import { LocalVariable } from "../LocalVariable";
 import { StoreOperation } from "../StoreOperation";
-import { Expression, LoadExpression, CallExpression } from "../../expressions";
+import { Expression, LoadExpression, CallExpression, LiteralValue } from "../../expressions";
 import { validate } from "../../utils";
 
 // CLASS DEFINITION
@@ -14,7 +14,7 @@ import { validate } from "../../utils";
 export abstract class ExecutionContext {
 
     readonly field          : FiniteField;
-    readonly parameters     : Parameter[];
+    readonly params         : Parameter[];
     readonly locals         : LocalVariable[];
     readonly constants      : ReadonlyArray<Constant>;
     readonly functions      : ReadonlyArray<AirFunction>;
@@ -24,7 +24,7 @@ export abstract class ExecutionContext {
     // --------------------------------------------------------------------------------------------
     constructor(field: FiniteField, constants: ReadonlyArray<Constant>, functions: ReadonlyArray<AirFunction>) {
         this.field = field;
-        this.parameters = [];
+        this.params = [];
         this.locals = [];
         this.declarationMap = new Map();
 
@@ -63,15 +63,16 @@ export abstract class ExecutionContext {
             : this.declarationMap.get(`${kind}::${indexOrHandle}`);
     }
 
-    buildLiteralValue() {
+    buildLiteralValue(value: bigint | bigint[] | bigint[][]): LiteralValue {
         // TODO: implement
+        return undefined as any;
     }
 
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {
         if (operation === 'load.param') {
             const parameter = this.getDeclaration(indexOrHandle, 'param');
             validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
-            const index = this.parameters.indexOf(parameter);
+            const index = this.params.indexOf(parameter);
             validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
             return new LoadExpression(parameter, index);
         }
@@ -105,12 +106,12 @@ export abstract class ExecutionContext {
         return statement;
     }
 
-    buildCallExpression(indexOrHandle: number | string, parameters: Expression[]): CallExpression {
+    buildCallExpression(indexOrHandle: number | string, params: Expression[]): CallExpression {
         const func = this.getDeclaration(indexOrHandle, 'func');
         validate(func !== undefined, errors.funcNotDeclared(indexOrHandle));
         const index = this.functions.indexOf(func);
         validate(index !== -1, errors.funcHandleInvalid(indexOrHandle));
-        return new CallExpression(func, index, parameters);
+        return new CallExpression(func, index, params);
     }
 }
 

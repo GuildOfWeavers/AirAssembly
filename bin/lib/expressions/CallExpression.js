@@ -8,23 +8,23 @@ const utils_2 = require("../utils");
 class CallExpression extends Expression_1.Expression {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(func, index, parameters) {
-        utils_2.validate(func.parameters.length === parameters.length, errors.invalidParamCount(index, func.parameters.length, parameters.length));
-        func.parameters.forEach((param, i) => utils_2.validate(utils_1.Dimensions.areSameDimensions(param.dimensions, parameters[i].dimensions), errors.invalidParamType(index, i, param.dimensions)));
-        super(func.dimensions, parameters);
+    constructor(func, index, params) {
+        utils_2.validate(func.params.length === params.length, errors.invalidParamCount(index, func.params.length, params.length));
+        func.params.forEach((param, i) => utils_2.validate(utils_1.Dimensions.areSameDimensions(param.dimensions, params[i].dimensions), errors.invalidParamType(index, i, param.dimensions)));
+        super(func.dimensions, params);
         this.func = func;
         this.index = index;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get parameters() {
+    get params() {
         return this.children;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
         const indexOrHandle = (this.func.handle) ? this.func.handle : this.index.toString();
-        return `(call ${indexOrHandle} ${this.parameters.map(p => p.toString()).join(' ')})`;
+        return `(call ${indexOrHandle} ${this.params.map(p => p.toString()).join(' ')})`;
     }
 }
 exports.CallExpression = CallExpression;

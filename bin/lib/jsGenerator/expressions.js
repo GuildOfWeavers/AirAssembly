@@ -90,7 +90,7 @@ class ExpressionCodeGenerator extends expressions_1.ExpressionVisitor {
     // CALL EXPRESSION
     // --------------------------------------------------------------------------------------------
     callExpression(e, options = {}) {
-        let code = `func${e.index}(${e.parameters.map(p => this.visit(p)).join(', ')})`;
+        let code = `func${e.index}(${e.params.map(p => this.visit(p)).join(', ')})`;
         if (e.isVector && options.vectorAsArray) {
             code = `${code}.toValues()`;
         }

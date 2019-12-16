@@ -77,22 +77,45 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
     export class AirSchema {
 
-        /** A finite field object instantiated for the field specified for the computation. */
+        /** A finite field defined for the module */
         readonly field: FiniteField;
 
-        /** An array of LiteralValue expressions describing constants defined for the computation. */
+        /** Constants defined for the module */
         readonly constants: ReadonlyArray<Constant>;
 
-        /**  */
-        readonly functions: ReadonlyArray<any>; // TODO
+        /** Functions defined for the module */
+        readonly functions: ReadonlyArray<AirFunction>;
 
-        /** A map of components, where the key is the name of the component, and the value is a Component object. */
+        /** Components defined for the module exposed as a map keyed by component name */
         readonly components: ReadonlyMap<string, Component>;
 
-        constructor(type: 'prime', modulus: bigint);
+        /**
+         * Creates a new AirSchema object
+         * @param fieldType Type of the finite field
+         * @param fieldModulus Modules of the prime filed
+         */
+        constructor(fieldType: 'prime', fieldModulus: bigint);
 
+        /**
+         * Adds a constant to the module
+         * @param value Value of the constant
+         * @param handle Optional constant handle
+         */
         addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void;
-        addFunction(context: any, statements: StoreOperation[], result: Expression, handle?: string): void; // TODO
+
+        /**
+         * Adds a function to the module
+         * @param context Function context, including parameters and local variables
+         * @param statements A list of store operations within the function body
+         * @param result The return expression of the function
+         * @param handle Optional function handle
+         */
+        addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression, handle?: string): void;
+
+        /**
+         * 
+         * @param component 
+         */
         addComponent(component: Component): void;
     }
 
@@ -103,6 +126,9 @@ declare module '@guildofweavers/air-assembly' {
 
         /** Number of secret input registers defined for the computation */
         readonly secretInputCount: number;
+
+        /** */
+        readonly traceInitializer: AirProcedure;
 
         /** A Procedure object describing transition function expression defined for the computation. */
         readonly transitionFunction: AirProcedure;
@@ -122,6 +148,30 @@ declare module '@guildofweavers/air-assembly' {
         setConstraintEvaluator(context: any, statements: StoreOperation[], result: Expression): void;     // TODO
     }
 
+    // FUNCTIONS AND PROCEDURES
+    // --------------------------------------------------------------------------------------------
+    export interface AirFunction {
+        readonly handle?        : string;
+        readonly params         : ReadonlyArray<Parameter>;
+        readonly locals         : ReadonlyArray<LocalVariable>;
+        readonly statements     : ReadonlyArray<StoreOperation>;
+        readonly result         : Expression;
+    }
+
+    export interface FunctionContext {
+        readonly field          : FiniteField;
+        readonly constants      : ReadonlyArray<Constant>;
+        readonly functions      : ReadonlyArray<AirFunction>;
+        readonly params         : ReadonlyArray<Parameter>;
+        readonly locals         : ReadonlyArray<LocalVariable>;
+        readonly result         : Dimensions;
+
+        buildLiteralValue(value: bigint | bigint[] | bigint[]): LiteralValue;
+        buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
+        buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation;
+        buildCallExpression(indexOrHandle: number | string, params: Expression[]): CallExpression;
+    }
+
     export type ProcedureName = 'init' | 'transition' | 'evaluation';
     export interface AirProcedure {
         readonly name           : ProcedureName;
@@ -133,6 +183,16 @@ declare module '@guildofweavers/air-assembly' {
     export interface Constant {
         readonly dimensions : Dimensions;
         readonly value      : LiteralValue;
+        readonly handle?    : string;
+    }
+
+    export interface Parameter {
+        readonly dimensions : Dimensions;
+        readonly handle?    : string;
+    }
+
+    export interface LocalVariable {
+        readonly dimensions : Dimensions;
         readonly handle?    : string;
     }
 
@@ -275,6 +335,12 @@ declare module '@guildofweavers/air-assembly' {
     export class LoadExpression extends Expression {
         readonly source : LoadSource;
         readonly index  : number;
+    }
+
+    export class CallExpression extends Expression {
+        readonly func   : AirFunction;
+        readonly index  : number;
+        readonly params : Expression[];
     }
 
     // ANALYSIS
@@ -461,7 +527,7 @@ declare module '@guildofweavers/air-assembly' {
     export interface TraceInitializer {
         /**
          * @param k Array with values of static registers at last step
-         * @param s Vector with trace seed values
+         * @param p0 Vector with trace seed values
          * @returns Array with values of execution trace at step 0
          */
         (k: bigint[], p0: Vector): bigint[];

@@ -84,7 +84,7 @@ function generateProcedureCode(procedure: AirProcedure): string {
 }
 
 function generateFunctionCode(func: AirFunction, index: number): string {
-    let code = `function func${index}(${func.parameters.map((p, i) => `p${i}`).join(', ')}) {\n`;
+    let code = `function func${index}(${func.params.map((p, i) => `p${i}`).join(', ')}) {\n`;
     if (func.locals.length > 0) {
         code += 'let ' + func.locals.map((v, i) => `v${i}`).join(', ') + ';\n';
         code += func.statements.map(a => `v${a.target} = ${expressions.toJsCode(a.expression)};`).join('\n');

@@ -1,11 +1,12 @@
 // IMPORTS
 // ================================================================================================
+import { Parameter as IParameter } from '@guildofweavers/air-assembly';
 import { Dimensions } from "../expressions/utils";
 import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class Parameter {
+export class Parameter implements IParameter {
 
     readonly dimensions : Dimensions;
     readonly handle?    : string;

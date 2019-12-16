@@ -10,7 +10,7 @@ class ExecutionContext {
     // --------------------------------------------------------------------------------------------
     constructor(field, constants, functions) {
         this.field = field;
-        this.parameters = [];
+        this.params = [];
         this.locals = [];
         this.declarationMap = new Map();
         this.constants = constants.map((constant, i) => {
@@ -35,14 +35,15 @@ class ExecutionContext {
             ? this.declarationMap.get(indexOrHandle)
             : this.declarationMap.get(`${kind}::${indexOrHandle}`);
     }
-    buildLiteralValue() {
+    buildLiteralValue(value) {
         // TODO: implement
+        return undefined;
     }
     buildLoadExpression(operation, indexOrHandle) {
         if (operation === 'load.param') {
             const parameter = this.getDeclaration(indexOrHandle, 'param');
             utils_1.validate(parameter !== undefined, errors.paramNotDeclared(indexOrHandle));
-            const index = this.parameters.indexOf(parameter);
+            const index = this.params.indexOf(parameter);
             utils_1.validate(index !== -1, errors.paramHandleInvalid(indexOrHandle));
             return new expressions_1.LoadExpression(parameter, index);
         }
@@ -74,12 +75,12 @@ class ExecutionContext {
         variable.bind(statement, index);
         return statement;
     }
-    buildCallExpression(indexOrHandle, parameters) {
+    buildCallExpression(indexOrHandle, params) {
         const func = this.getDeclaration(indexOrHandle, 'func');
         utils_1.validate(func !== undefined, errors.funcNotDeclared(indexOrHandle));
         const index = this.functions.indexOf(func);
         utils_1.validate(index !== -1, errors.funcHandleInvalid(indexOrHandle));
-        return new expressions_1.CallExpression(func, index, parameters);
+        return new expressions_1.CallExpression(func, index, params);
     }
 }
 exports.ExecutionContext = ExecutionContext;

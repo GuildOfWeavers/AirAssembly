@@ -109,7 +109,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
         };
 
         // analyze parameters
-        e.parameters.forEach((p, i) => {
+        e.params.forEach((p, i) => {
             const degree = this.visit(p, fnContext);
             fnContext.degree.param[i] = degree;
         });

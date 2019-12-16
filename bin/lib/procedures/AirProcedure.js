@@ -7,7 +7,7 @@ class AirProcedure {
     // --------------------------------------------------------------------------------------------
     constructor(context, statements, result) {
         this.name = context.name;
-        this.parameters = context.parameters.slice();
+        this.parameters = context.params.slice();
         this.localVariables = context.locals.slice();
         this.statements = statements.slice();
         if (!result.isVector || result.dimensions[0] !== context.width)

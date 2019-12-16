@@ -14,22 +14,22 @@ export class CallExpression extends Expression {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(func: AirFunction, index: number, parameters: Expression[]) {
-        validate(func.parameters.length === parameters.length,
-            errors.invalidParamCount(index, func.parameters.length, parameters.length));
+    constructor(func: AirFunction, index: number, params: Expression[]) {
+        validate(func.params.length === params.length,
+            errors.invalidParamCount(index, func.params.length, params.length));
         
-        func.parameters.forEach((param, i) =>
-            validate(Dimensions.areSameDimensions(param.dimensions, parameters[i].dimensions), 
+        func.params.forEach((param, i) =>
+            validate(Dimensions.areSameDimensions(param.dimensions, params[i].dimensions), 
                 errors.invalidParamType(index, i, param.dimensions)));
 
-        super(func.dimensions, parameters);
+        super(func.dimensions, params);
         this.func = func;
         this.index = index;
     }
 
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
-    get parameters(): Expression[] {
+    get params(): Expression[] {
         return this.children;
     }
 
@@ -37,7 +37,7 @@ export class CallExpression extends Expression {
     // --------------------------------------------------------------------------------------------
     toString(): string {
         const indexOrHandle = (this.func.handle) ? this.func.handle : this.index.toString();
-        return `(call ${indexOrHandle} ${this.parameters.map(p => p.toString()).join(' ')})`;
+        return `(call ${indexOrHandle} ${this.params.map(p => p.toString()).join(' ')})`;
     }
 }
 

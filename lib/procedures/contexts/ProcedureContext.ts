@@ -50,10 +50,10 @@ export class ProcedureContext extends ExecutionContext {
             this.locals.push(value);
         }
         else if (value instanceof Parameter && this.name === 'init') {
-            validate(this.parameters.length === 0, errors.tooManyInitParams());
+            validate(this.params.length === 0, errors.tooManyInitParams());
             validate(Dimensions.isVector(value.dimensions), errors.invalidInitParam());
-            this.declarationMap.set(`param::${this.parameters.length}`, value);
-            this.parameters.push(value);
+            this.declarationMap.set(`param::${this.params.length}`, value);
+            this.params.push(value);
         }
         else {
             throw new Error(`${value} is not allowed in ${this.name} procedure context`);

@@ -78,7 +78,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.Vector);
             const width = this.SUBRULE2(this.integerLiteral);
             this.CONSUME2(lexer_1.RParen);
-            const context = this.ACTION(() => new procedures_1.FunctionContext(schema, width));
+            const context = this.ACTION(() => new procedures_1.FunctionContext(schema, [width, 0])); // TODO
             this.MANY1(() => this.SUBRULE(this.paramDeclaration, { ARGS: [context] }));
             this.MANY2(() => this.SUBRULE(this.localDeclaration, { ARGS: [context] }));
             // build function body
