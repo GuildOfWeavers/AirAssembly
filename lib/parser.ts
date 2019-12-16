@@ -359,12 +359,12 @@ class AirParser extends EmbeddedActionsParser {
         return this.ACTION(() => new UnaryOperation(op, value));
     });
 
-    private scalarLiteral = this.RULE<LiteralValue>('scalarLiteral', () => {
+    private scalarLiteral = this.RULE<LiteralValue>('scalarLiteral', (ctx: ExecutionContext) => {
         this.CONSUME(LParen);
         this.CONSUME(Scalar);
         const value = this.CONSUME(Literal).image;
         this.CONSUME(RParen);
-        return this.ACTION(() => new LiteralValue(BigInt(value)));
+        return this.ACTION(() => ctx.buildLiteralValue(BigInt(value)));
     });
 
     // VECTORS AND MATRIXES

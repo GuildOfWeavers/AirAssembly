@@ -36,7 +36,7 @@ class AirSchema {
             utils_1.validate(!this._handles.has(handle), errors.duplicateHandle(handle));
             this._handles.add(handle);
         }
-        const constant = new procedures_1.Constant(new expressions_1.LiteralValue(value), handle); // TODO: pass field
+        const constant = new procedures_1.Constant(new expressions_1.LiteralValue(value, this.field), handle);
         this._constants.push(constant);
     }
     // FUNCTIONS

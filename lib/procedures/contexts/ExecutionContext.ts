@@ -64,8 +64,7 @@ export abstract class ExecutionContext {
     }
 
     buildLiteralValue(value: bigint | bigint[] | bigint[][]): LiteralValue {
-        // TODO: implement
-        return undefined as any;
+        return new LiteralValue(value, this.field);
     }
 
     buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression {

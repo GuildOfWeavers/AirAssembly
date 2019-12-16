@@ -51,7 +51,7 @@ export class AirSchema implements IAirSchema {
             validate(!this._handles.has(handle), errors.duplicateHandle(handle));
             this._handles.add(handle);
         }
-        const constant = new Constant(new LiteralValue(value), handle); // TODO: pass field
+        const constant = new Constant(new LiteralValue(value, this.field), handle);
         this._constants.push(constant);
     }
 

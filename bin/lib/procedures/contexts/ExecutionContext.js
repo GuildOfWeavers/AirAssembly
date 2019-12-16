@@ -36,8 +36,7 @@ class ExecutionContext {
             : this.declarationMap.get(`${kind}::${indexOrHandle}`);
     }
     buildLiteralValue(value) {
-        // TODO: implement
-        return undefined;
+        return new expressions_1.LiteralValue(value, this.field);
     }
     buildLoadExpression(operation, indexOrHandle) {
         if (operation === 'load.param') {

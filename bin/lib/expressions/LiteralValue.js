@@ -1,39 +1,39 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// IMPORTS
-// ================================================================================================
 const Expression_1 = require("./Expression");
 const utils_1 = require("./utils");
+const utils_2 = require("../utils");
 // CLASS DEFINITION
 // ================================================================================================
 class LiteralValue extends Expression_1.Expression {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(value) {
+    constructor(value, field) {
         if (typeof value === 'bigint') {
             // value is a scalar
             super(utils_1.Dimensions.scalar());
+            utils_2.validate(field.isElement(value), errors.invalidFieldElement(value));
         }
         else if (Array.isArray(value)) {
             // value is a vector or a matrix
             const rowCount = value.length;
-            if (typeof value[0] === 'bigint') {
+            if (isBigIntArray(value)) {
                 // value is a vector
                 super(utils_1.Dimensions.vector(rowCount));
+                value.forEach(v => utils_2.validate(field.isElement(v), errors.invalidFieldElement(v)));
             }
             else {
                 // value is a matrix
                 const colCount = value[0].length;
                 super(utils_1.Dimensions.matrix(rowCount, colCount));
                 for (let row of value) {
-                    if (row.length !== colCount) {
-                        throw new Error(`all matrix rows must have the same number of columns`);
-                    }
+                    utils_2.validate(row.length === colCount, errors.inconsistentMatrix());
+                    row.forEach(v => utils_2.validate(field.isElement(v), errors.invalidFieldElement(v)));
                 }
             }
         }
         else {
-            throw new Error(`invalid constant value '${value}'`);
+            throw new Error(`invalid literal value '${value}'`);
         }
         this.value = value;
     }
@@ -71,4 +71,15 @@ class LiteralValue extends Expression_1.Expression {
     }
 }
 exports.LiteralValue = LiteralValue;
+// HELPER FUNCTIONS
+// ================================================================================================
+function isBigIntArray(value) {
+    return typeof value[0] === 'bigint';
+}
+// ERRORS
+// ================================================================================================
+const errors = {
+    invalidFieldElement: (v) => `${v} is not a valid field element`,
+    inconsistentMatrix: () => `all matrix rows must have the same number of columns`
+};
 //# sourceMappingURL=LiteralValue.js.map

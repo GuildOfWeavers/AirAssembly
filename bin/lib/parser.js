@@ -303,12 +303,12 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new expressions_1.UnaryOperation(op, value));
         });
-        this.scalarLiteral = this.RULE('scalarLiteral', () => {
+        this.scalarLiteral = this.RULE('scalarLiteral', (ctx) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Scalar);
             const value = this.CONSUME(lexer_1.Literal).image;
             this.CONSUME(lexer_1.RParen);
-            return this.ACTION(() => new expressions_1.LiteralValue(BigInt(value)));
+            return this.ACTION(() => ctx.buildLiteralValue(BigInt(value)));
         });
         // VECTORS AND MATRIXES
         // --------------------------------------------------------------------------------------------
