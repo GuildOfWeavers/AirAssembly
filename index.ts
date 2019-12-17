@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { AirModule, StarkLimits, AirModuleOptions, SchemaAnalysisResult } from '@guildofweavers/air-assembly';
+import { AirModule, StarkLimits, AirModuleOptions, ComponentAnalysisResult } from '@guildofweavers/air-assembly';
 import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
 import { lexer } from './lib/lexer';
@@ -23,12 +23,7 @@ const DEFAULT_LIMITS: StarkLimits = {
 // RE-EXPORTS
 // ================================================================================================
 export { AirSchema } from './lib/AirSchema';
-export {
-    LiteralValue, BinaryOperation, UnaryOperation, MakeVector, GetVectorElement, SliceVector, MakeMatrix,
-    LoadExpression
-} from './lib/expressions';
-export { StaticRegister, InputRegister, CyclicRegister, MaskRegister, StaticRegisterSet } from './lib/registers';
-export { ExportDeclaration } from './lib/exports';
+export { PrngSequence } from './lib/registers';
 export { AssemblyError } from './lib/errors';
 
 export const prng = {
@@ -76,17 +71,21 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
     return schema;
 }
 
-export function instantiate(schema: AirSchema, options: Partial<AirModuleOptions> = {}): AirModule {
-    const compositionFactor = getCompositionFactor(schema);
+export function instantiate(schema: AirSchema, componentName: string, options: Partial<AirModuleOptions> = {}): AirModule {
+    const component = schema.components.get(componentName)!;
+    if (!component) throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+    const compositionFactor = getCompositionFactor(component);
     const vOptions = validateModuleOptions(options, compositionFactor);
     validateLimits(schema, vOptions.limits as StarkLimits);
-    const module = instantiateModule(schema, vOptions);
+    const module = instantiateModule(component, vOptions);
     return module;
 }
 
-export function analyze(schema: AirSchema): SchemaAnalysisResult {
-    const transition = analyzeProcedure(schema.transitionFunction);
-    const evaluation = analyzeProcedure(schema.constraintEvaluator);
+export function analyze(schema: AirSchema, componentName: string): ComponentAnalysisResult {
+    const component = schema.components.get(componentName)!;
+    if (!component) throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+    const transition = analyzeProcedure(component.transitionFunction);
+    const evaluation = analyzeProcedure(component.constraintEvaluator);
     return { transition, evaluation };
 }
 
@@ -112,14 +111,16 @@ function validateModuleOptions(options: Partial<AirModuleOptions>, compositionFa
 
 function validateLimits(schema: AirSchema, limits: StarkLimits): void {
     try {
-        if (schema.traceRegisterCount > limits.maxTraceRegisters)
+        schema.components.forEach(component => {
+            if (component.traceRegisterCount > limits.maxTraceRegisters)
             throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
-        else if (schema.staticRegisterCount > limits.maxStaticRegisters)
+        else if (component.staticRegisterCount > limits.maxStaticRegisters)
             throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
-        else if (schema.constraintCount > limits.maxConstraintCount)
+        else if (component.constraintCount > limits.maxConstraintCount)
             throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
-        else if (schema.maxConstraintDegree > limits.maxConstraintDegree)
+        else if (component.maxConstraintDegree > limits.maxConstraintDegree)
             throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
+        });
     }
     catch (error) {
         throw new AssemblyError([error]);

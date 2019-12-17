@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Expression_1 = require("./Expression");
-const LiteralValue_1 = require("./LiteralValue");
 const TraceSegment_1 = require("./TraceSegment");
 const procedures_1 = require("../procedures");
 // CLASS DEFINITION
@@ -17,9 +16,11 @@ class LoadExpression extends Expression_1.Expression {
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get source() {
-        if (this.binding instanceof LiteralValue_1.LiteralValue)
+        if (this.binding instanceof procedures_1.Constant)
             return 'const';
-        else if (this.binding instanceof procedures_1.Subroutine)
+        else if (this.binding instanceof procedures_1.Parameter)
+            return 'param';
+        else if (this.binding instanceof procedures_1.StoreOperation)
             return 'local';
         else if (this.binding instanceof TraceSegment_1.TraceSegment)
             return this.binding.segment;
@@ -27,9 +28,11 @@ class LoadExpression extends Expression_1.Expression {
             throw new Error(`invalid load binding: ${this.binding}`);
     }
     get isStatic() {
-        if (this.binding instanceof LiteralValue_1.LiteralValue)
+        if (this.binding instanceof procedures_1.Constant)
             return true;
-        else if (this.binding instanceof procedures_1.Subroutine)
+        else if (this.binding instanceof procedures_1.Parameter)
+            return false;
+        else if (this.binding instanceof procedures_1.StoreOperation)
             return this.binding.expression.isStatic;
         else if (this.binding instanceof TraceSegment_1.TraceSegment)
             return false;

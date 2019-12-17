@@ -5,9 +5,10 @@ import { lexerErrorMessageProvider } from "./errors";
 
 // LITERALS AND IDENTIFIERS
 // ================================================================================================
-export const HexLiteral = createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/  });
+export const HexLiteral = createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/   });
 export const Literal    = createToken({ name: "Literal",    pattern: /0|[1-9]\d*/,  longer_alt: HexLiteral });
-export const Identifier = createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/  });
+export const Identifier = createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/   });
+export const Handle     = createToken({ name: "Handle",     pattern: /\$[a-zA-Z]\w*/ });
 
 // KEYWORDS
 // ================================================================================================
@@ -33,17 +34,18 @@ export const Sha256     = createToken({ name: "Sha256",     pattern: /sha256/,  
 export const Mask       = createToken({ name: "Mask",       pattern: /mask/,        longer_alt: Identifier });
 export const Inverted   = createToken({ name: "Inverted",   pattern: /inverted/,    longer_alt: Identifier });
 
+export const Function   = createToken({ name: "Function",   pattern: /function/,    longer_alt: Identifier });
 export const Transition = createToken({ name: "Transition", pattern: /transition/,  longer_alt: Identifier });
 export const Evaluation = createToken({ name: "Evaluation", pattern: /evaluation/,  longer_alt: Identifier });
 
-export const Span       = createToken({ name: "Span",       pattern: /span/,        longer_alt: Identifier });
 export const Result     = createToken({ name: "Result",     pattern: /result/,      longer_alt: Identifier });
+export const Param      = createToken({ name: "Param",      pattern: /param/,       longer_alt: Identifier });
 export const Local      = createToken({ name: "Local",      pattern: /local/,       longer_alt: Identifier });
 
 export const Export     = createToken({ name: "Export",     pattern: /export/,      longer_alt: Identifier });
-export const Main       = createToken({ name: "Main",       pattern: /main/,        longer_alt: Identifier });
+export const Registers  = createToken({ name: "Registers",  pattern: /registers/,   longer_alt: Identifier });
+export const Constraints= createToken({ name: "Constraints",pattern: /constraints/, longer_alt: Identifier });
 export const Init       = createToken({ name: "Init",       pattern: /init/,        longer_alt: Identifier });
-export const Seed       = createToken({ name: "Seed",       pattern: /seed/,        longer_alt: Identifier });
 
 // TYPES
 // ================================================================================================
@@ -72,9 +74,11 @@ export const LoadOp     = createToken({ name: "LoadOp",     pattern: Lexer.NA   
 export const LoadConst  = createToken({ name: "LoadConst",  pattern: /load.const/,  longer_alt: Identifier, categories: LoadOp   });
 export const LoadTrace  = createToken({ name: "LoadTrace",  pattern: /load.trace/,  longer_alt: Identifier, categories: LoadOp   });
 export const LoadStatic = createToken({ name: "LoadStatic", pattern: /load.static/, longer_alt: Identifier, categories: LoadOp   });
+export const LoadParam  = createToken({ name: "LoadParam",  pattern: /load.param/,  longer_alt: Identifier, categories: LoadOp   });
 export const LoadLocal  = createToken({ name: "LoadLocal",  pattern: /load.local/,  longer_alt: Identifier, categories: LoadOp   });
 
 export const StoreOp    = createToken({ name: "StoreLocal", pattern: /store.local/, longer_alt: Identifier });
+export const CallOp     = createToken({ name: "CallOp",     pattern: /call/,        longer_alt: Identifier });
 
 // SYMBOLS
 // ================================================================================================
@@ -92,17 +96,19 @@ export const Comment    = createToken({ name: "Comment",    pattern : /#.+/,    
 export const allTokens = [
     WhiteSpace, Comment,
     
+    Export, Registers, Constraints, Init,
+
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift, Cycle,
-    Prng, Sha256, Mask, Inverted, Transition, Evaluation, Span, Result, Local, Export, Main, Init, Seed,
+    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Result, Param, Local,
 
     Scalar, Vector, Matrix,
 
     Get, Slice, BinaryOp, Add, Sub, Mul, Div, Exp, Prod, UnaryOp, Neg, Inv,
-    LoadOp, LoadConst, LoadTrace, LoadStatic, LoadLocal, StoreOp,
+    LoadOp, LoadConst, LoadTrace, LoadStatic, LoadParam, LoadLocal, StoreOp, CallOp,
 
     LParen, RParen, Minus,
 
-    HexLiteral, Literal, Identifier
+    HexLiteral, Literal, Identifier, Handle
 ];
 
 // EXPORT LEXER INSTANCE

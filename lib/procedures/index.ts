@@ -1,2 +1,9 @@
-export { Procedure } from './Procedure';
-export { Subroutine } from './Subroutine';
+export { AirFunction } from './AirFunction';
+export { AirProcedure } from './AirProcedure';
+export { StoreOperation } from './StoreOperation';
+export { ExecutionContext } from './contexts/ExecutionContext';
+export { ProcedureContext } from './contexts/ProcedureContext';
+export { FunctionContext } from './contexts/FunctionContext';
+export { Constant } from './Constant';
+export { Parameter } from './Parameter';
+export { LocalVariable } from './LocalVariable';

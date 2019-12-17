@@ -1,19 +1,24 @@
 // IMPORTS
 // ================================================================================================
 import { Dimensions } from "../expressions/utils";
-import { Subroutine } from "./Subroutine";
+import { StoreOperation } from "./StoreOperation";
+import { validateHandle } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
 export class LocalVariable {
 
     readonly dimensions : Dimensions;
-    private binding?    : Subroutine;
+    readonly handle?    : string;
+    private binding?    : StoreOperation;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(dimensions: Dimensions) {
+    constructor(dimensions: Dimensions, handle?: string) {
         this.dimensions = dimensions;
+        if (handle !== undefined) {
+            this.handle = validateHandle(handle);
+        }
     }
 
     // ACCESSORS
@@ -22,12 +27,12 @@ export class LocalVariable {
         return this.binding !== undefined;
     }
 
-    getBinding(index: number): Subroutine {
+    getBinding(index: number): StoreOperation {
         if (!this.binding) throw new Error(`local variable ${index} has not yet been set`);
         return this.binding;
     }
 
-    bind(value: Subroutine, index: number) {
+    bind(value: StoreOperation, index: number) {
         if (!Dimensions.areSameDimensions(this.dimensions, value.expression.dimensions)) {
             const vd = value.expression.dimensions;
             throw new Error(`cannot store ${vd[0]}x${vd[1]} value in local variable ${index}`);
@@ -42,8 +47,7 @@ export class LocalVariable {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString(): string {
-        if (Dimensions.isScalar(this.dimensions)) return `(local scalar)`;
-        else if (Dimensions.isVector(this.dimensions)) return `(local vector ${this.dimensions[0]})`;
-        else return `(local matrix ${this.dimensions[0]} ${this.dimensions[1]})`;
+        const handle = this.handle ? ` ${this.handle} ` : ' ';
+        return `(local${handle}${Dimensions.toExpressionString(this.dimensions)})`;
     }
 }

@@ -1,34 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// LOAD SOURCE
-// ================================================================================================
-const sources = {
-    'load.const': 'const',
-    'load.trace': 'trace',
-    'load.static': 'static',
-    'load.local': 'local',
-};
-function getLoadSource(operation) {
-    const source = sources[operation];
-    if (!source) {
-        throw new Error(`${operation} is not a valid load operation`);
-    }
-    return source;
-}
-exports.getLoadSource = getLoadSource;
-// STORE TARGET
-// ================================================================================================
-const targets = {
-    'store.local': 'local'
-};
-function getStoreTarget(operation) {
-    const target = targets[operation];
-    if (!target) {
-        throw new Error(`${operation} is not a valid store operation`);
-    }
-    return target;
-}
-exports.getStoreTarget = getStoreTarget;
 var Dimensions;
 (function (Dimensions) {
     function scalar() {
@@ -59,5 +30,27 @@ var Dimensions;
         return d1[0] === d2[0] && d1[1] === d2[1];
     }
     Dimensions.areSameDimensions = areSameDimensions;
+    function toExpressionString(d) {
+        if (Dimensions.isScalar(d))
+            return `scalar`;
+        else if (Dimensions.isVector(d))
+            return `vector ${d[0]}`;
+        else if (Dimensions.isMatrix(d))
+            return `matrix ${d[0]} ${d[1]}`;
+        else
+            throw new Error(`dimensions object ${d} is invalid`);
+    }
+    Dimensions.toExpressionString = toExpressionString;
+    function toString(d) {
+        if (Dimensions.isScalar(d))
+            return `scalar`;
+        else if (Dimensions.isVector(d))
+            return `vector[${d[0]}]`;
+        else if (Dimensions.isMatrix(d))
+            return `matrix[${d[0]},${d[1]}]`;
+        else
+            throw new Error(`dimensions object ${d} is invalid`);
+    }
+    Dimensions.toString = toString;
 })(Dimensions = exports.Dimensions || (exports.Dimensions = {}));
 //# sourceMappingURL=utils.js.map

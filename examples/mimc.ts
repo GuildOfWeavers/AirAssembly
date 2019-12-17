@@ -7,23 +7,26 @@ import { compile, instantiate } from '../index';
 const source = `
 (module
     (field prime 4194304001)
-    (const 
-        (scalar 3))
-    (static
-        (cycle (prng sha256 0x4d694d43 32)))
-    (transition
-        (span 1) (result vector 1)
+    (const $alpha scalar 3)
+    (function $mimcRound
+        (result vector 1)
+        (param $state vector 1) (param $roundKey scalar)
         (add 
-            (exp (load.trace 0) (load.const 0))
-            (get (load.static 0) 0)))
-    (evaluation
-        (span 2) (result vector 1)
-        (sub
-            (load.trace 1)
-            (add
-                (exp (load.trace 0) (load.const 0))
-                (get (load.static 0) 0))))
-    (export main (init seed) (steps 32)))
+            (exp (load.param $state) (load.const $alpha))
+            (load.param $roundKey)))
+    (export mimc
+        (registers 1) (constraints 1) (steps 64)
+        (static
+            (cycle (prng sha256 0x4d694d43 64)))
+        (init
+            (param $seed vector 1)
+            (load.param $seed))
+        (transition
+            (call $mimcRound (load.trace 0) (get (load.static 0) 0)))
+        (evaluation
+            (sub
+                (load.trace 1)
+                (call $mimcRound (load.trace 0) (get (load.static 0) 0))))))
 `;
 
 // EXAMPLE CODE
@@ -31,7 +34,7 @@ const source = `
 
 // instantiate AirModule object
 const schema = compile(Buffer.from(source));
-const air = instantiate(schema, { extensionFactor: 16 });
+const air = instantiate(schema, 'mimc', { extensionFactor: 16 });
 
 // generate trace table
 const pContext = air.initProvingContext([], [3n]);

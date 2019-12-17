@@ -1,38 +1,3 @@
-// IMPORTS
-// ================================================================================================
-import { StoreTarget, LoadSource } from "@guildofweavers/air-assembly";
-
-// LOAD SOURCE
-// ================================================================================================
-const sources: { [index: string]: LoadSource } = {
-    'load.const'    : 'const',
-    'load.trace'    : 'trace',
-    'load.static'   : 'static',
-    'load.local'    : 'local',
-};
-
-export function getLoadSource(operation: string): LoadSource {
-    const source = sources[operation];
-    if (!source) {
-        throw new Error(`${operation} is not a valid load operation`);
-    }
-    return source;
-}
-
-// STORE TARGET
-// ================================================================================================
-const targets: { [index: string]: StoreTarget } = {
-    'store.local': 'local'
-};
-
-export function getStoreTarget(operation: string): StoreTarget {
-    const target = targets[operation];
-    if (!target) {
-        throw new Error(`${operation} is not a valid store operation`);
-    }
-    return target;
-}
-
 // DIMENSIONS
 // ================================================================================================
 export type Dimensions = [number, number];
@@ -64,5 +29,19 @@ export namespace Dimensions {
 
     export function areSameDimensions(d1: Dimensions, d2: Dimensions): boolean {
         return d1[0] === d2[0] && d1[1] === d2[1];
+    }
+
+    export function toExpressionString(d: Dimensions): string {
+        if (Dimensions.isScalar(d))         return `scalar`;
+        else if (Dimensions.isVector(d))    return `vector ${d[0]}`;
+        else if (Dimensions.isMatrix(d))    return `matrix ${d[0]} ${d[1]}`;
+        else throw new Error(`dimensions object ${d} is invalid`);
+    }
+
+    export function toString(d: Dimensions): string {
+        if (Dimensions.isScalar(d))         return `scalar`;
+        else if (Dimensions.isVector(d))    return `vector[${d[0]}]`;
+        else if (Dimensions.isMatrix(d))    return `matrix[${d[0]},${d[1]}]`;
+        else throw new Error(`dimensions object ${d} is invalid`);
     }
 }

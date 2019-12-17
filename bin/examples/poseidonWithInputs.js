@@ -8,74 +8,60 @@ const index_1 = require("../index");
 const source = `
 (module
     (field prime 340282366920938463463374607393113505793)
-    (const
-        (scalar 5)
-        (matrix
+    (const $alpha scalar 5)
+	(const $mds matrix
             (214709430312099715322788202694750992687  54066244720673262921467176400601950806 122144641489288436529811410313120680228)
             ( 83122512782280758906222839313578703456 163244785834732434882219275190570945140  65865044136286518938950810559808473518)
-            ( 12333142678723890553278650076570367543 308304933036173868454178201249080175007  76915505462549994902479959396659996669)))
-    (static
-        (input secret vector (steps 64) (shift -1))
-        (input secret vector (steps 64) (shift -1))
-        (mask inverted (input 0))
-        (cycle 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 0)
-        (cycle (prng sha256 0x486164657331 64))
-        (cycle (prng sha256 0x486164657332 64))
-        (cycle (prng sha256 0x486164657333 64)))
-    (transition
-        (span 1) (result vector 3)
-        (local vector 3) (local vector 3)
-        (store.local 0 
-            (prod
-                (load.const 1)
-                (exp
-                    (add (load.trace 0) (slice (load.static 0) 4 6))
-                    (load.const 0))))
-        (store.local 1
-            (prod
-                (load.const 1)
-                (vector
-                    (add (slice (load.trace 0) 0 1) (slice (load.static 0) 4 5))
-                    (exp
-                        (add (get (load.trace 0) 2) (get (load.static 0) 6))
-                        (load.const 0)))))
-        (add
-            (vector (slice (load.static 0) 0 1) (scalar 0))
-            (mul 
-                (add
-                    (mul (load.local 0) (get (load.static 0) 3))
-                    (mul (load.local 1) (sub (scalar 1)  (get (load.static 0) 3))))
-                (get (load.static 0) 2)))
-    )
-    (evaluation
-        (span 2) (result vector 3)
-		(local vector 3) (local vector 3)
-        (store.local 0 
-            (prod
-                (load.const 1)
-                (exp
-                    (add (load.trace 0) (slice (load.static 0) 4 6))
-                    (load.const 0))))
-        (store.local 1
-            (prod
-                (load.const 1)
-                (vector
-                    (add (slice (load.trace 0) 0 1) (slice (load.static 0) 4 5))
-                    (exp
-                        (add (get (load.trace 0) 2) (get (load.static 0) 6))
-                        (load.const 0)))))
-        (sub
-            (load.trace 1)
+			( 12333142678723890553278650076570367543 308304933036173868454178201249080175007  76915505462549994902479959396659996669))
+	(function $poseidonRound
+		(result vector 3)
+		(param $state vector 3) (param $roundKeys vector 3) (param $isFullRound scalar)
+		(local $fullRound vector 3) (local $partRound vector 3)
+		(store.local $fullRound
+			(prod
+				(load.const $mds)
+				(exp
+					(add (load.param $state) (load.param $roundKeys))
+					(load.const $alpha))))
+		(store.local $partRound
+			(prod
+				(load.const $mds)
+				(vector
+					(add (slice (load.param $state) 0 1) (slice (load.param $roundKeys) 1 2))
+					(exp
+						(add (get (load.param $state) 2) (get (load.param $roundKeys) 2))
+						(load.const $alpha)))))
+		(add
+			(mul (load.local $fullRound) (load.param $isFullRound))
+			(mul (load.local $partRound) (sub (scalar 1)  (load.param $isFullRound)))))
+	(export poseidon
+		(registers 3) (constraints 3) (steps 64)
+		(static
+            (input secret (steps 64) (shift -1))
+            (input secret (steps 64) (shift -1))
+            (mask inverted (input 0))
+            (cycle 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 0)
+            (cycle (prng sha256 0x486164657331 64))
+            (cycle (prng sha256 0x486164657332 64))
+            (cycle (prng sha256 0x486164657333 64)))
+        (init
+			(vector (slice (load.static 0) 0 1) (scalar 0)))
+        (transition
+            (local vector 3)
+            (store.local 0
+                (call $poseidonRound (load.trace 0) (slice (load.static 0) 4 6) (get (load.static 0) 3)))
             (add
-                (vector (slice (load.static 0) 0 1) (scalar 0))
-                (mul 
-                    (add
-                        (mul (load.local 0) (get (load.static 0) 3))
-                        (mul (load.local 1) (sub (scalar 1)  (get (load.static 0) 3))))
-                    (get (load.static 0) 2)))
-		)
-	)
-    (export main (init seed) (steps 64)))
+                (mul (load.local 0)	(get (load.static 0) 2))
+                (vector (slice (load.static 0) 0 1) (scalar 0))))
+        (evaluation
+            (local vector 3)
+            (store.local 0
+                (call $poseidonRound (load.trace 0) (slice (load.static 0) 4 6) (get (load.static 0) 3)))
+			(sub
+				(load.trace 1)
+				(add
+                    (mul (load.local 0)	(get (load.static 0) 2))
+                    (vector (slice (load.static 0) 0 1) (scalar 0)))))))
 `;
 // EXAMPLE CODE
 // ================================================================================================
@@ -85,10 +71,10 @@ const inputs = [
 ];
 // instantiate AirModule object
 const schema = index_1.compile(Buffer.from(source));
-const stats = index_1.analyze(schema);
-const air = index_1.instantiate(schema);
+const stats = index_1.analyze(schema, 'poseidon');
+const air = index_1.instantiate(schema, 'poseidon');
 // generate trace table
-const pContext = air.initProvingContext(inputs, [inputs[0][0], inputs[1][0], 0n]);
+const pContext = air.initProvingContext(inputs);
 const trace = pContext.generateExecutionTrace();
 // generate constraint evaluation table
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);

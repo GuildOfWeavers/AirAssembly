@@ -1,18 +1,19 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure, Subroutine } from "../procedures";
+import { AirProcedure, StoreOperation } from "../procedures";
 import { Expression, LoadExpression } from "../expressions";
 import { LocalVariable } from "../procedures/LocalVariable";
 
 // PROCEDURE COMPRESSOR
 // ================================================================================================
-export function compressProcedure(procedure: Procedure): Procedure {
+export function compressProcedure(procedure: AirProcedure): AirProcedure {
 
+    /*
     let expressions = [...procedure.subroutines.map(s => s.expression), procedure.result];
     const subroutineReferences = new Map<Subroutine, LoadExpression[]>();
     expressions.forEach(e => collectSubroutineReferences(e, subroutineReferences));
 
-    const retainedSubroutines: Subroutine[] = [];
+    const retainedSubroutines: StoreOperation[] = [];
     for (let i = 0; i < procedure.subroutines.length; i++) {
         let subroutine = procedure.subroutines[i];
         let references = subroutineReferences.get(subroutine);
@@ -29,15 +30,15 @@ export function compressProcedure(procedure: Procedure): Procedure {
     const locals = procedure.locals.forEach(v => new LocalVariable(v));
 
     procedure.replaceSubroutines(retainedSubroutines);
-
+    */
     return procedure;
 }
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function collectSubroutineReferences(e: Expression, result: Map<Subroutine, LoadExpression[]>): void {
+function collectSubroutineReferences(e: Expression, result: Map<StoreOperation, LoadExpression[]>): void {
     if (e instanceof LoadExpression) {
-        if (!(e.binding instanceof Subroutine)) return;
+        if (!(e.binding instanceof StoreOperation)) return;
         const loads = result.get(e.binding) || [];
         loads.push(e)
         result.set(e.binding, loads);

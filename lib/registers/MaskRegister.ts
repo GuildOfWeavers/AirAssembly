@@ -1,10 +1,11 @@
 // IMPORTS
 // ================================================================================================
+import { MaskRegister as IMaskRegister } from '@guildofweavers/air-assembly';
 import { StaticRegister } from "./StaticRegister";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class MaskRegister extends StaticRegister {
+export class MaskRegister extends StaticRegister implements IMaskRegister {
 
     readonly source     : number;
     readonly inverted   : boolean;

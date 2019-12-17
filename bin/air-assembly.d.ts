@@ -47,179 +47,257 @@ declare module '@guildofweavers/air-assembly' {
     // --------------------------------------------------------------------------------------------
 
     /**
-     * Parses and compiles AirAssembly source code into an AirSchema object.
-     * @param path Path to the file containing AirAssembly source code.
-     * @param limits StarkLimits object against which the schema should be validated.
+     * Parses and compiles AirAssembly source code into an AirSchema object
+     * @param path Path to the file containing AirAssembly source code
+     * @param limits StarkLimits object against which the schema should be validated
      */
     export function compile(path: string, limits?: Partial<StarkLimits>): AirSchema;
 
     /**
-     * * Parses and compiles AirAssembly source code into an AirSchema object.
-     * @param source Buffer with AirAssembly source code (encoded in UTF8).
-     * @param limits StarkLimits object against which the schema should be validated.
+     * * Parses and compiles AirAssembly source code into an AirSchema object
+     * @param source Buffer with AirAssembly source code (encoded in UTF8)
+     * @param limits StarkLimits object against which the schema should be validated
      */
     export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
 
     /**
-     * Creates an AirModule object from the specified AirSchema.
-     * @param schema Schema from which to create the AirModule.
-     * @param options Additional options for the AirModule.
+     * Creates an AirModule object for the specified component
+     * @param schema Schema containing the component to instantiate
+     * @param component Name of the component to instantiate
+     * @param options Additional options for the AirModule
      */
-    export function instantiate(schema: AirSchema, options?: Partial<AirModuleOptions>): AirModule;
+    export function instantiate(schema: AirSchema, component: string, options?: Partial<AirModuleOptions>): AirModule;
 
     /** 
      * Performs basic analysis of the specified schema to infer such things as degree of transition
      * constraints, number of additions and multiplications needed to evaluate transition function etc.
+     * @param schema Schema containing the component to analyze
+     * @param component Name of the component to analyze
      */
-    export function analyze(schema: AirSchema): SchemaAnalysisResult;
+    export function analyze(schema: AirSchema, component: string): ComponentAnalysisResult;
 
     // AIR SCHEMA
     // --------------------------------------------------------------------------------------------
     export class AirSchema {
 
-        /** A finite field object instantiated for the field specified for the computation. */
+        /** A finite field defined for the module */
         readonly field: FiniteField;
 
-        /** An array of LiteralValue expressions describing constants defined for the computation. */
-        readonly constants: ReadonlyArray<LiteralValue>;
+        /** Constants defined for the module */
+        readonly constants: ReadonlyArray<Constant>;
 
-        /** An array of StaticRegister objects describing static registers defined for the computation. */
+        /** Functions defined for the module */
+        readonly functions: ReadonlyArray<AirFunction>;
+
+        /** Components defined for the module exposed as a map keyed by component name */
+        readonly components: ReadonlyMap<string, AirComponent>;
+
+        /**
+         * Creates a new AirSchema object
+         * @param fieldType Type of the finite field
+         * @param fieldModulus Modules of the prime filed
+         */
+        constructor(fieldType: 'prime', fieldModulus: bigint);
+
+        /**
+         * Adds a constant to the module
+         * @param value Value of the constant
+         * @param handle Optional constant handle
+         */
+        addConstant(value: bigint | bigint[] | bigint[][], handle?: string): void;
+
+        /**
+         * Creates a new function context from the current state of the schema
+         * @param resultType Dimensions of the expected function return value
+         * @param handle Optional function handle
+         */
+        createFunctionContext(resultType: Dimensions, handle?: string): FunctionContext;
+
+        /**
+         * Adds a function to the module
+         * @param context Function context, including parameters and local variables
+         * @param statements A list of store operations within the function body
+         * @param result The return expression of the function
+         */
+        addFunction(context: FunctionContext, statements: StoreOperation[], result: Expression): void;
+
+        /**
+         * Creates a component for a new computation within the module
+         * @param name Name of the component
+         * @param registers Number of dynamic registers expected in the computation
+         * @param constraints Number of constraints expected in the computation
+         * @param steps Minimal cycle length possible for the computation
+         */
+        createComponent(name: string, registers: number, constraints: number, steps: number): AirComponent;
+
+        /**
+         * Adds a component to the module
+         * @param component Component to add to the module
+         */
+        addComponent(component: AirComponent): void;
+    }
+
+    export interface AirComponent {
+
+        /** Name of the computation */
+        readonly name: string;
+
+        /** Static registers defined for the computation */
         readonly staticRegisters: ReadonlyArray<StaticRegister>;
 
         /** Number of secret input registers defined for the computation */
         readonly secretInputCount: number;
 
-        /** A Procedure object describing transition function expression defined for the computation. */
-        readonly transitionFunction: Procedure;
+        /** Trace initialization procedure defined for the computation */
+        readonly traceInitializer: AirProcedure;
 
-        /** A Procedure object describing transition constraint evaluator expression defined for the computation. */
-        readonly constraintEvaluator: Procedure;
+        /** Transition function procedure defined for the computation */
+        readonly transitionFunction: AirProcedure;
 
-        /** An array of constraint descriptors with metadata for the defined transition constraints */
+        /** Transition constraint evaluator procedure defined for the computation. */
+        readonly constraintEvaluator: AirProcedure;
+
+        /** Transition constraint properties */
         readonly constraints: ConstraintDescriptor[];
 
-        /** An integer value specifying the highest degree of transition constraints defined for the computation. */
+        /** Highest degree of transition constraints defined for the computation. */
         readonly maxConstraintDegree: number;
 
-        /** A map of export declarations, where the key is the name of the export, and the value is an ExportDeclaration object. */
-        readonly exports: ReadonlyMap<string, ExportDeclaration>;
+        addInputRegister(scope: string, binary: boolean, parentIdx?: number, steps?: number, offset?: number): void;
+        addMaskRegister(sourceIdx: number, inverted: boolean): void;
+        addCyclicRegister(values: bigint[] | PrngSequence): void;
+        
+        /**
+         * Creates a new procedure context from the current state of the component
+         * @param name Name of the procedure
+         */
+        createProcedureContext(name: ProcedureName): ProcedureContext;
 
-        constructor();
-
-        setField(type: 'prime', modulus: bigint): void;
-        setConstants(values: LiteralValue[]): void;
-        setStaticRegisters(registers: StaticRegisterSet): void;
-        setTransitionFunction(span: number, width: number, locals: Dimensions[]): Procedure;
-        setConstraintEvaluator(span: number, width: number, locals: Dimensions[]): Procedure;
-        setExports(declarations: ExportDeclaration[]): void;
+        setTraceInitializer(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
+        setTransitionFunction(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
+        setConstraintEvaluator(context: ProcedureContext, statements: StoreOperation[], result: Expression): void;
     }
 
-    export type ProcedureName = 'transition' | 'evaluation';
-    export interface Procedure {
-        readonly name           : ProcedureName;
-        readonly span           : number;
-        readonly locals         : ReadonlyArray<Dimensions>;
-        readonly subroutines    : ReadonlyArray<Subroutine>;
+    // FUNCTIONS AND PROCEDURES
+    // --------------------------------------------------------------------------------------------
+    export interface AirFunction {
+        readonly handle?        : string;
+        readonly params         : ReadonlyArray<Parameter>;
+        readonly locals         : ReadonlyArray<LocalVariable>;
+        readonly statements     : ReadonlyArray<StoreOperation>;
         readonly result         : Expression;
-        readonly resultLength   : number;
-
-        setResult(expression: Expression): void;
-        addSubroutine(expression: Expression, localVarIdx: number): void;
-        buildLoadExpression(operation: string, index: number): LoadExpression;
     }
 
-    export interface Subroutine {
+    export type ProcedureName = 'init' | 'transition' | 'evaluation';
+    export interface AirProcedure {
+        readonly name           : ProcedureName;
+        readonly params         : ReadonlyArray<Parameter>
+        readonly locals         : ReadonlyArray<LocalVariable>;
+        readonly statements     : ReadonlyArray<StoreOperation>;
+        readonly result         : Expression;
+    }
+
+    export interface Constant {
+        readonly dimensions : Dimensions;
+        readonly value      : LiteralValue;
+        readonly handle?    : string;
+    }
+
+    export interface Parameter {
+        readonly dimensions : Dimensions;
+        readonly handle?    : string;
+    }
+
+    export interface LocalVariable {
+        readonly dimensions : Dimensions;
+        readonly handle?    : string;
+    }
+
+    export interface StoreOperation {
         readonly expression     : Expression;
-        readonly localVarIdx    : number;
+        readonly target         : number;
         readonly dimensions     : Dimensions;
     }
 
-    export class ExportDeclaration {
-        readonly name           : string;
-        readonly cycleLength    : number;
-        readonly initializer?   : TraceInitializer;
+    export interface ExecutionContext {
+        readonly field          : FiniteField;
+        readonly constants      : ReadonlyArray<Constant>;
+        readonly functions      : ReadonlyArray<AirFunction>;
+        readonly params         : ReadonlyArray<Parameter>;
+        readonly locals         : ReadonlyArray<LocalVariable>;
 
-        readonly isMain         : boolean;
+        addParam(dimensions: Dimensions, handle?: string): void;
+        addLocal(dimensions: Dimensions, handle?: string): void;
 
-        constructor(name: string, cycleLength: number, initializer?: LiteralValue | 'seed');
+        buildLiteralValue(value: bigint | bigint[] | bigint[]): LiteralValue;
+        buildBinaryOperation(operation: string, lhs: Expression, rhs: Expression): BinaryOperation;
+        buildUnaryOperation(operation: string, operand: Expression): UnaryOperation;
+        buildMakeVectorExpression(elements: Expression[]): MakeVector;
+        buildGetVectorElementExpression(source: Expression, index: number): GetVectorElement;
+        buildSliceVectorExpression(source: Expression, start: number, end: number): SliceVector;
+        buildMakeMatrixExpression(elements: Expression[][]): MakeMatrix;
+        buildLoadExpression(operation: string, indexOrHandle: number | string): LoadExpression;
+        buildStoreOperation(indexOrHandle: number | string, value: Expression): StoreOperation;
+        buildCallExpression(indexOrHandle: number | string, params: Expression[]): CallExpression;
     }
 
-    export type TraceInitializer = (field: FiniteField, seed?: bigint[]) => bigint[];
+    export interface FunctionContext extends ExecutionContext{        
+        readonly result         : Dimensions;
+    }
+
+    export interface ProcedureContext extends ExecutionContext {
+        readonly name           : ProcedureName;
+        readonly traceRegisters : any;
+        readonly staticRegisters: any;
+        readonly width          : number;
+    }
 
     // STATIC REGISTERS
     // --------------------------------------------------------------------------------------------
-    export abstract class StaticRegister { }
+    export interface StaticRegister {}
 
-    export class InputRegister extends StaticRegister {
+    export interface InputRegister extends StaticRegister {
         readonly secret     : boolean;
         readonly rank       : number;
         readonly binary     : boolean;
         readonly offset     : number;
         readonly parent?    : number;
         readonly steps?     : number;
-
-        private constructor();
     }
 
-    export class CyclicRegister extends StaticRegister {
-        
-        private constructor();
-
-        getValues(field: FiniteField): bigint[];
+    export interface MaskRegister extends StaticRegister {
+        readonly source     : number;
+        readonly inverted   : boolean;
     }
 
-    export class PrngValues {
+    export interface CyclicRegister extends StaticRegister {
+        readonly cycleLength: number;
+
+        getValues(): bigint[];
+    }
+
+    export class PrngSequence {
         readonly method : 'sha256';
         readonly seed   : Buffer;
-        readonly count  : number;
+        readonly length : number;
 
         constructor(method: string, seed: bigint, count: number);
 
         getValues(field: FiniteField): bigint[];
     }
 
-    export class MaskRegister extends StaticRegister {
-        readonly source     : number;
-        readonly inverted   : boolean;
-
-        private constructor();
-    }
-
-    export class StaticRegisterSet {
-                
-        readonly inputs : ReadonlyArray<InputRegister>;
-        readonly cyclic : ReadonlyArray<CyclicRegister>;
-        readonly masked : ReadonlyArray<MaskRegister>;
-        readonly size   : number;
-
-        constructor();
-
-        addInput(scope: string, binary: boolean, typeOrParent: string | number, steps?: number): void;
-        addCyclic(values: bigint[]): void;
-        addMask(source: number, inverted: boolean): void;
-
-        get(index: number): StaticRegister;
-        map<T>(callback: (register: StaticRegister, index: number) => T): T[];
-        forEach(callback: (register: StaticRegister, index: number) => void): void;
-
-        getDanglingInputs(): number[];
-    }
-
     // EXPRESSIONS
     // --------------------------------------------------------------------------------------------
     export type Dimensions = [number, number];
     export type Degree = bigint | bigint[] | bigint[][];
-    export type StoreTarget = 'local';
-    export type LoadSource = 'const' | 'trace' | 'static' | 'local';
+    export type LoadSource = 'const' | 'trace' | 'static' | 'param' | 'local';  // TODO: rename?
 
     export type BinaryOperationType = 'add' | 'sub' | 'mul' | 'div' | 'exp' | 'prod';
     export type UnaryOperationType = 'neg' | 'inv';
 
-    export abstract class Expression {
+    export interface Expression {
         readonly dimensions : Dimensions;
         readonly children   : Expression[];
-
-        constructor(dimensions: Dimensions, children?: Expression[]);
 
         readonly isScalar   : boolean;
         readonly isVector   : boolean;
@@ -228,57 +306,49 @@ declare module '@guildofweavers/air-assembly' {
         readonly isStatic   : boolean;
     }
 
-    export class LiteralValue extends Expression {
+    export interface LiteralValue extends Expression {
         readonly value      : bigint | bigint[] | bigint[][];
-
-        constructor(value: bigint | bigint[] | bigint[][]);
     }
 
-    export class BinaryOperation extends Expression {
+    export interface BinaryOperation extends Expression {
         readonly operation  : BinaryOperationType;
         readonly lhs        : Expression;
         readonly rhs        : Expression;
-
-        constructor(operation: string, lhs: Expression, rhs: Expression);
     }
 
-    export class UnaryOperation extends Expression {
+    export interface UnaryOperation extends Expression {
         readonly operation  : UnaryOperationType;
         readonly operand    : Expression;
-
-        constructor(operation: string, operand: Expression);
     }
 
-    export class MakeVector extends Expression {
+    export interface MakeVector extends Expression {
         readonly elements   : Expression[];
-
-        constructor(elements: Expression[]);
     }
 
-    export class GetVectorElement extends Expression {
+    export interface GetVectorElement extends Expression {
         readonly source     : Expression;
         readonly index      : number;
-
-        constructor(source: Expression, index: number);
     }
 
-    export class SliceVector extends Expression {
+    export interface SliceVector extends Expression {
         readonly source     : Expression;
         readonly start      : number;
         readonly end        : number;
-
-        constructor(source: Expression, start: number, end: number);
     }
 
-    export class MakeMatrix extends Expression {
+    export interface MakeMatrix extends Expression {
         readonly elements   : Expression[][];
-
-        constructor(elements: Expression[][]);
     }
 
-    export class LoadExpression extends Expression {
-        readonly source : LoadSource;
-        readonly index  : number;
+    export interface LoadExpression extends Expression {
+        readonly source     : LoadSource;
+        readonly index      : number;
+    }
+
+    export interface CallExpression extends Expression {
+        readonly func       : AirFunction;
+        readonly index      : number;
+        readonly params     : Expression[];
     }
 
     // ANALYSIS
@@ -292,7 +362,7 @@ declare module '@guildofweavers/air-assembly' {
         };
     }
 
-    export interface SchemaAnalysisResult {
+    export interface ComponentAnalysisResult {
         readonly transition : ProcedureAnalysisResult;
         readonly evaluation : ProcedureAnalysisResult;
     }
@@ -462,11 +532,20 @@ declare module '@guildofweavers/air-assembly' {
 
     // INTERNAL
     // --------------------------------------------------------------------------------------------
+    export interface TraceInitializer {
+        /**
+         * @param k Array with values of static registers at last step
+         * @param p0 Vector with trace seed values
+         * @returns Array with values of execution trace at step 0
+         */
+        (k: bigint[], p0: Vector): bigint[];
+    }
+
     export interface TransitionFunction {
         /**
          * @param r Array with values of trace registers at the current step
          * @param k Array with values of static registers at the current step
-         * @returns Array to hold values of trace registers for the next step
+         * @returns Array with values of trace registers for the next step
          */
         (r: bigint[], k: bigint[]): bigint[];
     }
@@ -476,7 +555,7 @@ declare module '@guildofweavers/air-assembly' {
          * @param r Array with values of trace registers at the current step
          * @param n Array with values of trace registers at the next step
          * @param k Array with values of static registers at the current step
-         * @readonly Array to hold values of constraint evaluated at the current step
+         * @returns Array with values of constraint evaluated at the current step
          */
         (r: bigint[], n: bigint[], k: bigint[]): bigint[];
     }

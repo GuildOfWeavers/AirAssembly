@@ -1,10 +1,12 @@
 // IMPORTS
 // ================================================================================================
+import { InputRegister as IInputRegister } from '@guildofweavers/air-assembly';
 import { StaticRegister } from "./StaticRegister";
+import { validate, isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
 // ================================================================================================
-export class InputRegister extends StaticRegister {
+export class InputRegister extends StaticRegister implements IInputRegister {
 
     readonly secret     : boolean;
     readonly rank       : number;
@@ -15,12 +17,14 @@ export class InputRegister extends StaticRegister {
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(scope: string, rank: number, binary: boolean, offset: number, parent?: number, steps?: number) {
+    constructor(scope: string, rank: number, binary: boolean, parent?: number, steps?: number, offset = 0) {
         super();
-        if (scope !== 'public' && scope !== 'secret')
-            throw new Error(`invalid input register scope '${scope}'`);
-        else if (rank > 1 && parent === undefined)
-            throw new Error(`invalid input register rank: register of rank ${rank} has no parent`);
+        validate(scope === 'public' || scope === 'secret', errors.inputScopeInvalid(scope));
+        validate(rank > 0, errors.inputRankTooSmall());
+        validate(rank === 1 || parent !== undefined, errors.inputRankInvalid(rank));
+        if (steps !== undefined) {
+            validate(isPowerOf2(steps), errors.stepsNotPowerOf2());
+        }
 
         this.secret = (scope === 'secret');
         this.rank = rank;
@@ -44,23 +48,19 @@ export class InputRegister extends StaticRegister {
     // --------------------------------------------------------------------------------------------
     toString(): string {
         const scope = this.secret ? 'secret' : 'public';
-        const type = getTypeExpression(this.rank, this.parent);
-        const binary = this.binary ? ` binary` : ``;
-        const offset = getOffsetExpression(this.offset);
+        const parent = this.parent === undefined ? '' : ` (parent ${this.parent})`;
+        const binary = this.binary ? ' binary' :'';
+        const offset = this.offset === 0 ? '' : ` (shift ${this.offset})`;
         const steps = (this.steps !== undefined) ? ` (steps ${this.steps})` : '';
-        return `(input ${scope}${binary} ${type}${steps}${offset})`;
+        return `(input ${scope}${binary}${parent}${steps}${offset})`;
     }
 }
 
-// HELPER FUNCTIONS
+// ERRORS
 // ================================================================================================
-function getTypeExpression(rank: number, parent?: number) {
-    if (rank === 0) return 'scalar';
-    else if (rank === 1) return 'vector';
-    else return `(parent ${parent})`;
-}
-
-function getOffsetExpression(offset: number) {
-    if (offset === 0) return '';
-    else return ` (shift ${offset})`;
-}
+const errors = {
+    inputScopeInvalid   : (s: any) => `input register scope '${s}' is not valid`,
+    inputRankInvalid    : (r: any) => `invalid input register rank: register of rank ${r} has no parent`,
+    inputRankTooSmall   : () => `input register rank must be greater than 0`,
+    stepsNotPowerOf2    : () => `input register cycle length must be a power of 2`
+};

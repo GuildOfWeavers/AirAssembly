@@ -7,6 +7,7 @@ export { GetVectorElement } from './GetVectorElement';
 export { SliceVector } from './SliceVector';
 export { MakeMatrix } from './MakeMatrix';
 export { LoadExpression } from './LoadExpression';
+export { CallExpression } from './CallExpression';
 export { TraceSegment } from './TraceSegment';
 export { ExpressionVisitor } from './ExpressionVisitor';
 export { Dimensions } from './utils';

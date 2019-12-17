@@ -3,6 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const crypto = require("crypto");
+// CONSTANTS
+// ================================================================================================
+const MAX_HANDLE_LENGTH = 128;
+const HANDLE_REGEXP = /\$[a-zA-Z]\w*/g;
 // PUBLIC FUNCTIONS
 // ================================================================================================
 function isPowerOf2(value) {
@@ -14,10 +18,24 @@ function isPowerOf2(value) {
     }
 }
 exports.isPowerOf2 = isPowerOf2;
-function getCompositionFactor(schema) {
-    return 2 ** Math.ceil(Math.log2(schema.maxConstraintDegree));
+function getCompositionFactor(component) {
+    return 2 ** Math.ceil(Math.log2(component.maxConstraintDegree));
 }
 exports.getCompositionFactor = getCompositionFactor;
+// VALIDATORS
+// ================================================================================================
+function validate(condition, errorMessage) {
+    if (!condition)
+        throw new Error(errorMessage);
+}
+exports.validate = validate;
+function validateHandle(handle) {
+    validate(handle.length <= MAX_HANDLE_LENGTH, `handle '${handle}' is invalid: handle length cannot exceed ${MAX_HANDLE_LENGTH} characters`);
+    const matches = handle.match(HANDLE_REGEXP);
+    validate(matches !== null && matches.length === 1, `handle '${handle}' is invalid`);
+    return handle;
+}
+exports.validateHandle = validateHandle;
 // PRNG FUNCTIONS
 // ================================================================================================
 function sha256prng(seed, count, field) {
