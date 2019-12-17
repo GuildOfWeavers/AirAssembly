@@ -3,39 +3,30 @@ import { compile, instantiate, analyze, prng } from '../index';
 const schema = compile(Buffer.from(`
 (module
     (field prime 96769)
-    (const 
-        (scalar 3))
-    (static
-        (input secret vector (steps 16) (shift -1))
-        (mask inverted (input 0))
-        (cycle (prng sha256 0x4d694d43 16)))
-    (transition
-        (span 1) (result vector 1)
-        (local vector 1)
-        (store.local 0 
-			(add 
-				(exp (load.trace 0) (load.const 0))
-                (get (load.static 0) 2)))
-        (add
-            (mul (load.local 0)	(get (load.static 0) 1))
-			(get (load.static 0) 0)
-        )
-    )
-    (evaluation
-        (span 2) (result vector 1)
-		(local vector 1)
-        (store.local 0 
-			(add 
-				(exp (load.trace 0) (load.const 0))
-                (get (load.static 0) 2)))
-        (sub
-            (load.trace 1)
-            (add
-				(mul (load.local 0)	(get (load.static 0) 1))
-				(get (load.static 0) 0))
-		)
+    (const $alpha scalar 3)
+    (function $mimcRound
+        (result vector 1)
+        (param $state vector 1) (param $key scalar)
+        (add 
+            (exp (load.param $state) (load.const $alpha))
+            (load.param $key)))
+    (export main
+		(registers 1) (constraints 1) (steps 16)
+		(static
+			(input secret (steps 16) (shift -1))
+			(mask inverted (input 0))
+            (cycle (prng sha256 0x4d694d43 16)))
+        (init
+            (slice (load.static 0) 0 0))
+		(transition
+			(call $mimcRound (load.trace 0) (get (load.static 0) 2)))
+		(evaluation
+			(sub
+				(load.trace 1)
+				(call $mimcRound (load.trace 0) (get (load.static 0) 2))))
+	
 	)
-    (export main (init seed) (steps 16)))
+)
 `));
 
 console.log(schema.toString());
@@ -44,9 +35,9 @@ const inputs = [
     [3n, 4n, 5n, 6n]
 ];
 
-const air = instantiate(schema);
+const air = instantiate(schema, 'main');
 
-const pContext = air.initProvingContext(inputs, [3n]);
+const pContext = air.initProvingContext(inputs);
 const trace = pContext.generateExecutionTrace();
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);
 const pEvaluations = air.field.evalPolysAtRoots(pPolys, pContext.evaluationDomain);

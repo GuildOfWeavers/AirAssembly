@@ -9,6 +9,7 @@ const errors_1 = require("./errors");
 exports.HexLiteral = chevrotain_1.createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/ });
 exports.Literal = chevrotain_1.createToken({ name: "Literal", pattern: /0|[1-9]\d*/, longer_alt: exports.HexLiteral });
 exports.Identifier = chevrotain_1.createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/ });
+exports.Handle = chevrotain_1.createToken({ name: "Handle", pattern: /\$[a-zA-Z]\w*/ });
 // KEYWORDS
 // ================================================================================================
 exports.Module = chevrotain_1.createToken({ name: "Module", pattern: /module/, longer_alt: exports.Identifier });
@@ -28,15 +29,16 @@ exports.Prng = chevrotain_1.createToken({ name: "Prng", pattern: /prng/, longer_
 exports.Sha256 = chevrotain_1.createToken({ name: "Sha256", pattern: /sha256/, longer_alt: exports.Identifier });
 exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/, longer_alt: exports.Identifier });
 exports.Inverted = chevrotain_1.createToken({ name: "Inverted", pattern: /inverted/, longer_alt: exports.Identifier });
+exports.Function = chevrotain_1.createToken({ name: "Function", pattern: /function/, longer_alt: exports.Identifier });
 exports.Transition = chevrotain_1.createToken({ name: "Transition", pattern: /transition/, longer_alt: exports.Identifier });
 exports.Evaluation = chevrotain_1.createToken({ name: "Evaluation", pattern: /evaluation/, longer_alt: exports.Identifier });
-exports.Span = chevrotain_1.createToken({ name: "Span", pattern: /span/, longer_alt: exports.Identifier });
 exports.Result = chevrotain_1.createToken({ name: "Result", pattern: /result/, longer_alt: exports.Identifier });
+exports.Param = chevrotain_1.createToken({ name: "Param", pattern: /param/, longer_alt: exports.Identifier });
 exports.Local = chevrotain_1.createToken({ name: "Local", pattern: /local/, longer_alt: exports.Identifier });
 exports.Export = chevrotain_1.createToken({ name: "Export", pattern: /export/, longer_alt: exports.Identifier });
-exports.Main = chevrotain_1.createToken({ name: "Main", pattern: /main/, longer_alt: exports.Identifier });
+exports.Registers = chevrotain_1.createToken({ name: "Registers", pattern: /registers/, longer_alt: exports.Identifier });
+exports.Constraints = chevrotain_1.createToken({ name: "Constraints", pattern: /constraints/, longer_alt: exports.Identifier });
 exports.Init = chevrotain_1.createToken({ name: "Init", pattern: /init/, longer_alt: exports.Identifier });
-exports.Seed = chevrotain_1.createToken({ name: "Seed", pattern: /seed/, longer_alt: exports.Identifier });
 // TYPES
 // ================================================================================================
 exports.Scalar = chevrotain_1.createToken({ name: "Scalar", pattern: /scalar/, longer_alt: exports.Identifier });
@@ -60,8 +62,10 @@ exports.LoadOp = chevrotain_1.createToken({ name: "LoadOp", pattern: chevrotain_
 exports.LoadConst = chevrotain_1.createToken({ name: "LoadConst", pattern: /load.const/, longer_alt: exports.Identifier, categories: exports.LoadOp });
 exports.LoadTrace = chevrotain_1.createToken({ name: "LoadTrace", pattern: /load.trace/, longer_alt: exports.Identifier, categories: exports.LoadOp });
 exports.LoadStatic = chevrotain_1.createToken({ name: "LoadStatic", pattern: /load.static/, longer_alt: exports.Identifier, categories: exports.LoadOp });
+exports.LoadParam = chevrotain_1.createToken({ name: "LoadParam", pattern: /load.param/, longer_alt: exports.Identifier, categories: exports.LoadOp });
 exports.LoadLocal = chevrotain_1.createToken({ name: "LoadLocal", pattern: /load.local/, longer_alt: exports.Identifier, categories: exports.LoadOp });
 exports.StoreOp = chevrotain_1.createToken({ name: "StoreLocal", pattern: /store.local/, longer_alt: exports.Identifier });
+exports.CallOp = chevrotain_1.createToken({ name: "CallOp", pattern: /call/, longer_alt: exports.Identifier });
 // SYMBOLS
 // ================================================================================================
 exports.LParen = chevrotain_1.createToken({ name: "LParen", pattern: /\(/ });
@@ -75,13 +79,14 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 // ================================================================================================
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
+    exports.Export, exports.Registers, exports.Constraints, exports.Init,
     exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Shift, exports.Cycle,
-    exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Transition, exports.Evaluation, exports.Span, exports.Result, exports.Local, exports.Export, exports.Main, exports.Init, exports.Seed,
+    exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Result, exports.Param, exports.Local,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
-    exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadLocal, exports.StoreOp,
+    exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadParam, exports.LoadLocal, exports.StoreOp, exports.CallOp,
     exports.LParen, exports.RParen, exports.Minus,
-    exports.HexLiteral, exports.Literal, exports.Identifier
+    exports.HexLiteral, exports.Literal, exports.Identifier, exports.Handle
 ];
 // EXPORT LEXER INSTANCE
 // ================================================================================================

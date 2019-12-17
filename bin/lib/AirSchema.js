@@ -2,30 +2,26 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const galois_1 = require("@guildofweavers/galois");
 const procedures_1 = require("./procedures");
-const analysis_1 = require("./analysis");
-const registers_1 = require("./registers");
+const expressions_1 = require("./expressions");
+const AirComponent_1 = require("./AirComponent");
+const utils_1 = require("./utils");
 // CLASS DEFINITION
 // ================================================================================================
 class AirSchema {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor() {
+    constructor(fieldType, fieldModulus) {
+        utils_1.validate(fieldType === 'prime', errors.invalidFieldType(fieldType));
+        this._field = galois_1.createPrimeField(fieldModulus);
         this._constants = [];
-        this._staticRegisters = [];
+        this._functions = [];
+        this._components = new Map();
+        this._handles = new Set();
     }
     // FIELD
     // --------------------------------------------------------------------------------------------
     get field() {
-        if (!this._field)
-            throw new Error(`fields has not been set yet`);
         return this._field;
-    }
-    setField(type, modulus) {
-        if (this._field)
-            throw new Error('field has already been set');
-        if (type !== 'prime')
-            throw new Error(`field type '${type}' is not supported`);
-        this._field = galois_1.createPrimeField(modulus);
     }
     // CONSTANTS
     // --------------------------------------------------------------------------------------------
@@ -35,179 +31,65 @@ class AirSchema {
     get constants() {
         return this._constants;
     }
-    setConstants(values) {
-        if (this.constantCount > 0)
-            throw new Error(`constants have already been set`);
-        values.forEach((v, i) => this._constants.push(this.validateConstant(v, i)));
+    addConstant(value, handle) {
+        if (handle) {
+            utils_1.validate(!this._handles.has(handle), errors.duplicateHandle(handle));
+            this._handles.add(handle);
+        }
+        const constant = new procedures_1.Constant(new expressions_1.LiteralValue(value, this.field), handle);
+        this._constants.push(constant);
     }
-    // STATIC REGISTERS
+    // FUNCTIONS
     // --------------------------------------------------------------------------------------------
-    get staticRegisterCount() {
-        return this._staticRegisters.length;
+    get functions() {
+        return this._functions;
     }
-    get staticRegisters() {
-        return this._staticRegisters;
+    createFunctionContext(resultType, handle) {
+        return new procedures_1.FunctionContext(this, resultType, handle);
     }
-    get secretInputCount() {
-        let result = 0;
-        for (let register of this.staticRegisters) {
-            if (register instanceof registers_1.InputRegister && register.secret) {
-                result++;
-            }
+    addFunction(context, statements, result) {
+        if (context.handle) {
+            utils_1.validate(!this._handles.has(context.handle), errors.duplicateHandle(context.handle));
+            this._handles.add(context.handle);
         }
-        return result;
-    }
-    get maxInputCycle() {
-        let result = 0;
-        for (let register of this.staticRegisters) {
-            if (register instanceof registers_1.InputRegister && register.steps && register.steps > result) {
-                result = register.steps;
-            }
-        }
-        return result;
-    }
-    setStaticRegisters(registers) {
-        if (this.staticRegisterCount > 0)
-            throw new Error(`static registers have already been set`);
-        const danglingInputs = registers.getDanglingInputs();
-        if (danglingInputs.length > 0)
-            throw new Error(`cycle length for input registers ${danglingInputs.join(', ')} is not defined`);
-        registers.forEach((r, i) => this._staticRegisters.push(this.validateStaticRegister(r, i)));
-    }
-    // TRANSITION FUNCTION
-    // --------------------------------------------------------------------------------------------
-    get traceRegisterCount() {
-        return this.transitionFunction.resultLength;
-    }
-    get transitionFunction() {
-        if (!this._transitionFunction)
-            throw new Error(`transition function hasn't been set yet`);
-        return this._transitionFunction;
-    }
-    setTransitionFunction(span, width, locals) {
-        if (this._transitionFunction)
-            throw new Error(`transition function has already been set`);
-        if (!this._field)
-            throw new Error(`transition function cannot be set before field is set`);
-        const constants = this._constants;
-        const traceWidth = width;
-        const staticWidth = this.staticRegisterCount;
-        this._transitionFunction = new procedures_1.Procedure(this.field, 'transition', span, width, constants, locals, traceWidth, staticWidth);
-        return this._transitionFunction;
-    }
-    // TRANSITION CONSTRAINTS
-    // --------------------------------------------------------------------------------------------
-    get constraintCount() {
-        return this.constraintEvaluator.resultLength;
-    }
-    get constraintEvaluator() {
-        if (!this._constraintEvaluator)
-            throw new Error(`constraint evaluator hasn't been set yet`);
-        return this._constraintEvaluator;
-    }
-    get constraints() {
-        if (!this._constraints) {
-            const constraintAnalysis = analysis_1.analyzeProcedure(this.constraintEvaluator);
-            this._constraints = constraintAnalysis.degree.map(d => ({
-                degree: d > Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : Number(d)
-            }));
-        }
-        return this._constraints;
-    }
-    get maxConstraintDegree() {
-        if (this._maxConstraintDegree === undefined) {
-            this._maxConstraintDegree = this.constraints.reduce((p, c) => c.degree > p ? c.degree : p, 0);
-        }
-        return this._maxConstraintDegree;
-    }
-    setConstraintEvaluator(span, width, locals) {
-        if (this._constraintEvaluator)
-            throw new Error(`constraint evaluator has already been set`);
-        if (!this._field)
-            throw new Error(`constraint evaluator cannot be set before field is set`);
-        const constants = this._constants;
-        const traceWidth = this.traceRegisterCount;
-        const staticWidth = this.staticRegisterCount;
-        this._constraintEvaluator = new procedures_1.Procedure(this.field, 'evaluation', span, width, constants, locals, traceWidth, staticWidth);
-        return this._constraintEvaluator;
+        const func = new procedures_1.AirFunction(context, statements, result);
+        this._functions.push(func);
     }
     // EXPORT DECLARATIONS
     // --------------------------------------------------------------------------------------------
-    get exports() {
-        if (!this._exportDeclarations)
-            throw new Error(`exports have not been set yet`);
-        return this._exportDeclarations;
+    get components() {
+        return this._components;
     }
-    setExports(declarations) {
-        if (this._exportDeclarations)
-            throw new Error(`exports have already been set`);
-        this._exportDeclarations = new Map();
-        const maxInputCycle = this.maxInputCycle;
-        for (let declaration of declarations) {
-            if (this._exportDeclarations.has(declaration.name))
-                throw new Error(`export with name '${declaration.name}' is declared more than once`);
-            if (declaration.cycleLength < maxInputCycle)
-                throw new Error(`trace cycle for export '${declaration.name}' is smaller than possible input cycle`);
-            this._exportDeclarations.set(declaration.name, declaration);
-        }
-        const mainExport = this.exports.get('main');
-        if (mainExport && mainExport.seed) {
-            if (mainExport.seed.length !== this.traceRegisterCount)
-                throw new Error(`initializer for main export must resolve to a vector of ${this.traceRegisterCount} elements`);
-            this.validateMainExportSeed(mainExport.seed);
-        }
+    createComponent(name, registers, constraints, steps) {
+        return new AirComponent_1.AirComponent(name, this, registers, constraints, steps);
+    }
+    addComponent(component) {
+        utils_1.validate(!this._components.has(component.name), errors.duplicateComponent(component.name));
+        component.validate();
+        this._components.set(component.name, component);
     }
     // CODE OUTPUT
     // --------------------------------------------------------------------------------------------
     toString() {
         let code = `\n  ${buildFieldExpression(this.field)}`;
-        if (this.constantCount > 0)
-            code += `\n  (const\n    ${this.constants.map(c => c.toString()).join('\n    ')})`;
-        if (this.staticRegisterCount > 0)
-            code += `\n  (static\n    ${this.staticRegisters.map(r => r.toString()).join('\n    ')})`;
-        code += this.transitionFunction.toString();
-        code += this.constraintEvaluator.toString();
-        this.exports.forEach(d => code += `\n  ${d.toString()}`);
+        this.constants.forEach(c => code += `\n  ${c.toString()}`);
+        this.functions.forEach(f => code += `\n  ${f.toString()}`);
+        this.components.forEach(m => code += `\n  ${m.toString()}`);
         return `(module${code}\n)`;
-    }
-    // VALIDATION
-    // --------------------------------------------------------------------------------------------
-    validateConstant(constant, index) {
-        constant.elements.forEach(v => {
-            if (!this.field.isElement(v)) {
-                throw new Error(`value ${v} for constant ${index} is not a valid field element`);
-            }
-        });
-        return constant;
-    }
-    validateStaticRegister(register, index) {
-        if (!(register instanceof registers_1.CyclicRegister))
-            return register;
-        register.getValues(this.field).forEach(v => {
-            if (!this.field.isElement(v)) {
-                throw new Error(`value ${v} for static register ${index} is not a valid field element`);
-            }
-        });
-        return register;
-    }
-    validateMainExportSeed(seed) {
-        seed.forEach(v => {
-            if (!this.field.isElement(v)) {
-                throw new Error(`value ${v} in main export initializer is not a valid field element`);
-            }
-        });
     }
 }
 exports.AirSchema = AirSchema;
 // HELPER FUNCTIONS
 // ================================================================================================
 function buildFieldExpression(field) {
-    if (field.extensionDegree === 1) {
-        // this is a prime field
-        return `(field prime ${field.characteristic})`;
-    }
-    else {
-        throw new Error('non-prime fields are not supported');
-    }
+    utils_1.validate(field.extensionDegree === 1, 'non-prime fields are not supported');
+    return `(field prime ${field.characteristic})`;
 }
+// ERRORS
+// ================================================================================================
+const errors = {
+    invalidFieldType: (t) => `field type '${t}' is not supported`,
+    duplicateHandle: (h) => `handle ${h} cannot be declared multiple times`,
+    duplicateComponent: (e) => `export with name '${e}' is declared more than once`
+};
 //# sourceMappingURL=AirSchema.js.map

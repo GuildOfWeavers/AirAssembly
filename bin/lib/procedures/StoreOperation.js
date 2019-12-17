@@ -2,43 +2,29 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // CLASS DEFINITION
 // ================================================================================================
-class Subroutine {
+class StoreOperation {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(expression, localVarIdx) {
+    constructor(target, expression) {
+        this._target = target;
         this._expression = expression;
-        this._localVarIdx = localVarIdx;
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
+    get target() {
+        return this._target;
+    }
     get expression() {
         return this._expression;
-    }
-    get localVarIdx() {
-        return this._localVarIdx;
     }
     get dimensions() {
         return this._expression.dimensions;
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
-    updateIndex(fromIdx, toIdx) {
-        if (this.localVarIdx === fromIdx) {
-            this._localVarIdx = toIdx;
-        }
-    }
-    transformExpression(transformer) {
-        let transformed = transformer(this.expression);
-        if (transformed === this.expression) {
-            this.expression.transform(transformer);
-        }
-        else {
-            this._expression = transformed;
-        }
-    }
     toString() {
-        return `(store.local ${this.localVarIdx} ${this.expression.toString()})`;
+        return `(store.local ${this.target} ${this.expression.toString()})`;
     }
 }
-exports.Subroutine = Subroutine;
-//# sourceMappingURL=Subroutine.js.map
+exports.StoreOperation = StoreOperation;
+//# sourceMappingURL=StoreOperation.js.map

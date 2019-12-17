@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const expressions_1 = require("../expressions");
+const procedures_1 = require("../procedures");
 // PUBLIC FUNCTIONS
 // ================================================================================================
 function getExponentValue(exp) {
@@ -11,8 +12,8 @@ function getExponentValue(exp) {
     if (exp instanceof expressions_1.LiteralValue) {
         return exp.value;
     }
-    else if (exp instanceof expressions_1.LoadExpression && exp.binding instanceof expressions_1.LiteralValue) {
-        return exp.binding.value;
+    else if (exp instanceof expressions_1.LoadExpression && exp.binding instanceof procedures_1.Constant) {
+        return exp.binding.value.value; // TODO?
     }
     else {
         throw new Error(`cannot raise to non-constant power`);

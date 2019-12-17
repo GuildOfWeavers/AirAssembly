@@ -2,13 +2,12 @@
 // ================================================================================================
 import { LoadSource } from '@guildofweavers/air-assembly';
 import { Expression } from './Expression';
-import { LiteralValue } from './LiteralValue';
 import { TraceSegment } from './TraceSegment';
-import { Subroutine } from '../procedures';
+import { StoreOperation, Parameter, Constant } from '../procedures';
 
 // INTERFACES
 // ================================================================================================
-type LoadBinding = TraceSegment | LiteralValue | Subroutine;
+type LoadBinding = Constant | TraceSegment | StoreOperation | Parameter;
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -28,15 +27,17 @@ export class LoadExpression extends Expression {
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
     get source(): LoadSource {
-        if (this.binding instanceof LiteralValue) return 'const';
-        else if (this.binding instanceof Subroutine) return 'local';
+        if (this.binding instanceof Constant) return 'const';
+        else if (this.binding instanceof Parameter) return 'param';
+        else if (this.binding instanceof StoreOperation) return 'local';
         else if (this.binding instanceof TraceSegment) return this.binding.segment;
         else throw new Error(`invalid load binding: ${this.binding}`);
     }
 
     get isStatic(): boolean {
-        if (this.binding instanceof LiteralValue) return true;
-        else if (this.binding instanceof Subroutine) return this.binding.expression.isStatic;
+        if (this.binding instanceof Constant) return true;
+        else if (this.binding instanceof Parameter) return false;
+        else if (this.binding instanceof StoreOperation) return this.binding.expression.isStatic;
         else if (this.binding instanceof TraceSegment) return false;
         else throw new Error(`invalid load binding: ${this.binding}`);
     }

@@ -9,14 +9,14 @@ const compositionFactor = 0;
 const extensionFactor = 0;
 const constraints = [];
 const staticRegisters = {};
-const initializeTrace = undefined;
 // GENERATED FUNCTION PLACEHOLDERS
 // ================================================================================================
+const initializeTrace = function () { return []; };
 const applyTransition = function () { return []; };
 const evaluateConstraints = function () { return []; };
 // PROVER GENERATOR
 // ================================================================================================
-function initProvingContext(inputs = [], seed) {
+function initProvingContext(inputs = [], seed = []) {
     // validate inputs
     const { traceLength, registerSpecs, inputShapes } = digestInputs(inputs);
     // build evaluation domain
@@ -37,12 +37,15 @@ function initProvingContext(inputs = [], seed) {
     // --------------------------------------------------------------------------------------------
     function generateExecutionTrace() {
         const steps = traceLength - 1;
-        let rValues = initializeTrace(f, seed);
-        if (rValues.length !== traceRegisterCount) {
-            throw new Error(`failed to initialize execution trace: seed didn't resolve to vector of ${traceRegisterCount} elements`);
-        }
-        let nValues = new Array(traceRegisterCount).fill(f.zero);
         const kValues = new Array(kRegisters.length).fill(f.zero);
+        // compute values of static registers at the last step
+        const lastStep = steps * compositionFactor;
+        for (let i = 0; i < kValues.length; i++) {
+            kValues[i] = kRegisters[i](lastStep);
+        }
+        // initialize first row of the execution trace
+        let rValues = initializeTrace(kValues, f.newVectorFrom(seed));
+        let nValues = new Array(traceRegisterCount).fill(f.zero);
         // initialize execution trace and copy over the first row
         const traceTable = new Array(traceRegisterCount);
         for (let register = 0; register < traceTable.length; register++) {

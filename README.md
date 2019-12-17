@@ -3,15 +3,15 @@ This library contains specifications and JavaScript runtime for AirAssembly - a 
 
 AirAssembly is a low-level language and is intended to be a compilation target for other, higher-level, languages (e.g. [AirScript](https://github.com/GuildOfWeavers/AirScript)). It uses a simple s-expression-based syntax to specify:
 
-1. Inputs required by a computation.
-2. Logic for generating execution trace for the computation.
-3. Logic for evaluating transition constraints for the computation.
-4. Metadata needed to compose the computation with other computations.
+1. Inputs required by the computations.
+2. Logic for generating execution traces for the computations.
+3. Logic for evaluating transition constraints for the computations.
+4. Metadata needed to compose the computations with other computations.
 
 Full specifications for AirAssembly can be found [here](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs).
 
 ## Usage
-This library is not intended for standalone use, but is rather meant to be a component used in STARK provers (e.g. [genSTARK](https://github.com/GuildOfWeavers/genSTARK)). Nevertheless, you can install it separately like so:
+This library is not intended for standalone use, but is rather meant to be a component used in STARK provers/verifiers (e.g. [genSTARK](https://github.com/GuildOfWeavers/genSTARK)). Nevertheless, you can install it separately like so:
 
 ```bash
 $ npm install @guildofweavers/air-assembly --save
@@ -27,27 +27,30 @@ import { compile, instantiate } from '@guildofweavers/air-assembly';
 const source = `
 (module
     (field prime 4194304001)
-    (const 
-        (scalar 3))
-    (static
-        (cycle (prng sha256 0x4d694d43 64)))
-    (transition
-        (span 1) (result vector 1)
+    (const $alpha scalar 3)
+    (function $mimcRound
+        (result vector 1)
+        (param $state vector 1) (param $roundKey scalar)
         (add 
-            (exp (load.trace 0) (load.const 0))
-            (get (load.static 0) 0)))
-    (evaluation
-        (span 2) (result vector 1)
-        (sub
-            (load.trace 1)
-            (add
-                (exp (load.trace 0) (load.const 0))
-                (get (load.static 0) 0))))
-    (export main (init seed) (steps 32)))`;
+            (exp (load.param $state) (load.const $alpha))
+            (load.param $roundKey)))
+    (export mimc
+        (registers 1) (constraints 1) (steps 32)
+        (static
+            (cycle (prng sha256 0x4d694d43 32)))
+        (init
+            (param $seed vector 1)
+            (load.param $seed))
+        (transition
+            (call $mimcRound (load.trace 0) (get (load.static 0) 0)))
+        (evaluation
+            (sub
+                (load.trace 1)
+                (call $mimcRound (load.trace 0) (get (load.static 0) 0))))))`;
 
 // instantiate AirModule object
 const schema = compile(Buffer.from(source));
-const air = instantiate(schema);
+const air = instantiate(schema, 'mimc');
 
 // generate trace table
 const context = air.initProvingContext([], [3n]);
@@ -68,11 +71,11 @@ The library exposes a small set of functions that can be used to compile AirAsse
 * **compile**(source: `Buffer` | `string`, limits?: `StarkLimits`): `AirSchema`<br />
   Parses and compiles AirAssembly source code into an [AirSchema](#Air-Schema) object. If `source` parameter is a `Buffer`, it is expected to contain AirAssembly code. If `source` is a `string`, it is expected to be a path to a file containing AirAssembly code. If `limits` parameter is provided, generated `AirSchema` will be validated against these limits.
 
-* **instantiate**(schema: `AirSchema`, options?: `ModuleOptions`): `AirModule`<br />
-  Creates an [AirModule](#Air-Module) object from the specified `schema`. The `AirModule` can then be used to generate execution trace tables and evaluate transition constraints. The optional `options` parameter can be used to control instantiation of the `AirModule`.
+* **instantiate**(schema: `AirSchema`, component: `string`, options?: `ModuleOptions`): `AirModule`<br />
+  Creates an [AirModule](#Air-Module) object for the specified `component` within the provided `schema`. The `AirModule` can then be used to generate execution trace tables and evaluate transition constraints. The optional `options` parameter can be used to control instantiation of the `AirModule`.
 
-* **analyze**(schema: `AirSchema`): `SchemaAnalysisResult`<br />
-  Performs basic analysis of the specified `schema` to infer such things as degree of transition constraints, number of additions and multiplications needed to evaluate transition function etc.
+* **analyze**(schema: `AirSchema`, component: `name`): `SchemaAnalysisResult`<br />
+  Performs basic analysis of the `component` within the provided `schema` to infer such things as degree of transition constraints, number of additions and multiplications needed to evaluate transition function etc.
 
 #### Air module options
 When instantiating an `AirModule` object, an `AirModuleOptions` object can be provided to specify any of the following parameters for the module:
@@ -98,23 +101,23 @@ When instantiating an `AirModule` object, an `AirModuleOptions` object can be pr
 To generate an execution trace for a computation defined by AirAssembly source code, the following steps should be executed:
 
 1. Compile AirAssembly source code into [AirSchema](#Air-Schema) using the top-level `compile()` function.
-2. Pass the resulting `AirSchema` to the top-level `instantiate()` function to create an [AirModule](#Air-Module).
+2. Pass the resulting `AirSchema` to the top-level `instantiate()` function to create an [AirModule](#Air-Module). You'll also need to specify the name of the [AirComponent](#Air-Component) exported from the `AirSchema` because `AirModules` are instantiated for a specific component.
 3. Create a [ProvingContext](#Proving-context) by invoking `AirModule.initProvingContext()` method. If the computation contains input registers, then input values for these registers must be passed to the `initProvingContext()` method. This instantiates the `ProvingContext` for a specific set of inputs.
-4. Generate the execution trace by invoking `ProvingContext.generateExecutionTrace()` method. If the computation's [main export](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#main-export) uses a seed vector to initialize the execution trace, then an array with seed values must be passed to the `generateExecutionTrace()` method. If the computation does not define a main export, an error will be thrown.
+4. Generate the execution trace by invoking `ProvingContext.generateExecutionTrace()` method.
 
 The code block bellow illustrates these steps:
 
 ```TypeScript
 const schema = compile(Buffer.from(source));
-const air = instantiate(schema, { extensionFactor: 16 });
+const air = instantiate(schema, `mimc`, { extensionFactor: 16 });
 const context = air.initProvingContext([], [3n]);
 const trace = context.generateExecutionTrace();
 ```
 In the above:
 * `source` is a string variable containing AirAssembly source code similar to the one shown in the [usage](#Usage) section.
-* The `AirModule` is instantiated using default limits but setting extension factor to `16`.
+* The `AirModule` is instantiated for the exported `mimc` component using default limits but setting extension factor to `16`.
 * An empty inputs array is passed as the first parameter to the `initProvingContext()` method since the computation shown in the [usage](#Usage) section does not define any input registers.
-* A seed array with value `3` is passed as the second parameter to the `initProvingContext()` method since main export initializer uses a `seed` vector to initialize the first row of the execution trace.
+* A seed array with value `3` is passed as the second parameter to the `initProvingContext()` method since [component initializer](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#trace-initializer) expects a vector parameter to initialize the first row of the execution trace.
 * After the code is executed, the `trace` variable will be a [matrix](https://github.com/GuildOfWeavers/galois#matrixes) with 1 row and 32 columns (corresponding to 1 register and 32 steps).
 
 The execution trace for the single register will look like so:
@@ -128,7 +131,7 @@ The execution trace for the single register will look like so:
 ```
 
 ### Evaluating transition constraints
-Transition constraints described in AirAssembly source code can be evaluated using either as a prover or as a verifier. Both methods are described below.
+Transition constraints described in AirAssembly source code can be evaluated either as a prover or as a verifier. Both methods are described below.
 
 #### Evaluating transition constraints as a prover
 When generating a STARK proof, transition constraints need to be evaluated at all points of the evaluation domain. This can be done efficiently by invoking `ProvingContext.evaluateTransitionConstraints()` method. To evaluate the constraints, the following steps should be executed:
@@ -174,14 +177,14 @@ For example, evaluating constraints for AirAssembly code from the [usage](#Usage
 When verifying a STARK proof, transition constraints need to be evaluated at a small subset of points. This can be done by invoking `VerificationContext.evaluateConstraintsAt()` method which evaluates constraints at a single point of evaluation domain. To evaluate constraints at a single point, the following steps should be executed:
 
 1. Compile AirAssembly source code into [AirSchema](#Air-Schema) using the top-level `compile()` function.
-2. Pass the resulting `AirSchema` to the top-level `instantiate()` function to create an [AirModule](#Air-Module).
+2. Pass the resulting `AirSchema` together with exported component name to the top-level `instantiate()` function to create an [AirModule](#Air-Module).
 3. Create a [VerificationContext](#Verification-context) by invoking `AirModule.initVerificationContext()` method. If the computation contains input registers, input shapes for these registers must be passed to the `initVerificationContext()` method. If any of the input registers are public, input values for these registers must also be passed to the method.
 4. Evaluate constraints by invoking `VerificationContext.evaluateConstraintsAt()` method and passing to it an x-coordinate of the desired point from the evaluation domain, as well as corresponding values of register traces.
 
 The code block bellow illustrates these steps:
 ```TypeScript
 const schema = compile(Buffer.from(source));
-const air = instantiate(schema, { extensionFactor: 16 });
+const air = instantiate(schema, 'mimc', { extensionFactor: 16 });
 const context = air.initVerificationContext();
 const x = air.field.exp(context.rootOfUnity, 16n);
 const rValues = [1539309651n], nValues = [3863242857n];
@@ -189,7 +192,7 @@ const evaluations = context.evaluateConstraintsAt(x, rValues, nValues, []);
 ```
 In the above:
 * `source` is a string variable containing AirAssembly source code similar to the one shown in the [usage](#Usage) section.
-* The `AirModule` is instantiated using default limits but setting extension factor to `16`.
+* The `AirModule` for `mimc` component is instantiated using default limits but setting extension factor to `16`.
 * No input shapes or inputs are passed to the `initVerificationContext()` method since the computation shown in the [usage](#Usage) section does not define any input registers. 
 * `x` is set to the 17th value in of the execution domain, while `rValues` and `nValues` contain register traces for 2nd and 3rd steps of the computation. This is because when the extension factor is `16`, the 2nd value of the execution trace aligns with the 17th value of the evaluation domain.
 * After the code is executed, the `evaluations` variable will be an array with a single value `0`. This is because applying transition function to value `1539309651` (current state of the execution trace) results in `3863242857`, which is the next state of the execution trace.
@@ -201,20 +204,33 @@ An `AirSchema` object contains a semantic representation of AirAssembly source c
 
 | Property            | Description |
 | ------------------- | ----------- |
-| field               | A [finite field](https://github.com/GuildOfWeavers/galois#api) object instantiated for the [field](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#field-declaration) specified for the computation. |
-| constants           | An array of `LiteralValue` expressions describing [constants](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constant-declarations) defined for the computation. |
+| field               | A [finite field](https://github.com/GuildOfWeavers/galois#api) object instantiated for the [field](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#field-declaration) specified for the computations contained withing schema. |
+| constants           | An array of `Constant` objects describing [module constants](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constant-declarations) defined for the computations. |
+| functions           | an array of `AirFunction` objects describing [module functions](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#Function-declarations) defined for the computations. |
+| components          | A map of [component export](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#component-exports), where the key is the name of the component, and the value is an [AirComponent](#Air-Component) object. |
+
+Note: definitions for `Constant` and `AirFunction` objects mentioned above can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts) file.
+
+#### Air Component
+An `AirComponent` object is a semantic representation of a specific computation contained within [AirSchema](#Air-Schema). That is, a single `AirSchema` object can contain many `AirComponents` each describing a distinct computation. This allows packaging AIR of many computations into a single physical file.
+
+`AirComponent` has the following properties:
+
+| Property            | Description |
+| ------------------- | ----------- |
+| name                | String value containing name of the exported component. |
 | staticRegisters     | An array of `StaticRegister` objects describing [static registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#static-registers) defined for the computation. |
 | secretInputCount    | An integer value specifying number of secret [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers) defined for the computation. |
-| transitionFunction  | A `Procedure` object describing [transition function](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#transition-function) expression defined for the computation. |
-| constraintEvaluator | A `Procedure` object describing [transition constraint evaluator](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constraint-evaluator) expression defined for the computation. |
+| traceInitializer  | An `AirProcedure` object describing [execution trace initializer](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#trace-initializer) expression defined for the computation. |
+| transitionFunction  | An `AirProcedure` object describing [transition function](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#transition-function) expression defined for the computation. |
+| constraintEvaluator | An `AirProcedure` object describing [transition constraint evaluator](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#constraint-evaluator) expression defined for the computation. |
 | constraints         | An array of `ConstraintDescriptor` objects containing metadata for each of the defined transition constraints (e.g. constraint degree). |
 | maxConstraintDegree | An integer value specifying the highest degree of transition constraints defined for the computation. |
-| exports             | A map of [export declarations](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#Export-declarations), where the key is the name of the export, and the value is an `ExportDeclaration` object. |
 
-Note: definitions for `LiteralValue`, `StaticRegister` and other objects mentioned above can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts) file.
+Note: definitions for `StaticRegister`, `AirProcedure`, and `ConstraintDescriptor` objects mentioned above can be found in [air-assembly.d.ts](https://github.com/GuildOfWeavers/AirAssembly/blob/master/air-assembly.d.ts) file.
 
 ### Air Module
-An `AirModule` object contains JavaScript code needed to create [ProvingContext](#Proving-context) and [VerificationContext](#Verification-context) objects. These objects can then be used to generate execution trace and evaluate transition constraints for a computation. An `AirModule` can be instantiated from an `AirSchema` by using the top-level `instantiate()` function.
+An `AirModule` object contains JavaScript code needed to create [ProvingContext](#Proving-context) and [VerificationContext](#Verification-context) objects. These objects can then be used to generate execution trace and evaluate transition constraints for a computation. An `AirModule` can be instantiated for a specific component of an `AirSchema` by using the top-level `instantiate()` function.
 
 `AirModule` has the following properties:
 
@@ -234,7 +250,7 @@ An `AirModule` object contains JavaScript code needed to create [ProvingContext]
 * **initProvingContext**(inputs?: `any[]`, seed?: `bigint[]`): `ProvingContext`</br>
   Instantiates a [ProvingContext](#Proving-context) object for a specific instance of the computation. This context can then be used to generate execution trace table and constraint evaluation table for the computation.
   * `inputs` parameter must be provided only if the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers). In such a case, the shape of input objects must be in line with the shapes specified by the computation's input descriptors.
-  *  `seed` parameter must be provided only if the seed vector is used in the [main export](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#main-export) expression of the computation's AirAssembly definition.
+  *  `seed` parameter must be provided only if the [trace initializer](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#trace-initializer) for the computation expects a vector parameter.
 
 * **initVerificationContext**(inputShapes?: `InputShape[]`, publicInputs?: `any[]`): `VerificationContext`</br>
   Instantiates a [VerificationContext](#Verification-context) object for a specific instance of the computation. This context can then be used to evaluate transition constraints at a given point of the evaluation domain of the computation. If the computation contains [input registers](https://github.com/GuildOfWeavers/AirAssembly/tree/master/specs#input-registers), `inputShapes` parameter must be provided to specify the shapes of consumed inputs. If any of the input registers are public, `publicInputs` parameter must also be provided to specify the actual values of all public inputs consumed by the computation.
@@ -295,7 +311,7 @@ An `InputDescriptor` object contains information about an [input register](https
 
 | Property   | Description |
 | -----------| ----------- |
-| rank       | An integer value indicating the position of the register in the input dependency tree. For example, rank of a register without parents is `0`, rank of a register with a single ancestor is `1`, rank of register with 2 ancestors is `2` etc. |
+| rank       | An integer value indicating the position of the register in the input dependency tree. For example, rank of a register without parents is `1`, rank of a register with a single ancestor is `2`, rank of register with 2 ancestors is `3` etc. |
 | secret     | A boolean value indicating wither the inputs for the register are public or secret. |
 | binary     | A boolean value indicating whether the register can accept only binary values (ones and zeros). |
 | offset     | A signed integer value specifying the number of steps by which an input value is to be shifted in the execution trace. |

@@ -3,13 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const utils_1 = require("../expressions/utils");
+const utils_2 = require("../utils");
 // CLASS DEFINITION
 // ================================================================================================
 class LocalVariable {
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(dimensions) {
+    constructor(dimensions, handle) {
         this.dimensions = dimensions;
+        if (handle !== undefined) {
+            this.handle = utils_2.validateHandle(handle);
+        }
     }
     // ACCESSORS
     // --------------------------------------------------------------------------------------------
@@ -34,12 +38,8 @@ class LocalVariable {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        if (utils_1.Dimensions.isScalar(this.dimensions))
-            return `(local scalar)`;
-        else if (utils_1.Dimensions.isVector(this.dimensions))
-            return `(local vector ${this.dimensions[0]})`;
-        else
-            return `(local matrix ${this.dimensions[0]} ${this.dimensions[1]})`;
+        const handle = this.handle ? ` ${this.handle} ` : ' ';
+        return `(local${handle}${utils_1.Dimensions.toExpressionString(this.dimensions)})`;
     }
 }
 exports.LocalVariable = LocalVariable;

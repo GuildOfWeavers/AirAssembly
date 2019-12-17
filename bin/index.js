@@ -20,23 +20,8 @@ const DEFAULT_LIMITS = {
 // ================================================================================================
 var AirSchema_1 = require("./lib/AirSchema");
 exports.AirSchema = AirSchema_1.AirSchema;
-var expressions_1 = require("./lib/expressions");
-exports.LiteralValue = expressions_1.LiteralValue;
-exports.BinaryOperation = expressions_1.BinaryOperation;
-exports.UnaryOperation = expressions_1.UnaryOperation;
-exports.MakeVector = expressions_1.MakeVector;
-exports.GetVectorElement = expressions_1.GetVectorElement;
-exports.SliceVector = expressions_1.SliceVector;
-exports.MakeMatrix = expressions_1.MakeMatrix;
-exports.LoadExpression = expressions_1.LoadExpression;
 var registers_1 = require("./lib/registers");
-exports.StaticRegister = registers_1.StaticRegister;
-exports.InputRegister = registers_1.InputRegister;
-exports.CyclicRegister = registers_1.CyclicRegister;
-exports.MaskRegister = registers_1.MaskRegister;
-exports.StaticRegisterSet = registers_1.StaticRegisterSet;
-var exports_1 = require("./lib/exports");
-exports.ExportDeclaration = exports_1.ExportDeclaration;
+exports.PrngSequence = registers_1.PrngSequence;
 var errors_2 = require("./lib/errors");
 exports.AssemblyError = errors_2.AssemblyError;
 exports.prng = {
@@ -77,17 +62,23 @@ function compile(sourceOrPath, limits) {
     return schema;
 }
 exports.compile = compile;
-function instantiate(schema, options = {}) {
-    const compositionFactor = utils_1.getCompositionFactor(schema);
+function instantiate(schema, componentName, options = {}) {
+    const component = schema.components.get(componentName);
+    if (!component)
+        throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+    const compositionFactor = utils_1.getCompositionFactor(component);
     const vOptions = validateModuleOptions(options, compositionFactor);
     validateLimits(schema, vOptions.limits);
-    const module = jsGenerator_1.instantiateModule(schema, vOptions);
+    const module = jsGenerator_1.instantiateModule(component, vOptions);
     return module;
 }
 exports.instantiate = instantiate;
-function analyze(schema) {
-    const transition = analysis_1.analyzeProcedure(schema.transitionFunction);
-    const evaluation = analysis_1.analyzeProcedure(schema.constraintEvaluator);
+function analyze(schema, componentName) {
+    const component = schema.components.get(componentName);
+    if (!component)
+        throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+    const transition = analysis_1.analyzeProcedure(component.transitionFunction);
+    const evaluation = analysis_1.analyzeProcedure(component.constraintEvaluator);
     return { transition, evaluation };
 }
 exports.analyze = analyze;
@@ -110,14 +101,16 @@ function validateModuleOptions(options, compositionFactor) {
 }
 function validateLimits(schema, limits) {
     try {
-        if (schema.traceRegisterCount > limits.maxTraceRegisters)
-            throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
-        else if (schema.staticRegisterCount > limits.maxStaticRegisters)
-            throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
-        else if (schema.constraintCount > limits.maxConstraintCount)
-            throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
-        else if (schema.maxConstraintDegree > limits.maxConstraintDegree)
-            throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
+        schema.components.forEach(component => {
+            if (component.traceRegisterCount > limits.maxTraceRegisters)
+                throw new Error(`number of state registers cannot exceed ${limits.maxTraceRegisters}`);
+            else if (component.staticRegisterCount > limits.maxStaticRegisters)
+                throw new Error(`number of static registers cannot exceed ${limits.maxStaticRegisters}`);
+            else if (component.constraintCount > limits.maxConstraintCount)
+                throw new Error(`number of transition constraints cannot exceed ${limits.maxConstraintCount}`);
+            else if (component.maxConstraintDegree > limits.maxConstraintDegree)
+                throw new Error(`max constraint degree cannot exceed ${limits.maxConstraintDegree}`);
+        });
     }
     catch (error) {
         throw new errors_1.AssemblyError([error]);

@@ -1,7 +1,9 @@
 // IMPORTS
 // ================================================================================================
+import { FiniteField } from '@guildofweavers/galois';
 import { Expression } from './Expression';
 import { Dimensions } from './utils';
+import { validate } from '../utils';
 
 // CLASS DEFINITION
 // ================================================================================================
@@ -11,32 +13,33 @@ export class LiteralValue extends Expression {
 
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(value: bigint | bigint[] | bigint[][]) {
+    constructor(value: bigint | bigint[] | bigint[][], field: FiniteField) {
         if (typeof value === 'bigint') {
             // value is a scalar
             super(Dimensions.scalar());
+            validate(field.isElement(value), errors.invalidFieldElement(value));
         }
         else if (Array.isArray(value)) {
             // value is a vector or a matrix
             const rowCount = value.length;
 
-            if (typeof value[0] === 'bigint') {
+            if (isBigIntArray(value)) {
                 // value is a vector
                 super(Dimensions.vector(rowCount));
+                value.forEach(v => validate(field.isElement(v), errors.invalidFieldElement(v)));
             }
             else {
                 // value is a matrix
-                const colCount = (value[0] as bigint[]).length;
+                const colCount = value[0].length;
                 super(Dimensions.matrix(rowCount, colCount));
-                for (let row of value as bigint[][]) {
-                    if (row.length !== colCount) {
-                        throw new Error(`all matrix rows must have the same number of columns`);
-                    }
+                for (let row of value) {
+                    validate(row.length === colCount, errors.inconsistentMatrix());
+                    row.forEach(v => validate(field.isElement(v), errors.invalidFieldElement(v)));
                 }
             }
         }
         else {
-            throw new Error(`invalid constant value '${value}'`);
+            throw new Error(`invalid literal value '${value}'`);
         }
 
         this.value = value;
@@ -75,3 +78,16 @@ export class LiteralValue extends Expression {
         }
     }
 }
+
+// HELPER FUNCTIONS
+// ================================================================================================
+function isBigIntArray(value: any[]): value is bigint[] {
+    return typeof value[0] === 'bigint';
+}
+
+// ERRORS
+// ================================================================================================
+const errors = {
+    invalidFieldElement: (v: bigint) => `${v} is not a valid field element`,
+    inconsistentMatrix : () => `all matrix rows must have the same number of columns`
+};

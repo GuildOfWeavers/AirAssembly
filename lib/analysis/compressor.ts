@@ -1,6 +1,6 @@
 // IMPORTS
 // ================================================================================================
-import { Procedure, Subroutine } from "../procedures";
+import { AirProcedure } from "../procedures";
 import {
     Expression, ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
     GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions
@@ -69,14 +69,8 @@ class ExpressionCompressor extends ExpressionVisitor<Expression> {
 }
 
 const compressor = new ExpressionCompressor();
-export function compressProcedure(proc: Procedure) {
-    const result = new Procedure(proc.field, 
-        proc.name, proc.span, proc.resultLength, proc.constants, proc.locals as any,
-        proc.traceRegisters.dimensions[0],
-        proc.staticRegisters.dimensions[0]);
-    proc.subroutines.forEach(s => result.addSubroutine(compressor.visit(s.expression), s.localVarIdx));
-    result.setResult(compressor.visit(proc.result));
-    return result;
+export function compressProcedure(proc: AirProcedure) {
+    return undefined as any; // TODO
 }
 
 // HELPER FUNCTIONS
