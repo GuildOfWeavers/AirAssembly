@@ -31,7 +31,7 @@ The code below illustrates AirAssembly module structure on an example of a [MiMC
 ```
 (module
     (field prime 340282366920938463463374607393113505793)
-    (const scalar $alpha 3)
+    (const $alpha scalar 3)
     (function $mimcRound
         (result vector 1)
         (param $state vector 1) (param $roundKey scalar)
@@ -59,7 +59,7 @@ The meaning of sections in the above example is as follows:
 * [Constant declarations](#Constant-declarations) define a set of constants which can be used in arithmetic operations within the module.
 * [Function declarations](#Function-declarations) define a set of functions which can be used to encapsulate common arithmetic expressions.
 * [Component exports](#Component-exports) define a set of computations exported by the module. Each component consists of the following sub-sections:
-  * [Signature](#Component-signature) defines basic properties of the computation.
+  * [Signature](#Component-signature) defines basic properties of the computation (number of registers, number of constraints etc.).
   * [Static registers](#Static-registers) describe logic for building static registers, including logic for non-scalar interpreting inputs.
   * [Trace initializer](#Trace-initializer) describes logic for initialing the first row of the execution trace, including logic for interpreting scalar inputs.
   * [Transition function](#Transition-function) describes state transition logic for the computation.

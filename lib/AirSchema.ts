@@ -2,7 +2,7 @@
 // ================================================================================================
 import { AirSchema as IAirSchema } from "@guildofweavers/air-assembly";
 import { FiniteField, createPrimeField } from "@guildofweavers/galois";
-import { AirFunction, FunctionContext, Constant, StoreOperation, LocalVariable, Parameter } from "./procedures";
+import { AirFunction, FunctionContext, Constant, StoreOperation } from "./procedures";
 import { Expression, LiteralValue, Dimensions } from "./expressions";
 import { AirComponent } from "./AirComponent";
 import { validate } from "./utils";
