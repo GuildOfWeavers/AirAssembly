@@ -6,8 +6,8 @@ import { compile, instantiate } from '../index';
 // ================================================================================================
 const source = `
 (module
-    (field prime 340282366920938463463374607393113505793)
-    (const scalar $alpha 3)
+    (field prime 4194304001)
+    (const $alpha scalar 3)
     (function $mimcRound
         (result vector 1)
         (param $state vector 1) (param $roundKey scalar)
@@ -15,7 +15,7 @@ const source = `
             (exp (load.param $state) (load.const $alpha))
             (load.param $roundKey)))
     (export mimc
-        (registers 1) (constraints 1) (steps 1024)
+        (registers 1) (constraints 1) (steps 64)
         (static
             (cycle (prng sha256 0x4d694d43 64)))
         (init
