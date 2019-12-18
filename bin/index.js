@@ -62,10 +62,18 @@ function compile(sourceOrPath, limits) {
     return schema;
 }
 exports.compile = compile;
-function instantiate(schema, componentName, options = {}) {
-    const component = schema.components.get(componentName);
-    if (!component)
-        throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+function instantiate(schema, componentOrOptions, options) {
+    let component;
+    if (typeof componentOrOptions === 'string') {
+        component = schema.components.get(componentOrOptions);
+        utils_1.validate(component, errors.componentNotFound(componentOrOptions));
+        options = options || {};
+    }
+    else {
+        component = schema.components.get('default');
+        utils_1.validate(component, errors.noDefaultComponent());
+        options = componentOrOptions || {};
+    }
     const compositionFactor = utils_1.getCompositionFactor(component);
     const vOptions = validateModuleOptions(options, compositionFactor);
     validateLimits(schema, vOptions.limits);
@@ -75,8 +83,7 @@ function instantiate(schema, componentName, options = {}) {
 exports.instantiate = instantiate;
 function analyze(schema, componentName) {
     const component = schema.components.get(componentName);
-    if (!component)
-        throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+    utils_1.validate(component, errors.componentNotFound(componentName));
     const transition = analysis_1.analyzeProcedure(component.transitionFunction);
     const evaluation = analysis_1.analyzeProcedure(component.constraintEvaluator);
     return { transition, evaluation };
@@ -116,4 +123,10 @@ function validateLimits(schema, limits) {
         throw new errors_1.AssemblyError([error]);
     }
 }
+// ERRORS
+// ================================================================================================
+const errors = {
+    componentNotFound: (n) => `component with name '${n}' does not exist in the provided schema`,
+    noDefaultComponent: () => `provided schema does not contain a default component export`
+};
 //# sourceMappingURL=index.js.map

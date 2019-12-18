@@ -74,6 +74,9 @@ The library exposes a small set of functions that can be used to compile AirAsse
 * **instantiate**(schema: `AirSchema`, component: `string`, options?: `ModuleOptions`): `AirModule`<br />
   Creates an [AirModule](#Air-Module) object for the specified `component` within the provided `schema`. The `AirModule` can then be used to generate execution trace tables and evaluate transition constraints. The optional `options` parameter can be used to control instantiation of the `AirModule`.
 
+* **instantiate**(schema: `AirSchema`, options?: `ModuleOptions`): `AirModule`<br />
+  An overloaded version of the `instantiate()` function with `component` name assumed to equal "default". If the provided `schema` does not have a default component export, an error will be thrown.
+
 * **analyze**(schema: `AirSchema`, component: `name`): `SchemaAnalysisResult`<br />
   Performs basic analysis of the `component` within the provided `schema` to infer such things as degree of transition constraints, number of additions and multiplications needed to evaluate transition function etc.
 

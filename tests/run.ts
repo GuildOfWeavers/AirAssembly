@@ -10,7 +10,7 @@ const schema = compile(Buffer.from(`
         (add 
             (exp (load.param $state) (load.const $alpha))
             (load.param $key)))
-    (export main
+    (export default
 		(registers 1) (constraints 1) (steps 16)
 		(static
 			(input secret (steps 16) (shift -1))
@@ -35,7 +35,7 @@ const inputs = [
     [3n, 4n, 5n, 6n]
 ];
 
-const air = instantiate(schema, 'main');
+const air = instantiate(schema);
 
 const pContext = air.initProvingContext(inputs);
 const trace = pContext.generateExecutionTrace();

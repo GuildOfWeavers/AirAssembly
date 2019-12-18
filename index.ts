@@ -3,12 +3,13 @@
 import { AirModule, StarkLimits, AirModuleOptions, ComponentAnalysisResult } from '@guildofweavers/air-assembly';
 import * as fs from 'fs';
 import { AirSchema } from './lib/AirSchema';
+import { AirComponent } from './lib/AirComponent';
 import { lexer } from './lib/lexer';
 import { parser } from './lib/parser';
 import { instantiateModule } from './lib/jsGenerator';
 import { analyzeProcedure } from './lib/analysis';
 import { AssemblyError } from './lib/errors';
-import { getCompositionFactor, isPowerOf2, sha256prng } from './lib/utils';
+import { getCompositionFactor, isPowerOf2, sha256prng, validate } from './lib/utils';
 
 // MODULE VARIABLES
 // ================================================================================================
@@ -71,9 +72,22 @@ export function compile(sourceOrPath: Buffer | string, limits?: Partial<StarkLim
     return schema;
 }
 
-export function instantiate(schema: AirSchema, componentName: string, options: Partial<AirModuleOptions> = {}): AirModule {
-    const component = schema.components.get(componentName)!;
-    if (!component) throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+export function instantiate(schema: AirSchema, options?: Partial<AirModuleOptions>): AirModule;
+export function instantiate(schema: AirSchema, component: string, options?: Partial<AirModuleOptions>): AirModule;
+export function instantiate(schema: AirSchema, componentOrOptions?: string | Partial<AirModuleOptions>, options?: Partial<AirModuleOptions>): AirModule {
+
+    let component: AirComponent;
+    if (typeof componentOrOptions === 'string') {
+        component = schema.components.get(componentOrOptions)!;
+        validate(component, errors.componentNotFound(componentOrOptions));
+        options = options || {};
+    }
+    else {
+        component = schema.components.get('default')!;
+        validate(component, errors.noDefaultComponent());
+        options = componentOrOptions || {};
+    }
+    
     const compositionFactor = getCompositionFactor(component);
     const vOptions = validateModuleOptions(options, compositionFactor);
     validateLimits(schema, vOptions.limits as StarkLimits);
@@ -83,7 +97,7 @@ export function instantiate(schema: AirSchema, componentName: string, options: P
 
 export function analyze(schema: AirSchema, componentName: string): ComponentAnalysisResult {
     const component = schema.components.get(componentName)!;
-    if (!component) throw new Error(`component with name '${componentName}' does not exist in the provided schema`);
+    validate(component, errors.componentNotFound(componentName));
     const transition = analyzeProcedure(component.transitionFunction);
     const evaluation = analyzeProcedure(component.constraintEvaluator);
     return { transition, evaluation };
@@ -126,3 +140,10 @@ function validateLimits(schema: AirSchema, limits: StarkLimits): void {
         throw new AssemblyError([error]);
     }
 }
+
+// ERRORS
+// ================================================================================================
+const errors = {
+    componentNotFound   : (n: any) => `component with name '${n}' does not exist in the provided schema`,
+    noDefaultComponent  : () => `provided schema does not contain a default component export`
+};

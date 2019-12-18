@@ -61,7 +61,14 @@ declare module '@guildofweavers/air-assembly' {
     export function compile(source: Buffer, limits?: Partial<StarkLimits>): AirSchema;
 
     /**
-     * Creates an AirModule object for the specified component
+     * Creates an AirModule object for the defaulted schema component
+     * @param schema Schema containing the component to instantiate
+     * @param options Additional options for the AirModule
+     */
+    export function instantiate(schema: AirSchema, options?: Partial<AirModuleOptions>): AirModule;
+
+    /**
+     * Creates an AirModule object for the specified schema component
      * @param schema Schema containing the component to instantiate
      * @param component Name of the component to instantiate
      * @param options Additional options for the AirModule
