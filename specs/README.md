@@ -61,7 +61,7 @@ The meaning of sections in the above example is as follows:
 * [Component exports](#Component-exports) define a set of computations exported by the module. Each component consists of the following sub-sections:
   * [Signature](#Component-signature) defines basic properties of the computation (number of registers, number of constraints etc.).
   * [Static registers](#Static-registers) describe logic for building static registers, including logic for non-scalar interpreting inputs.
-  * [Trace initializer](#Trace-initializer) describes logic for initialing the first row of the execution trace, including logic for interpreting scalar inputs.
+  * [Trace initializer](#Trace-initializer) describes logic for initializing the first row of the execution trace, including logic for interpreting scalar inputs.
   * [Transition function](#Transition-function) describes state transition logic for the computation.
   * [Constraint evaluator](#Constraint-evaluator) describes algebraic relation between steps of the computation.
 
@@ -221,7 +221,7 @@ where:
 * `name` specifies the name under which the component is exported. The name must start with a letter and can contain any combination of letters, numbers, and underscores.
 * [Signature](#Component-signature) defines basic properties of the computation.
 * [Static registers](#Static-registers) describe logic for building static registers, including logic for interpreting non-scalar inputs.
-* [Trace initializer](#Trace-initializer) describes logic for initialing the first row of the execution trace, including logic for interpreting scalar inputs.
+* [Trace initializer](#Trace-initializer) describes logic for initializing the first row of the execution trace, including logic for interpreting scalar inputs.
 * [Transition function](#Transition-function) describes state transition logic for the computation.
 * [Constraint evaluator](#Constraint-evaluator) describes algebraic relation between steps of the computation.
 
@@ -423,7 +423,7 @@ The above transition function produces a trace table with 2 dynamic registers pe
 (this is actually a somewhat convoluted way to describe a transition function for the Fibonacci sequence).
 
 #### Constraint evaluator
-Constraint evaluator section describes transition constraint evaluation logic needed to generate a constraint evaluation table for the computation. That is, the return value of a constraint evaluator becomes the next row in the constraint evaluation table. Constraint evaluation expression has the following form:
+Constraint evaluator section describes transition constraint evaluation logic needed to generate a constraint evaluation table for the computation. That is, the value returned from the constraint evaluator becomes the next row in the constraint evaluation table. Constraint evaluation expression has the following form:
 ```
 (evaluation <locals?> <body>)
 ```
@@ -471,8 +471,8 @@ where:
 
 For example:
 ```
-(vector 1 2 3 4)
-(vector 1 (vector 2 3) (add (scalar 2) (scalar 2)))
+(vector (scalar 1) (scalar 2) (scalar 3) (scalar 4))
+(vector (scalar 1) (vector (scalar 2) (scalar 3)) (add (scalar 2) (scalar 2)))
 ```
 Both of the above expressions resolve to a vector with elements `[1, 2, 3, 4]`.
 
@@ -487,7 +487,7 @@ where:
 
  For example:
 ```
-(get (vector 1 2 3 4) 1)    # resolves to scalar value 2
+(get (vector (scalar 1) (scalar 2) (scalar 3)) 1)    # resolves to scalar value 2
 ```
 
 #### Slicing vectors
@@ -502,8 +502,8 @@ where:
 
 For example:
 ```
-(slice (vector 1 2 3 4) 1 2)    # resolves to vector [2, 3]
-(slice (vector 1 2 3 4) 1 1)    # resolves to vector [2]
+(slice (vector (scalar 1) (scalar 2) (scalar 3)) 1 2)    # resolves to vector [2, 3]
+(slice (vector (scalar 1) (scalar 2) (scalar 3)) 1 1)    # resolves to vector [2]
 ```
 
 ### Matrix operations
@@ -516,8 +516,8 @@ where:
 
  For example:
  ```
- (matrix (1 2 3 4) (5 6 7 8))
- (matrix (vector 1 2 3 4) (vector 5 6 7 8))
+ (matrix ((scalar 1) (scalar 2) (scalar 3) (scalar 4)) ((scalar 5) (scalar 6) (scalar 7) (scalar 8)))
+ (matrix (vector (scalar 1) (scalar 2) (scalar 3) (scalar 4)) (vector (scalar 5) (scalar 6) (scalar 7) (scalar 8)))
  ```
 Both of the above expressions resolve to a matrix with 2 rows and 4 columns containing values `[[1, 2, 3, 4], [5, 6, 7, 8]]`.
 
@@ -547,12 +547,12 @@ For example:
 ```
 The above operations can also take vectors and matrixes as operands. In such cases, the operations are treated as **element-wise** operations and it is required that both operands have the same lengths/dimensions. For example:
 ```
-(add (vector 1 2) (vector 3 4))     # resolves to [4, 6]
-(add (vector 1 2) (vector 3 4 5))   # results in an error
+(add (vector (scalar 1) (scalar 2)) (vector (scalar 3) (scalar 4)))     # resolves to [4, 6]
+(add (vector (scalar 1) (scalar 2)) (vector (scalar 3)))                # results in an error
 ```
 The second operand can also be replaced with a scalar value. For example:
 ```
-(exp (vector 3 4) (scalar 2))       # resolves to [9, 16]
+(exp (vector (scalar 3) (scalar 4)) (scalar 2))       # resolves to [9, 16]
 ```
 
 #### prod operation
@@ -581,7 +581,7 @@ For example (assuming field modulus is 23):
 If the operand is a vector or a matrix, the operation is performed **element-wise**. For example:
 
 ```
-(neg (vector 1 2 3 4))      # resolves to [22, 21, 20 19]
+(neg (vector (scalar 1) (scalar 2) (scalar 3) (scalar 4)))  # resolves to [22, 21, 20 19]
 ```
 
 ### Load operations
