@@ -1,98 +1,127 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const expressions_1 = require("../expressions");
-const degree_1 = require("./degree");
 const operations_1 = require("./operations");
+const utils_1 = require("./utils");
 // EXPRESSION ANALYZER CLASS
 // ================================================================================================
 class ExpressionAnalyzer extends expressions_1.ExpressionVisitor {
     // LITERALS
     // --------------------------------------------------------------------------------------------
     literalValue(e) {
-        return dimensionsToDegree(e.dimensions, 0n);
+        return dimensionsToInfo(e.dimensions, 0n);
     }
     // OPERATIONS
     // --------------------------------------------------------------------------------------------
     binaryOperation(e, ctx) {
-        operations_1.analyzeBinaryOperation(e, ctx.stats);
-        const lhsDegree = this.visit(e.lhs, ctx);
-        const rhsDegree = this.visit(e.rhs, ctx);
-        const degree = degree_1.getBinaryOperationDegree(e, lhsDegree, rhsDegree);
-        return degree;
+        const lhsInfo = this.visit(e.lhs, ctx);
+        const rhsInfo = this.visit(e.rhs, ctx);
+        switch (e.operation) {
+            case 'add':
+            case 'sub': {
+                ctx.stats.add += operations_1.getSimpleOperationCount(e.lhs);
+                return operations_1.applySimpleOperation(operations_1.maxDegree, lhsInfo, rhsInfo);
+            }
+            case 'mul': {
+                ctx.stats.mul += operations_1.getSimpleOperationCount(e.lhs);
+                return operations_1.applySimpleOperation(operations_1.sumDegree, lhsInfo, rhsInfo);
+            }
+            case 'div': {
+                ctx.stats.mul += operations_1.getSimpleOperationCount(e.lhs);
+                ctx.stats.inv += 1;
+                return operations_1.applySimpleOperation(operations_1.sumDegree, lhsInfo, rhsInfo); // TODO: incorrect degree
+            }
+            case 'exp': {
+                const exponent = utils_1.getExponentValue(e.rhs);
+                ctx.stats.mul += operations_1.getExponentOperationCount(e.lhs, exponent);
+                return operations_1.applyExponentOperation(lhsInfo, exponent);
+            }
+            case 'prod': {
+                const counts = operations_1.getProductOperationCounts(e.lhs, e.rhs);
+                ctx.stats.mul += counts.mul;
+                ctx.stats.add += counts.add;
+                return operations_1.applyProductOperation(lhsInfo, rhsInfo);
+            }
+        }
     }
     unaryOperation(e, ctx) {
-        operations_1.analyzeUnaryOperation(e, ctx.stats);
-        const opDegree = this.visit(e, ctx);
-        const degree = degree_1.getUnaryOperationDegree(e, opDegree);
-        return degree;
+        const operandInfo = this.visit(e.operand, ctx);
+        switch (e.operation) {
+            case 'neg': {
+                ctx.stats.add += operations_1.getSimpleOperationCount(e.operand);
+                return operandInfo;
+            }
+            case 'inv': {
+                ctx.stats.inv += operations_1.getSimpleOperationCount(e.operand);
+                return operandInfo; // TODO: incorrect degree
+            }
+        }
     }
     // VECTORS AND MATRIXES
     // --------------------------------------------------------------------------------------------
     makeVector(e, ctx) {
-        let degree = [];
+        let result = [];
         for (let element of e.elements) {
-            const elementDegree = this.visit(element, ctx);
+            const elementInfo = this.visit(element, ctx);
             if (element.isScalar) {
-                degree.push(elementDegree);
+                result.push(elementInfo);
             }
             else if (element.isVector) {
-                degree = degree.concat(elementDegree);
+                result = result.concat(elementInfo);
             }
         }
-        return degree;
+        return result;
     }
     getVectorElement(e, ctx) {
-        const sourceDegree = this.visit(e.source, ctx);
-        return sourceDegree[e.index];
+        const sourceItems = this.visit(e.source, ctx);
+        return sourceItems[e.index];
     }
     sliceVector(e, ctx) {
-        const sourceDegree = this.visit(e.source, ctx);
-        return sourceDegree.slice(e.start, e.end + 1);
+        const sourceItems = this.visit(e.source, ctx);
+        return sourceItems.slice(e.start, e.end + 1);
     }
     makeMatrix(e, ctx) {
-        const degree = [];
+        const result = [];
         for (let row of e.elements) {
-            let rowDegree = [];
+            let rowInfo = [];
             for (let element of row) {
-                const elementDegree = this.visit(element, ctx);
+                const elementInfo = this.visit(element, ctx);
                 if (element.isScalar) {
-                    rowDegree.push(elementDegree);
+                    rowInfo.push(elementInfo);
+                }
+                else if (element.isVector) {
+                    rowInfo = rowInfo.concat(elementInfo);
                 }
             }
-            degree.push(rowDegree);
+            result.push(rowInfo);
         }
-        return degree;
+        return result;
     }
     // LOAD AND STORE
     // --------------------------------------------------------------------------------------------
     loadExpression(e, ctx) {
-        if (e.source === 'const')
-            return ctx.degree.const[e.index];
-        else if (e.source === 'param')
-            return ctx.degree.param[e.index];
-        else if (e.source === 'local')
-            return ctx.degree.local[e.index];
-        else if (e.source === 'static')
-            return ctx.degree.static;
-        else
-            return ctx.degree.trace;
+        switch (e.source) {
+            case 'const': return ctx.info.const[e.index];
+            case 'param': return ctx.info.param[e.index];
+            case 'local': return ctx.info.local[e.index];
+            case 'trace': return dimensionsToInfo(ctx.info.trace, 1n, new Set([e.index]), new Set());
+            case 'static': return dimensionsToInfo(ctx.info.static, 1n, new Set(), new Set([e.index]));
+        }
     }
     // CALL EXPRESSION
     // --------------------------------------------------------------------------------------------
     callExpression(e, ctx) {
         const fnContext = {
-            degree: { ...ctx.degree, param: [], local: [] },
+            info: { ...ctx.info, param: [], local: [] },
             stats: ctx.stats
         };
         // analyze parameters
         e.params.forEach((p, i) => {
-            const degree = this.visit(p, fnContext);
-            fnContext.degree.param[i] = degree;
+            fnContext.info.param[i] = this.visit(p, fnContext);
         });
         // analyze statements
         e.func.statements.forEach(s => {
-            const degree = this.visit(s.expression, fnContext);
-            fnContext.degree.local[s.target] = degree;
+            fnContext.info.local[s.target] = this.visit(s.expression, fnContext);
         });
         return this.visit(e.func.result, fnContext);
     }
@@ -103,36 +132,40 @@ const analyzer = new ExpressionAnalyzer();
 function analyzeProcedure(procedure) {
     // initialize context
     const context = {
-        degree: {
-            const: procedure.constants.map(c => dimensionsToDegree(c.dimensions, 0n)),
+        info: {
+            const: procedure.constants.map(c => dimensionsToInfo(c.dimensions)),
             param: [],
             local: new Array(procedure.locals.length),
-            static: dimensionsToDegree(procedure.staticRegisters.dimensions, 1n),
-            trace: dimensionsToDegree(procedure.traceRegisters.dimensions, 1n)
+            static: procedure.staticRegisters.dimensions,
+            trace: procedure.traceRegisters.dimensions
         },
         stats: { add: 0, mul: 0, inv: 0 }
     };
     // analyze statements
     procedure.statements.forEach(s => {
-        const degree = analyzer.visit(s.expression, context);
-        context.degree.local[s.target] = degree;
+        context.info.local[s.target] = analyzer.visit(s.expression, context);
     });
     // analyze result and return
-    const degree = analyzer.visit(procedure.result, context);
-    return { degree, operations: context.stats };
+    const procedureInfo = analyzer.visit(procedure.result, context);
+    const results = procedureInfo.map(item => ({
+        degree: item.degree,
+        traceRefs: Array.from(item.traceRefs).sort((a, b) => a - b),
+        staticRefs: Array.from(item.staticRefs).sort((a, b) => a - b)
+    }));
+    return { results, operations: context.stats };
 }
 exports.analyzeProcedure = analyzeProcedure;
 // HELPER FUNCTIONS
 // ================================================================================================
-function dimensionsToDegree(dimensions, degree) {
+function dimensionsToInfo(dimensions, degree = 0n, traceRefs = new Set(), staticRefs = new Set()) {
     if (expressions_1.Dimensions.isScalar(dimensions)) {
-        return degree;
+        return { degree, staticRefs, traceRefs };
     }
     else if (expressions_1.Dimensions.isVector(dimensions)) {
-        return new Array(dimensions[0]).fill(degree);
+        return new Array(dimensions[0]).fill({ degree, staticRefs, traceRefs });
     }
     else {
-        return new Array(dimensions[0]).fill(new Array(dimensions[1]).fill(degree));
+        return new Array(dimensions[0]).fill(new Array(dimensions[1]).fill({ degree, staticRefs, traceRefs }));
     }
 }
 //# sourceMappingURL=analyzer.js.map

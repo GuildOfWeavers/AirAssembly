@@ -361,11 +361,15 @@ declare module '@guildofweavers/air-assembly' {
     // ANALYSIS
     // --------------------------------------------------------------------------------------------
     export interface ProcedureAnalysisResult {
-        readonly degree     : bigint[];
+        readonly results: {
+            readonly degree     : bigint;
+            readonly traceRefs  : number[];
+            readonly staticRefs : number[];
+        }[];
         readonly operations : {
-            readonly add    : number;
-            readonly mul    : number;
-            readonly inv    : number;
+            readonly add        : number;
+            readonly mul        : number;
+            readonly inv        : number;
         };
     }
 
@@ -458,6 +462,8 @@ declare module '@guildofweavers/air-assembly' {
 
     export interface ConstraintDescriptor {
         readonly degree     : number;
+        readonly traceRefs  : number[];
+        readonly staticRefs : number[];
     }
 
     // CONTEXTS

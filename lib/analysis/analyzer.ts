@@ -1,123 +1,167 @@
 // IMPORTS
 // ================================================================================================
-import { Degree, ProcedureAnalysisResult } from "@guildofweavers/air-assembly";
+import { ProcedureAnalysisResult } from "@guildofweavers/air-assembly";
 import { AirProcedure } from "../procedures";
 import {
     ExpressionVisitor, LiteralValue, BinaryOperation, UnaryOperation, MakeVector,
     GetVectorElement, SliceVector, MakeMatrix, LoadExpression, Dimensions, CallExpression
 } from "../expressions";
-import { getBinaryOperationDegree, getUnaryOperationDegree } from "./degree";
-import { analyzeBinaryOperation, analyzeUnaryOperation, OperationStats } from "./operations";
+import {
+    OperationStats, getSimpleOperationCount, getExponentOperationCount, getProductOperationCounts,
+    applySimpleOperation, applyExponentOperation, applyProductOperation, maxDegree, sumDegree,
+} from "./operations";
+import { getExponentValue } from "./utils";
 
 // INTERFACES
 // ================================================================================================
 interface AnalysisContext {
-    degree: {
-        const   : Degree[];
-        param   : Degree[];
-        local   : Degree[];
-        static  : Degree;
-        trace   : Degree;
+    info: {
+        const   : ExpressionInfo[];
+        param   : ExpressionInfo[];
+        local   : ExpressionInfo[];
+        static  : Dimensions;
+        trace   : Dimensions;
     }
     stats       : OperationStats;
 }
 
+export interface InfoItem {
+    readonly degree     : bigint;
+    readonly traceRefs  : Set<number>
+    readonly staticRefs : Set<number>
+}
+
+export type ExpressionInfo = InfoItem | InfoItem[] | InfoItem[][];
+
 // EXPRESSION ANALYZER CLASS
 // ================================================================================================
-class ExpressionAnalyzer extends ExpressionVisitor<Degree> {
+class ExpressionAnalyzer extends ExpressionVisitor<ExpressionInfo> {
 
     // LITERALS
     // --------------------------------------------------------------------------------------------
-    literalValue(e: LiteralValue): Degree {
-        return dimensionsToDegree(e.dimensions, 0n);
+    literalValue(e: LiteralValue): ExpressionInfo {
+        return dimensionsToInfo(e.dimensions, 0n);
     }
 
     // OPERATIONS
     // --------------------------------------------------------------------------------------------
-    binaryOperation(e: BinaryOperation, ctx: AnalysisContext): Degree {
-        analyzeBinaryOperation(e, ctx.stats);
-        const lhsDegree = this.visit(e.lhs, ctx);
-        const rhsDegree = this.visit(e.rhs, ctx);
-        const degree = getBinaryOperationDegree(e, lhsDegree, rhsDegree);
-        return degree;
+    binaryOperation(e: BinaryOperation, ctx: AnalysisContext): ExpressionInfo {
+        const lhsInfo = this.visit(e.lhs, ctx);
+        const rhsInfo = this.visit(e.rhs, ctx);
+        switch(e.operation) {
+            case 'add': case 'sub': {
+                ctx.stats.add += getSimpleOperationCount(e.lhs);
+                return applySimpleOperation(maxDegree, lhsInfo, rhsInfo);
+            }
+            case 'mul': {
+                ctx.stats.mul += getSimpleOperationCount(e.lhs);
+                return applySimpleOperation(sumDegree, lhsInfo, rhsInfo);
+            }
+            case 'div': {
+                ctx.stats.mul += getSimpleOperationCount(e.lhs);
+                ctx.stats.inv += 1;
+                return applySimpleOperation(sumDegree, lhsInfo, rhsInfo); // TODO: incorrect degree
+            }
+            case 'exp': {
+                const exponent = getExponentValue(e.rhs);
+                ctx.stats.mul += getExponentOperationCount(e.lhs, exponent);
+                return applyExponentOperation(lhsInfo, exponent);
+            }
+            case 'prod': {
+                const counts = getProductOperationCounts(e.lhs, e.rhs);
+                ctx.stats.mul += counts.mul;
+                ctx.stats.add += counts.add;
+                return applyProductOperation(lhsInfo, rhsInfo);
+            }
+        }
     }
 
-    unaryOperation(e: UnaryOperation, ctx: AnalysisContext): Degree {
-        analyzeUnaryOperation(e, ctx.stats);
-        const opDegree = this.visit(e, ctx);
-        const degree = getUnaryOperationDegree(e, opDegree);
-        return degree;
+    unaryOperation(e: UnaryOperation, ctx: AnalysisContext): ExpressionInfo {
+        const operandInfo = this.visit(e.operand, ctx);
+        switch (e.operation) {
+            case 'neg': {
+                ctx.stats.add += getSimpleOperationCount(e.operand);
+                return operandInfo;
+            }
+            case 'inv': {
+                ctx.stats.inv += getSimpleOperationCount(e.operand);
+                return operandInfo; // TODO: incorrect degree
+            }
+        }
     }
 
     // VECTORS AND MATRIXES
     // --------------------------------------------------------------------------------------------
-    makeVector(e: MakeVector, ctx: AnalysisContext): Degree {
-        let degree: bigint[] = [];
+    makeVector(e: MakeVector, ctx: AnalysisContext): ExpressionInfo {
+        let result: InfoItem[] = [];
         for (let element of e.elements) {
-            const elementDegree = this.visit(element, ctx);
+            const elementInfo = this.visit(element, ctx);
             if (element.isScalar) {
-                degree.push(elementDegree as bigint);
+                result.push(elementInfo as InfoItem);
             }
             else if (element.isVector) {
-                degree = degree.concat(elementDegree as bigint[]);
+                result = result.concat(elementInfo as InfoItem[]);
             }
         }
-        return degree;
+        return result;
     }
 
-    getVectorElement(e: GetVectorElement, ctx: AnalysisContext): Degree {
-        const sourceDegree = this.visit(e.source, ctx) as bigint[];
-        return sourceDegree[e.index];
+    getVectorElement(e: GetVectorElement, ctx: AnalysisContext): ExpressionInfo {
+        const sourceItems = this.visit(e.source, ctx) as InfoItem[];
+        return sourceItems[e.index];
     }
 
-    sliceVector(e: SliceVector, ctx: AnalysisContext): Degree {
-        const sourceDegree = this.visit(e.source, ctx) as bigint[];
-        return sourceDegree.slice(e.start, e.end + 1);
+    sliceVector(e: SliceVector, ctx: AnalysisContext): ExpressionInfo {
+        const sourceItems = this.visit(e.source, ctx) as InfoItem[];
+        return sourceItems.slice(e.start, e.end + 1);
     }
 
-    makeMatrix(e: MakeMatrix, ctx: AnalysisContext): Degree {
-        const degree: bigint[][] = [];
+    makeMatrix(e: MakeMatrix, ctx: AnalysisContext): ExpressionInfo {
+        const result: InfoItem[][] = [];
         for (let row of e.elements) {
-            let rowDegree: bigint[] = [];
+            let rowInfo: InfoItem[] = [];
             for (let element of row) {
-                const elementDegree = this.visit(element, ctx);
+                const elementInfo = this.visit(element, ctx);
                 if (element.isScalar) {
-                    rowDegree.push(elementDegree as bigint);
+                    rowInfo.push(elementInfo as InfoItem);
+                }
+                else if (element.isVector) {
+                    rowInfo = rowInfo.concat(elementInfo as InfoItem[])
                 }
             }
-            degree.push(rowDegree);
+            result.push(rowInfo);
         }
-        return degree;
+        return result;
     }
 
     // LOAD AND STORE
     // --------------------------------------------------------------------------------------------
-    loadExpression(e: LoadExpression, ctx: AnalysisContext): Degree {
-        if (e.source === 'const') return ctx.degree.const[e.index];
-        else if (e.source === 'param') return ctx.degree.param[e.index];
-        else if (e.source === 'local') return ctx.degree.local[e.index];
-        else if (e.source === 'static') return ctx.degree.static;
-        else return ctx.degree.trace;
+    loadExpression(e: LoadExpression, ctx: AnalysisContext): ExpressionInfo {
+        switch (e.source) {
+            case 'const':  return ctx.info.const[e.index];
+            case 'param':  return ctx.info.param[e.index];
+            case 'local':  return ctx.info.local[e.index];
+            case 'trace':  return dimensionsToInfo(ctx.info.trace, 1n, new Set([e.index]), new Set());
+            case 'static': return dimensionsToInfo(ctx.info.static, 1n, new Set(), new Set([e.index]));
+        }
     }
 
     // CALL EXPRESSION
     // --------------------------------------------------------------------------------------------
-    callExpression(e: CallExpression, ctx: AnalysisContext): Degree {
+    callExpression(e: CallExpression, ctx: AnalysisContext): ExpressionInfo {
         const fnContext: AnalysisContext = {
-            degree  : { ...ctx.degree, param: [], local: [] },
+            info  : { ...ctx.info, param: [], local: [] },
             stats   : ctx.stats
         };
 
         // analyze parameters
         e.params.forEach((p, i) => {
-            const degree = this.visit(p, fnContext);
-            fnContext.degree.param[i] = degree;
+            fnContext.info.param[i] = this.visit(p, fnContext);
         });
 
         // analyze statements
         e.func.statements.forEach(s => {
-            const degree = this.visit(s.expression, fnContext);
-            fnContext.degree.local[s.target] = degree;
+            fnContext.info.local[s.target] = this.visit(s.expression, fnContext);
         });
 
         return this.visit(e.func.result, fnContext);
@@ -131,37 +175,41 @@ export function analyzeProcedure(procedure: AirProcedure): ProcedureAnalysisResu
 
     // initialize context
     const context: AnalysisContext = {
-        degree: {
-            const   : procedure.constants.map(c => dimensionsToDegree(c.dimensions, 0n)),
+        info: {
+            const   : procedure.constants.map(c => dimensionsToInfo(c.dimensions)),
             param   : [],
             local   : new Array(procedure.locals.length),
-            static  : dimensionsToDegree(procedure.staticRegisters.dimensions, 1n),
-            trace   : dimensionsToDegree(procedure.traceRegisters.dimensions, 1n)
+            static  : procedure.staticRegisters.dimensions,
+            trace   : procedure.traceRegisters.dimensions
         },
         stats: { add: 0, mul: 0, inv: 0 }
     }
 
     // analyze statements
     procedure.statements.forEach(s => {
-        const degree = analyzer.visit(s.expression, context);
-        context.degree.local[s.target] = degree;
+        context.info.local[s.target] = analyzer.visit(s.expression, context);
     });
 
     // analyze result and return
-    const degree = analyzer.visit(procedure.result, context) as bigint[];
-    return { degree, operations: context.stats };
+    const procedureInfo = analyzer.visit(procedure.result, context);
+    const results = (procedureInfo as InfoItem[]).map(item => ({
+        degree      : item.degree,
+        traceRefs   : Array.from(item.traceRefs).sort((a, b) => a - b),
+        staticRefs  : Array.from(item.staticRefs).sort((a, b) => a - b)
+    }));
+    return { results, operations: context.stats };
 }
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function dimensionsToDegree(dimensions: Dimensions, degree: bigint): Degree {
+function dimensionsToInfo(dimensions: Dimensions, degree = 0n, traceRefs = new Set<number>(), staticRefs = new Set<number>()): ExpressionInfo {
     if (Dimensions.isScalar(dimensions)) {
-        return degree;
+        return { degree, staticRefs, traceRefs };
     }
     else if (Dimensions.isVector(dimensions)) {
-        return new Array(dimensions[0]).fill(degree);
+        return new Array(dimensions[0]).fill({ degree, staticRefs, traceRefs });
     }
     else {
-        return new Array(dimensions[0]).fill(new Array(dimensions[1]).fill(degree));
+        return new Array(dimensions[0]).fill(new Array(dimensions[1]).fill({ degree, staticRefs, traceRefs }));
     }
 }
