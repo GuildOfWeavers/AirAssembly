@@ -15,7 +15,7 @@ interface DegreeOp {
     (d1: bigint, d2: bigint): bigint;
 }
 
-// PUBLIC FUNCTIONS
+// OPERATION COUNT FUNCTIONS
 // ================================================================================================
 export function getSimpleOperationCount(e: Expression): number {
     if (e.isScalar) return 1;
@@ -50,6 +50,8 @@ export function getProductOperationCounts(lhs: Expression, rhs: Expression): { a
     return { add, mul };
 }
 
+// OPERATION APPLICATION FUNCTIONS
+// ================================================================================================
 export function applySimpleOperation(degreeOp: DegreeOp, lhs: ExpressionInfo, rhs: ExpressionInfo): ExpressionInfo {
     if (isScalar(lhs)) {
         const v2 = rhs as InfoItem;
@@ -67,27 +69,15 @@ export function applySimpleOperation(degreeOp: DegreeOp, lhs: ExpressionInfo, rh
     }
 }
 
-export function applyExponent(lhs: ExpressionInfo, rhs: bigint): ExpressionInfo {
-    if (isScalar(lhs)) {
-        return {
-            degree      : lhs.degree * rhs,
-            traceRefs   : lhs.traceRefs,
-            staticRefs  : lhs.staticRefs
-        };
+export function applyExponentOperation(base: ExpressionInfo, exponent: bigint): ExpressionInfo {
+    if (isScalar(base)) {
+        return mulDegree(base, exponent);
     }
-    else if (isVector(lhs)) {
-        return lhs.map(item => ({
-            degree      : item.degree * rhs,
-            traceRefs   : item.traceRefs,
-            staticRefs  : item.staticRefs
-        }));
+    else if (isVector(base)) {
+        return base.map(item => mulDegree(item, exponent));
     }
     else {
-        return lhs.map(row => row.map(item => ({
-            degree      : item.degree * rhs,
-            traceRefs   : item.traceRefs,
-            staticRefs  : item.staticRefs
-        })));
+        return base.map(row => row.map(item => mulDegree(item, exponent)));
     }
 }
 
@@ -116,11 +106,11 @@ export function sumDegree(d1: bigint, d2: bigint): bigint {
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function applyToVector(op: DegreeOp, d1: InfoItem[], d2: InfoItem[] | InfoItem): InfoItem[] {
-    const result = new Array<InfoItem>(d1.length);
-    for (let i = 0; i < d1.length; i++) {
-        let v1 = d1[i];
-        let v2 = (Array.isArray(d2) ? d2[i] : d2);
+function applyToVector(op: DegreeOp, lhs: InfoItem[], rhs: InfoItem[] | InfoItem): InfoItem[] {
+    const result = new Array<InfoItem>(lhs.length);
+    for (let i = 0; i < lhs.length; i++) {
+        let v1 = lhs[i];
+        let v2 = (Array.isArray(rhs) ? rhs[i] : rhs);
         result[i] = {
             degree      : op(v1.degree, v2.degree),
             traceRefs   : mergeReferences(v1.traceRefs, v2.traceRefs),
@@ -130,13 +120,13 @@ function applyToVector(op: DegreeOp, d1: InfoItem[], d2: InfoItem[] | InfoItem):
     return result;
 }
 
-function applyToMatrix(op: DegreeOp, d1: InfoItem[][], d2: InfoItem[][] | InfoItem) {
-    const result = new Array<InfoItem[]>(d1.length);
-    for (let i = 0; i < d1.length; i++) {
-        result[i] = new Array<InfoItem>(d1[i].length);
-        for (let j = 0; j < d1[i].length; j++) {
-            let v1 = d1[i][j];
-            let v2 = (Array.isArray(d2) ? d2[i][j] : d2);
+function applyToMatrix(op: DegreeOp, lhs: InfoItem[][], rhs: InfoItem[][] | InfoItem): InfoItem[][] {
+    const result = new Array<InfoItem[]>(lhs.length);
+    for (let i = 0; i < lhs.length; i++) {
+        result[i] = new Array<InfoItem>(lhs[i].length);
+        for (let j = 0; j < lhs[i].length; j++) {
+            let v1 = lhs[i][j];
+            let v2 = (Array.isArray(rhs) ? rhs[i][j] : rhs);
             result[i][j] = {
                 degree      : op(v1.degree, v2.degree),
                 traceRefs   : mergeReferences(v1.traceRefs, v2.traceRefs),
@@ -147,12 +137,20 @@ function applyToMatrix(op: DegreeOp, d1: InfoItem[][], d2: InfoItem[][] | InfoIt
     return result;
 }
 
-function applyLinearCombination(d1: InfoItem[], d2: InfoItem[]): InfoItem {
+function mulDegree(base: InfoItem, exponent: bigint): InfoItem {
+    return {
+        degree      : base.degree * exponent,
+        traceRefs   : base.traceRefs,
+        staticRefs  : base.staticRefs
+    };
+}
+
+function applyLinearCombination(lhs: InfoItem[], rhs: InfoItem[]): InfoItem {
     const traceRefs = new Set<number>();
     const staticRefs = new Set<number>();
     let degree = 0n;
-    for (let i = 0; i < d1.length; i++) {
-        let v1 = d1[i], v2 = d2[i];
+    for (let i = 0; i < lhs.length; i++) {
+        let v1 = lhs[i], v2 = rhs[i];
 
         let d = v1.degree + v2.degree;
         if (d > degree) { degree = d; }
@@ -166,18 +164,18 @@ function applyLinearCombination(d1: InfoItem[], d2: InfoItem[]): InfoItem {
     return { degree, traceRefs, staticRefs };
 }
 
-function applyMatrixVectorProduct(d1: InfoItem[][], d2: InfoItem[]): InfoItem[] {
+function applyMatrixVectorProduct(lhs: InfoItem[][], rhs: InfoItem[]): InfoItem[] {
     const result = new Array<InfoItem>();
-    for (let row of d1) {
-        result.push(applyLinearCombination(row, d2));
+    for (let row of lhs) {
+        result.push(applyLinearCombination(row, rhs));
     }
     return result;
 }
 
-function applyMatrixMatrixProduct(d1: InfoItem[][], d2: InfoItem[][]): InfoItem[][] {
-    const n = d1.length;
-    const m = d1[0].length;
-    const p = d2[0].length;
+function applyMatrixMatrixProduct(lhs: InfoItem[][], rhs: InfoItem[][]): InfoItem[][] {
+    const n = lhs.length;
+    const m = lhs[0].length;
+    const p = rhs[0].length;
 
     const result = new Array<InfoItem[]>(n);
     for (let i = 0; i < n; i++) {
@@ -187,7 +185,7 @@ function applyMatrixMatrixProduct(d1: InfoItem[][], d2: InfoItem[][]): InfoItem[
             let traceRefs = new Set<number>();
             let staticRefs = new Set<number>();
             for (let k = 0; k < m; k++) {
-                let v1 = d1[i][k], v2 = d2[k][j];
+                let v1 = lhs[i][k], v2 = rhs[k][j];
 
                 let d = v1.degree + v2.degree;
                 if (d > degree) { degree = d };

@@ -8,7 +8,7 @@ import {
 } from "../expressions";
 import {
     OperationStats, getSimpleOperationCount, getExponentOperationCount, getProductOperationCounts,
-    applySimpleOperation, applyExponent, applyProductOperation, maxDegree, sumDegree,
+    applySimpleOperation, applyExponentOperation, applyProductOperation, maxDegree, sumDegree,
 } from "./operations";
 import { getExponentValue } from "./utils";
 
@@ -19,8 +19,8 @@ interface AnalysisContext {
         const   : ExpressionInfo[];
         param   : ExpressionInfo[];
         local   : ExpressionInfo[];
-        static  : number;
-        trace   : number;
+        static  : Dimensions;
+        trace   : Dimensions;
     }
     stats       : OperationStats;
 }
@@ -46,58 +46,47 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionInfo> {
     // OPERATIONS
     // --------------------------------------------------------------------------------------------
     binaryOperation(e: BinaryOperation, ctx: AnalysisContext): ExpressionInfo {
-        
-        let result: ExpressionInfo;
         const lhsInfo = this.visit(e.lhs, ctx);
         const rhsInfo = this.visit(e.rhs, ctx);
-
         switch(e.operation) {
             case 'add': case 'sub': {
                 ctx.stats.add += getSimpleOperationCount(e.lhs);
-                result = applySimpleOperation(maxDegree, lhsInfo, rhsInfo);
-                break;
+                return applySimpleOperation(maxDegree, lhsInfo, rhsInfo);
             }
             case 'mul': {
                 ctx.stats.mul += getSimpleOperationCount(e.lhs);
-                result = applySimpleOperation(sumDegree, lhsInfo, rhsInfo);
-                break;
+                return applySimpleOperation(sumDegree, lhsInfo, rhsInfo);
             }
             case 'div': {
                 ctx.stats.mul += getSimpleOperationCount(e.lhs);
                 ctx.stats.inv += 1;
-                result = applySimpleOperation(sumDegree, lhsInfo, rhsInfo); // TODO: incorrect degree
-                break;
+                return applySimpleOperation(sumDegree, lhsInfo, rhsInfo); // TODO: incorrect degree
             }
             case 'exp': {
                 const exponent = getExponentValue(e.rhs);
                 ctx.stats.mul += getExponentOperationCount(e.lhs, exponent);
-                result = applyExponent(lhsInfo, exponent);
-                break;
+                return applyExponentOperation(lhsInfo, exponent);
             }
             case 'prod': {
                 const counts = getProductOperationCounts(e.lhs, e.rhs);
                 ctx.stats.mul += counts.mul;
                 ctx.stats.add += counts.add;
-                result = applyProductOperation(lhsInfo, rhsInfo);
-                break;
+                return applyProductOperation(lhsInfo, rhsInfo);
             }
         }
-
-        return result;
     }
 
     unaryOperation(e: UnaryOperation, ctx: AnalysisContext): ExpressionInfo {
         const operandInfo = this.visit(e.operand, ctx);
-        if (e.operation === 'neg') {
-            ctx.stats.add += getSimpleOperationCount(e.operand);
-            return operandInfo;
-        }
-        else if (e.operation === 'inv') {
-            ctx.stats.inv += getSimpleOperationCount(e.operand);
-            return operandInfo; // TODO: incorrect degree
-        }
-        else {
-            throw new Error(`unary operation '${e.operation}' is invalid`);
+        switch (e.operation) {
+            case 'neg': {
+                ctx.stats.add += getSimpleOperationCount(e.operand);
+                return operandInfo;
+            }
+            case 'inv': {
+                ctx.stats.inv += getSimpleOperationCount(e.operand);
+                return operandInfo; // TODO: incorrect degree
+            }
         }
     }
 
@@ -106,12 +95,12 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionInfo> {
     makeVector(e: MakeVector, ctx: AnalysisContext): ExpressionInfo {
         let result: InfoItem[] = [];
         for (let element of e.elements) {
-            const elementItem = this.visit(element, ctx);
+            const elementInfo = this.visit(element, ctx);
             if (element.isScalar) {
-                result.push(elementItem as InfoItem);
+                result.push(elementInfo as InfoItem);
             }
             else if (element.isVector) {
-                result = result.concat(elementItem as InfoItem[]);
+                result = result.concat(elementInfo as InfoItem[]);
             }
         }
         return result;
@@ -136,8 +125,8 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionInfo> {
                 if (element.isScalar) {
                     rowInfo.push(elementInfo as InfoItem);
                 }
-                else {
-                    // TODO?
+                else if (element.isVector) {
+                    rowInfo = rowInfo.concat(elementInfo as InfoItem[])
                 }
             }
             result.push(rowInfo);
@@ -148,22 +137,13 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionInfo> {
     // LOAD AND STORE
     // --------------------------------------------------------------------------------------------
     loadExpression(e: LoadExpression, ctx: AnalysisContext): ExpressionInfo {
-        if (e.source === 'const')       return ctx.info.const[e.index];
-        else if (e.source === 'param')  return ctx.info.param[e.index];
-        else if (e.source === 'local')  return ctx.info.local[e.index];
-        else if (e.source === 'static') {
-            const result: InfoItem[] = [];
-            const info = { degree: 1n, staticRefs: new Set([e.index]), traceRefs: new Set<number>() };
-            for (let i = 0; i < ctx.info.static; i++) { result.push(info); }
-            return result;
+        switch (e.source) {
+            case 'const':  return ctx.info.const[e.index];
+            case 'param':  return ctx.info.param[e.index];
+            case 'local':  return ctx.info.local[e.index];
+            case 'trace':  return dimensionsToInfo(ctx.info.trace, 1n, new Set([e.index]), new Set());
+            case 'static': return dimensionsToInfo(ctx.info.static, 1n, new Set(), new Set([e.index]));
         }
-        else if (e.source === 'trace') {
-            const result: InfoItem[] = [];
-            const info = { degree: 1n, staticRefs: new Set<number>(), traceRefs: new Set([e.index]) };
-            for (let i = 0; i < ctx.info.trace; i++) { result.push(info); }
-            return result;
-        }
-        else throw new Error(`load source '${e.source}' is invalid`);
     }
 
     // CALL EXPRESSION
@@ -196,11 +176,11 @@ export function analyzeProcedure(procedure: AirProcedure): ProcedureAnalysisResu
     // initialize context
     const context: AnalysisContext = {
         info: {
-            const   : procedure.constants.map(c => dimensionsToInfo(c.dimensions, 0n)),
+            const   : procedure.constants.map(c => dimensionsToInfo(c.dimensions)),
             param   : [],
             local   : new Array(procedure.locals.length),
-            static  : procedure.staticRegisters.dimensions[0],
-            trace   : procedure.traceRegisters.dimensions[0]
+            static  : procedure.staticRegisters.dimensions,
+            trace   : procedure.traceRegisters.dimensions
         },
         stats: { add: 0, mul: 0, inv: 0 }
     }
@@ -222,16 +202,14 @@ export function analyzeProcedure(procedure: AirProcedure): ProcedureAnalysisResu
 
 // HELPER FUNCTIONS
 // ================================================================================================
-function dimensionsToInfo(dimensions: Dimensions, degree: bigint): ExpressionInfo {
+function dimensionsToInfo(dimensions: Dimensions, degree = 0n, traceRefs = new Set<number>(), staticRefs = new Set<number>()): ExpressionInfo {
     if (Dimensions.isScalar(dimensions)) {
-        return { degree, staticRefs: new Set(), traceRefs: new Set() };
+        return { degree, staticRefs, traceRefs };
     }
     else if (Dimensions.isVector(dimensions)) {
-        const info = { degree, staticRefs: new Set(), traceRefs: new Set() };
-        return new Array(dimensions[0]).fill(info);
+        return new Array(dimensions[0]).fill({ degree, staticRefs, traceRefs });
     }
     else {
-        const info = { degree, staticRefs: new Set(), traceRefs: new Set() };
-        return new Array(dimensions[0]).fill(new Array(dimensions[1]).fill(info));
+        return new Array(dimensions[0]).fill(new Array(dimensions[1]).fill({ degree, staticRefs, traceRefs }));
     }
 }
