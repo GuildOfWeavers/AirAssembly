@@ -166,8 +166,10 @@ export class AirComponent implements IComponent {
     get constraints(): ConstraintDescriptor[] {
         if (!this._constraints)  {
             const constraintAnalysis = analyzeProcedure(this.constraintEvaluator);
-            this._constraints = constraintAnalysis.degree.map(d => ({
-                degree  : d > Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : Number(d)
+            this._constraints = constraintAnalysis.results.map(r => ({
+                degree      : r.degree > Number.MAX_SAFE_INTEGER ? Number.MAX_SAFE_INTEGER : Number(r.degree),
+                traceRefs   : r.traceRefs,
+                staticRefs  : r.staticRefs
             }));
         }
         return this._constraints;
