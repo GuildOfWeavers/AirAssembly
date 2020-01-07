@@ -9,7 +9,7 @@ const errors_1 = require("./errors");
 exports.HexLiteral = chevrotain_1.createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/ });
 exports.Literal = chevrotain_1.createToken({ name: "Literal", pattern: /0|[1-9]\d*/, longer_alt: exports.HexLiteral });
 exports.Identifier = chevrotain_1.createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/ });
-exports.Handle = chevrotain_1.createToken({ name: "Handle", pattern: /\$[a-zA-Z]\w*/ });
+exports.Handle = chevrotain_1.createToken({ name: "Handle", pattern: /\$[_a-zA-Z]\w*/ });
 // KEYWORDS
 // ================================================================================================
 exports.Module = chevrotain_1.createToken({ name: "Module", pattern: /module/, longer_alt: exports.Identifier });

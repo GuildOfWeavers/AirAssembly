@@ -6,7 +6,7 @@ const crypto = require("crypto");
 // CONSTANTS
 // ================================================================================================
 const MAX_HANDLE_LENGTH = 128;
-const HANDLE_REGEXP = /\$[a-zA-Z]\w*/g;
+const HANDLE_REGEXP = /\$[_a-zA-Z]\w*/g;
 // PUBLIC FUNCTIONS
 // ================================================================================================
 function isPowerOf2(value) {

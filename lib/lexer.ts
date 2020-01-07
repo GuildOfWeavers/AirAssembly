@@ -5,10 +5,10 @@ import { lexerErrorMessageProvider } from "./errors";
 
 // LITERALS AND IDENTIFIERS
 // ================================================================================================
-export const HexLiteral = createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/   });
+export const HexLiteral = createToken({ name: "HexLiteral", pattern: /0x[0-9a-f]+/    });
 export const Literal    = createToken({ name: "Literal",    pattern: /0|[1-9]\d*/,  longer_alt: HexLiteral });
-export const Identifier = createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/   });
-export const Handle     = createToken({ name: "Handle",     pattern: /\$[a-zA-Z]\w*/ });
+export const Identifier = createToken({ name: "Identifier", pattern: /[a-zA-Z]\w*/    });
+export const Handle     = createToken({ name: "Handle",     pattern: /\$[_a-zA-Z]\w*/ });
 
 // KEYWORDS
 // ================================================================================================

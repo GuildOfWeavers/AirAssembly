@@ -7,7 +7,7 @@ import { AirComponent } from './AirComponent';
 // CONSTANTS
 // ================================================================================================
 const MAX_HANDLE_LENGTH = 128;
-const HANDLE_REGEXP = /\$[a-zA-Z]\w*/g;
+const HANDLE_REGEXP = /\$[_a-zA-Z]\w*/g;
 
 // PUBLIC FUNCTIONS
 // ================================================================================================

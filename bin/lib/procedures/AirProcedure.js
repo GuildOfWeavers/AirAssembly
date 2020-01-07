@@ -31,7 +31,7 @@ class AirProcedure {
         if (this.locals.length > 0)
             code += `\n      ${this.locals.map(v => v.toString()).join(' ')}`;
         if (this.statements.length > 0)
-            code += `\n      ${this.statements.map(s => s.toString()).join('\n    ')}`;
+            code += `\n      ${this.statements.map(s => s.toString()).join('\n      ')}`;
         code += `\n      ${this.result.toString()}`;
         return `\n    (${this.name}${code})`;
     }
