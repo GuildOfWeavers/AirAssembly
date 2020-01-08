@@ -42,7 +42,9 @@ class LoadExpression extends Expression_1.Expression {
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     toString() {
-        if ((this.binding instanceof procedures_1.Constant || this.binding instanceof procedures_1.Parameter) && this.binding.handle) {
+        if ((this.binding instanceof procedures_1.Constant
+            || this.binding instanceof procedures_1.Parameter
+            || this.binding instanceof procedures_1.StoreOperation) && this.binding.handle) {
             return `(load.${this.source} ${this.binding.handle})`;
         }
         else {

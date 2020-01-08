@@ -45,7 +45,10 @@ export class LoadExpression extends Expression {
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     toString(): string {
-        if ((this.binding instanceof Constant || this.binding instanceof Parameter) && this.binding.handle) {
+        if ((this.binding instanceof Constant
+          || this.binding instanceof Parameter
+          || this.binding instanceof StoreOperation) && this.binding.handle) 
+        {
             return `(load.${this.source} ${this.binding.handle})`;
         }
         else {
