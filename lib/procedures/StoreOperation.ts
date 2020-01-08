@@ -24,6 +24,11 @@ export class StoreOperation implements IStoreOperation {
     get target(): number {
         return this._target;
     }
+
+    get handle(): string | undefined {
+        return this._handle;
+    }
+
     get expression(): Expression {
         return this._expression;
     }

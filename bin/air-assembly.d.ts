@@ -221,8 +221,9 @@ declare module '@guildofweavers/air-assembly' {
     }
 
     export interface StoreOperation {
-        readonly expression     : Expression;
         readonly target         : number;
+        readonly handle?        : string;
+        readonly expression     : Expression;
         readonly dimensions     : Dimensions;
     }
 

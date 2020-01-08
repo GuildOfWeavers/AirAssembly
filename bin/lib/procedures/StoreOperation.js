@@ -15,6 +15,9 @@ class StoreOperation {
     get target() {
         return this._target;
     }
+    get handle() {
+        return this._handle;
+    }
     get expression() {
         return this._expression;
     }

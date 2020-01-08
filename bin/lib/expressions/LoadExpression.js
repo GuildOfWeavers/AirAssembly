@@ -42,7 +42,12 @@ class LoadExpression extends Expression_1.Expression {
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     toString() {
-        return `(load.${this.source} ${this.index})`;
+        if ((this.binding instanceof procedures_1.Constant || this.binding instanceof procedures_1.Parameter) && this.binding.handle) {
+            return `(load.${this.source} ${this.binding.handle})`;
+        }
+        else {
+            return `(load.${this.source} ${this.index})`;
+        }
     }
 }
 exports.LoadExpression = LoadExpression;

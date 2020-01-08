@@ -45,6 +45,11 @@ export class LoadExpression extends Expression {
     // PUBLIC MEMBERS
     // --------------------------------------------------------------------------------------------
     toString(): string {
-        return `(load.${this.source} ${this.index})`;
+        if ((this.binding instanceof Constant || this.binding instanceof Parameter) && this.binding.handle) {
+            return `(load.${this.source} ${this.binding.handle})`;
+        }
+        else {
+            return `(load.${this.source} ${this.index})`;
+        }
     }
 }
