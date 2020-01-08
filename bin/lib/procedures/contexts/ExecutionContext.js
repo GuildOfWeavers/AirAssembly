@@ -116,7 +116,8 @@ class ExecutionContext {
         utils_1.validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
         const index = this.locals.indexOf(variable);
         utils_1.validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
-        const statement = new StoreOperation_1.StoreOperation(index, value);
+        const handle = typeof indexOrHandle === 'string' ? indexOrHandle : undefined;
+        const statement = new StoreOperation_1.StoreOperation(index, value, handle);
         variable.bind(statement, index);
         return statement;
     }

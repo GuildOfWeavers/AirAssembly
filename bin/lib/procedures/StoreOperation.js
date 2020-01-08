@@ -5,8 +5,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class StoreOperation {
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(target, expression) {
+    constructor(target, expression, handle) {
         this._target = target;
+        this._handle = handle;
         this._expression = expression;
     }
     // ACCESSORS
@@ -23,7 +24,8 @@ class StoreOperation {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        return `(store.local ${this.target} ${this.expression.toString()})`;
+        const target = this._handle ? this._handle : this.target;
+        return `(store.local ${target} ${this.expression.toString()})`;
     }
 }
 exports.StoreOperation = StoreOperation;

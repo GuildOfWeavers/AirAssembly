@@ -8,12 +8,14 @@ import { Expression, Dimensions } from '../expressions';
 export class StoreOperation implements IStoreOperation {
     
     private _target     : number;
+    private _handle?    : string;
     private _expression : Expression;
 
     // CONSTRUCTORS
     // --------------------------------------------------------------------------------------------
-    constructor(target: number, expression: Expression) {
+    constructor(target: number, expression: Expression, handle?: string) {
         this._target = target;
+        this._handle = handle;
         this._expression = expression;
     }
 
@@ -33,6 +35,7 @@ export class StoreOperation implements IStoreOperation {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     toString() {
-        return `(store.local ${this.target} ${this.expression.toString()})`;
+        const target = this._handle ? this._handle : this.target;
+        return `(store.local ${target} ${this.expression.toString()})`;
     }
 }

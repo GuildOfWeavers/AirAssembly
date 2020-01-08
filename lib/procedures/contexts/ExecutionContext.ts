@@ -154,7 +154,8 @@ export abstract class ExecutionContext implements IExecutionContext {
         validate(variable !== undefined, errors.localNotDeclared(indexOrHandle));
         const index = this.locals.indexOf(variable);
         validate(index !== -1, errors.localHandleInvalid(indexOrHandle));
-        const statement = new StoreOperation(index, value);
+        const handle = typeof indexOrHandle === 'string' ? indexOrHandle : undefined;
+        const statement = new StoreOperation(index, value, handle);
         variable.bind(statement, index);
         return statement;
     }
