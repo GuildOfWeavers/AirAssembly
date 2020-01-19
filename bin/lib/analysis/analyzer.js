@@ -117,7 +117,7 @@ class ExpressionAnalyzer extends expressions_1.ExpressionVisitor {
         };
         // analyze parameters
         e.params.forEach((p, i) => {
-            fnContext.info.param[i] = this.visit(p, fnContext);
+            fnContext.info.param[i] = this.visit(p, ctx);
         });
         // analyze statements
         e.func.statements.forEach(s => {

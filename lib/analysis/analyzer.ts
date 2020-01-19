@@ -156,7 +156,7 @@ class ExpressionAnalyzer extends ExpressionVisitor<ExpressionInfo> {
 
         // analyze parameters
         e.params.forEach((p, i) => {
-            fnContext.info.param[i] = this.visit(p, fnContext);
+            fnContext.info.param[i] = this.visit(p, ctx);
         });
 
         // analyze statements
