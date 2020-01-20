@@ -126,7 +126,7 @@ function buildStaticRegisters(component: AirComponent) {
         if (register instanceof InputRegister) {
             inputs.push({
                 rank    : register.rank,
-                parent  : register.parent,
+                parent  : findInputParentIndex(register, component),
                 secret  : register.secret,
                 binary  : register.binary,
                 offset  : register.offset,
@@ -142,4 +142,13 @@ function buildStaticRegisters(component: AirComponent) {
     }
 
     return { inputs, masked, cyclic };
+}
+
+function findInputParentIndex(register: InputRegister, component: AirComponent): number | undefined {
+    let index: number | undefined;
+    while (register.master) {
+        index = register.master.index;
+        register = component.staticRegisters[register.master.index] as InputRegister;
+    }
+    return index;
 }

@@ -23,7 +23,8 @@ export const Input      = createToken({ name: "Input",      pattern: /input/,   
 export const Secret     = createToken({ name: "Secret",     pattern: /secret/,      longer_alt: Identifier });
 export const Public     = createToken({ name: "Public",     pattern: /public/,      longer_alt: Identifier });
 export const Binary     = createToken({ name: "Binary",     pattern: /binary/,      longer_alt: Identifier });
-export const Parent     = createToken({ name: "Parent",     pattern: /parent/,      longer_alt: Identifier });
+export const ChildOf    = createToken({ name: "ChildOf",    pattern: /childof/,     longer_alt: Identifier });
+export const PeerOf     = createToken({ name: "PeerOf",     pattern: /peerof/,      longer_alt: Identifier });
 export const Steps      = createToken({ name: "Steps",      pattern: /steps/,       longer_alt: Identifier });
 export const Shift      = createToken({ name: "Shift",      pattern: /shift/,       longer_alt: Identifier });
 
@@ -98,8 +99,8 @@ export const allTokens = [
     
     Export, Registers, Constraints, Init,
 
-    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, Parent, Steps, Shift, Cycle,
-    Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Result, Param, Local,
+    Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, ChildOf, PeerOf, Steps, Shift,
+    Cycle, Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Result, Param, Local,
 
     Scalar, Vector, Matrix,
 

@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import { FiniteField } from "@guildofweavers/galois";
-import { AirComponent as IComponent, ConstraintDescriptor, ProcedureName } from "@guildofweavers/air-assembly";
+import { AirComponent as IComponent, ConstraintDescriptor, ProcedureName, InputRegisterMaster } from "@guildofweavers/air-assembly";
 import { AirSchema } from "./AirSchema";
 import { StaticRegister, InputRegister, MaskRegister, CyclicRegister, PrngSequence } from "./registers";
 import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction } from "./procedures";
@@ -82,17 +82,19 @@ export class AirComponent implements IComponent {
         return result;
     }
 
-    addInputRegister(scope: string, binary: boolean, parentIdx?: number, steps?: number, offset?: number): void {
+    addInputRegister(scope: string, binary: boolean, master?: InputRegisterMaster, steps?: number, offset?: number): void {
         const registerIdx = this.staticRegisterCount;
         validate(registerIdx === this._inputRegisters.length, errors.inputRegOutOfOrder());
 
         let rank = 0;
-        if (typeof parentIdx === 'number') {
-            const parent = this._inputRegisters[parentIdx];
-            validate(parent, errors.invalidInputParentIndex(registerIdx, parentIdx));
-            validate(parent instanceof InputRegister, errors.inputParentNotInputReg(registerIdx, parentIdx));
-            validate(!parent.isLeaf, errors.inputParentIsLeafReg(registerIdx, parentIdx));
-            rank = parent.rank + 1;
+        if (master) {
+            const relation = master.relation;
+            const masterReg = this._inputRegisters[master.index];
+            validate(relation === 'peerof' || relation === 'childof', errors.invalidInputMasterRel(registerIdx, relation));;
+            validate(masterReg, errors.invalidInputMasterIndex(registerIdx, master.index));
+            validate(masterReg instanceof InputRegister, errors.inputMasterNotInputReg(registerIdx, master.index));
+            validate(!masterReg.isLeaf, errors.inputMasterIsLeafReg(registerIdx, master.index));
+            rank = (relation === 'peerof' ? masterReg.rank : masterReg.rank + 1);
         }
         else {
             rank = 1;
@@ -102,7 +104,7 @@ export class AirComponent implements IComponent {
             validate(steps <= this.cycleLength, errors.inputCycleTooBig(steps, this.cycleLength));
         }
     
-        const register = new InputRegister(scope, rank, binary, parentIdx, steps, offset);
+        const register = new InputRegister(scope, rank, binary, master, steps, offset);
         this._inputRegisters.push(register);
         this._staticRegisters.push(register);
     }
@@ -221,8 +223,8 @@ export class AirComponent implements IComponent {
             let register : InputRegister | undefined = leaf;
             while (register) {
                 registers.delete(register);
-                register = register.parent !== undefined
-                    ? this._inputRegisters[register.parent]
+                register = register.master !== undefined
+                    ? this._inputRegisters[register.master.index]
                     : undefined;
             }
         }
@@ -243,9 +245,10 @@ const errors = {
     cycleLengthNotPowerOf2  : (n: any) => `trace cycle length for export '${n}' is invalid: cycle length must be a power of 2`,
     inputRegOutOfOrder      : () => `input register cannot be preceded by other register types`,
     inputCycleTooBig        : (c: any, t: any) => `input cycle length (${c}) cannot be greater than trace cycle length (${t})`,
-    invalidInputParentIndex : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is undefined`,
-    inputParentNotInputReg  : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is not an input register`,
-    inputParentIsLeafReg    : (r: any, s: any) => `invalid parent for input register ${r}: register ${s} is a leaf register`,
+    invalidInputMasterIndex : (r: any, s: any) => `invalid master for input register ${r}: register ${s} is undefined`,
+    invalidInputMasterRel   : (r: any, p: any) => `invalid master for input register ${r}: '${p}' is not a valid relation`,
+    inputMasterNotInputReg  : (r: any, s: any) => `invalid master for input register ${r}: register ${s} is not an input register`,
+    inputMasterIsLeafReg    : (r: any, s: any) => `invalid master for input register ${r}: register ${s} is a leaf register`,
     danglingInputRegisters  : (d: any[]) => `cycle length for input registers ${d.join(', ')} is not defined`,
     maskRegOutOfOrder       : () => `mask registers cannot be preceded by cyclic registers`,
     invalidMaskSourceIndex  : (r: any, s: any) => `invalid source for mask register ${r}: register ${s} is undefined`,

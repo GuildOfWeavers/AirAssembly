@@ -47,16 +47,19 @@ class AirComponent {
         }
         return result;
     }
-    addInputRegister(scope, binary, parentIdx, steps, offset) {
+    addInputRegister(scope, binary, master, steps, offset) {
         const registerIdx = this.staticRegisterCount;
         utils_1.validate(registerIdx === this._inputRegisters.length, errors.inputRegOutOfOrder());
         let rank = 0;
-        if (typeof parentIdx === 'number') {
-            const parent = this._inputRegisters[parentIdx];
-            utils_1.validate(parent, errors.invalidInputParentIndex(registerIdx, parentIdx));
-            utils_1.validate(parent instanceof registers_1.InputRegister, errors.inputParentNotInputReg(registerIdx, parentIdx));
-            utils_1.validate(!parent.isLeaf, errors.inputParentIsLeafReg(registerIdx, parentIdx));
-            rank = parent.rank + 1;
+        if (master) {
+            const relation = master.relation;
+            const masterReg = this._inputRegisters[master.index];
+            utils_1.validate(relation === 'peerof' || relation === 'childof', errors.invalidInputMasterRel(registerIdx, relation));
+            ;
+            utils_1.validate(masterReg, errors.invalidInputMasterIndex(registerIdx, master.index));
+            utils_1.validate(masterReg instanceof registers_1.InputRegister, errors.inputMasterNotInputReg(registerIdx, master.index));
+            utils_1.validate(!masterReg.isLeaf, errors.inputMasterIsLeafReg(registerIdx, master.index));
+            rank = (relation === 'peerof' ? masterReg.rank : masterReg.rank + 1);
         }
         else {
             rank = 1;
@@ -64,7 +67,7 @@ class AirComponent {
         if (steps !== undefined) {
             utils_1.validate(steps <= this.cycleLength, errors.inputCycleTooBig(steps, this.cycleLength));
         }
-        const register = new registers_1.InputRegister(scope, rank, binary, parentIdx, steps, offset);
+        const register = new registers_1.InputRegister(scope, rank, binary, master, steps, offset);
         this._inputRegisters.push(register);
         this._staticRegisters.push(register);
     }
@@ -168,8 +171,8 @@ class AirComponent {
             let register = leaf;
             while (register) {
                 registers.delete(register);
-                register = register.parent !== undefined
-                    ? this._inputRegisters[register.parent]
+                register = register.master !== undefined
+                    ? this._inputRegisters[register.master.index]
                     : undefined;
             }
         }
@@ -189,9 +192,10 @@ const errors = {
     cycleLengthNotPowerOf2: (n) => `trace cycle length for export '${n}' is invalid: cycle length must be a power of 2`,
     inputRegOutOfOrder: () => `input register cannot be preceded by other register types`,
     inputCycleTooBig: (c, t) => `input cycle length (${c}) cannot be greater than trace cycle length (${t})`,
-    invalidInputParentIndex: (r, s) => `invalid parent for input register ${r}: register ${s} is undefined`,
-    inputParentNotInputReg: (r, s) => `invalid parent for input register ${r}: register ${s} is not an input register`,
-    inputParentIsLeafReg: (r, s) => `invalid parent for input register ${r}: register ${s} is a leaf register`,
+    invalidInputMasterIndex: (r, s) => `invalid master for input register ${r}: register ${s} is undefined`,
+    invalidInputMasterRel: (r, p) => `invalid master for input register ${r}: '${p}' is not a valid relation`,
+    inputMasterNotInputReg: (r, s) => `invalid master for input register ${r}: register ${s} is not an input register`,
+    inputMasterIsLeafReg: (r, s) => `invalid master for input register ${r}: register ${s} is a leaf register`,
     danglingInputRegisters: (d) => `cycle length for input registers ${d.join(', ')} is not defined`,
     maskRegOutOfOrder: () => `mask registers cannot be preceded by cyclic registers`,
     invalidMaskSourceIndex: (r, s) => `invalid source for mask register ${r}: register ${s} is undefined`,

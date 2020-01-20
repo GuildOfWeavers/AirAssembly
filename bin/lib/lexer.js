@@ -21,7 +21,8 @@ exports.Input = chevrotain_1.createToken({ name: "Input", pattern: /input/, long
 exports.Secret = chevrotain_1.createToken({ name: "Secret", pattern: /secret/, longer_alt: exports.Identifier });
 exports.Public = chevrotain_1.createToken({ name: "Public", pattern: /public/, longer_alt: exports.Identifier });
 exports.Binary = chevrotain_1.createToken({ name: "Binary", pattern: /binary/, longer_alt: exports.Identifier });
-exports.Parent = chevrotain_1.createToken({ name: "Parent", pattern: /parent/, longer_alt: exports.Identifier });
+exports.ChildOf = chevrotain_1.createToken({ name: "ChildOf", pattern: /childof/, longer_alt: exports.Identifier });
+exports.PeerOf = chevrotain_1.createToken({ name: "PeerOf", pattern: /peerof/, longer_alt: exports.Identifier });
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/, longer_alt: exports.Identifier });
 exports.Shift = chevrotain_1.createToken({ name: "Shift", pattern: /shift/, longer_alt: exports.Identifier });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/, longer_alt: exports.Identifier });
@@ -80,8 +81,8 @@ exports.Comment = chevrotain_1.createToken({ name: "Comment", pattern: /#.+/, gr
 exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
     exports.Export, exports.Registers, exports.Constraints, exports.Init,
-    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.Parent, exports.Steps, exports.Shift, exports.Cycle,
-    exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Result, exports.Param, exports.Local,
+    exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.ChildOf, exports.PeerOf, exports.Steps, exports.Shift,
+    exports.Cycle, exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Result, exports.Param, exports.Local,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
     exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadParam, exports.LoadLocal, exports.StoreOp, exports.CallOp,

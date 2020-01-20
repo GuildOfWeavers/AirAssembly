@@ -170,7 +170,7 @@ declare module '@guildofweavers/air-assembly' {
         /** Highest degree of transition constraints defined for the computation. */
         readonly maxConstraintDegree: number;
 
-        addInputRegister(scope: string, binary: boolean, parentIdx?: number, steps?: number, offset?: number): void;
+        addInputRegister(scope: string, binary: boolean, master?: InputRegisterMaster, steps?: number, offset?: number): void;
         addMaskRegister(sourceIdx: number, inverted: boolean): void;
         addCyclicRegister(values: bigint[] | PrngSequence): void;
         
@@ -269,8 +269,14 @@ declare module '@guildofweavers/air-assembly' {
         readonly rank       : number;
         readonly binary     : boolean;
         readonly offset     : number;
-        readonly parent?    : number;
+        readonly master?    : InputRegisterMaster;
         readonly steps?     : number;
+    }
+
+    export type InputRegisterRelation = 'childof' | 'peerof';
+    export interface InputRegisterMaster {
+        readonly index      : number;
+        readonly relation   : InputRegisterRelation;
     }
 
     export interface MaskRegister extends StaticRegister {

@@ -169,12 +169,15 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 { ALT: () => this.CONSUME(lexer_1.Public).image }
             ]);
             const binary = this.OPTION1(() => this.CONSUME(lexer_1.Binary)) ? true : false;
-            const parent = this.OPTION2(() => {
+            const master = this.OPTION2(() => {
                 this.CONSUME2(lexer_1.LParen);
-                this.CONSUME(lexer_1.Parent);
+                const relation = this.OR2([
+                    { ALT: () => this.CONSUME(lexer_1.ChildOf).image },
+                    { ALT: () => this.CONSUME(lexer_1.PeerOf).image }
+                ]);
                 const index = this.SUBRULE1(this.integerLiteral);
                 this.CONSUME2(lexer_1.RParen);
-                return index;
+                return { index, relation };
             });
             const steps = this.OPTION3(() => {
                 this.CONSUME3(lexer_1.LParen);
@@ -191,7 +194,7 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
                 return this.ACTION(() => slots);
             });
             this.CONSUME1(lexer_1.RParen);
-            this.ACTION(() => component.addInputRegister(scope, binary, parent, steps, offset));
+            this.ACTION(() => component.addInputRegister(scope, binary, master, steps, offset));
         });
         this.maskRegister = this.RULE('maskRegister', (component) => {
             this.CONSUME1(lexer_1.LParen);

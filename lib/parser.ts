@@ -8,7 +8,7 @@ import { ExecutionContext, StoreOperation } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
-    Result, Cycle, Steps, Parent, Mask, Inverted, Export, Identifier, Init, Shift, Minus,
+    Result, Cycle, Steps, ChildOf, PeerOf, Mask, Inverted, Export, Identifier, Init, Shift, Minus,
     Prng, Sha256, HexLiteral, Handle, Param, Function, CallOp, Registers, Constraints
 } from './lexer';
 import {
@@ -204,12 +204,15 @@ class AirParser extends EmbeddedActionsParser {
 
         const binary = this.OPTION1(() => this.CONSUME(Binary)) ? true : false;
 
-        const parent = this.OPTION2(() => {
+        const master = this.OPTION2(() => {
             this.CONSUME2(LParen);
-            this.CONSUME(Parent);
+            const relation = this.OR2([
+                { ALT: () => this.CONSUME(ChildOf).image },
+                { ALT: () => this.CONSUME(PeerOf).image }
+            ]);
             const index = this.SUBRULE1(this.integerLiteral);
             this.CONSUME2(RParen);
-            return index;
+            return { index, relation };
         });
 
         const steps = this.OPTION3(() => {
@@ -229,7 +232,7 @@ class AirParser extends EmbeddedActionsParser {
         });
 
         this.CONSUME1(RParen);
-        this.ACTION(() => component.addInputRegister(scope, binary, parent, steps, offset));
+        this.ACTION(() => component.addInputRegister(scope, binary, master, steps, offset));
     });
 
     private maskRegister = this.RULE('maskRegister', (component: AirComponent) => {
