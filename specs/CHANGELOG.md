@@ -1,5 +1,9 @@
 # Release History
 
+### v0.3 - January 19, 2020
+
+* Replaced `parent` expression in input registers with `childof` and `peerof` expressions.
+
 ### v0.2 - December 17, 2019
 
 * Added module functions and `call` expressions.
