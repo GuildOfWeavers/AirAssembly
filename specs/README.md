@@ -280,20 +280,22 @@ A detailed explanation of each type of static register is provided in the follow
 ##### Input registers
 Input register declarations define a set of non-scalar inputs required by the computation, and describes the logic needed to transform these inputs into register traces. Input register declaration expression has the following form:
 ```
-(input <scope> <binary?> <parent?> <steps?> <shift?>)
+(input <scope> <binary?> <master?> <steps?> <shift?>)
 ```
 where:
 * `scope` can be either `secret` or `public`. Values for `secret` input registers are assumed to be known only to the prover and need to be provided only at the proof generation time. Values for `public` input registers must be known to both, the prover and the verifier, and must be provided at the time of proof generation, as well as, at the time of proof verification.
 * An optional `binary` attribute indicates whether the input register accepts only binary values (ones and zeros).
-* An optional reference to a parent registers of the form: `(parent <index>)`, where `index` is the index of the parent register. This allows forming of nested inputs (see [examples](#Nested-input-registers) for more info).
+* An optional reference to a master registers of the form: `(<relation> <index>)`, where:
+  * `relation` can be either `peerof` or `childof`, and defines relation between this register and its master register. This allows forming of nested inputs (see [examples](#Nested-input-registers) for more info).
+  * `index` is the index of the master register.
 * `steps` expression has the form `(steps <count>)`, where `count` specifies the number of steps by which a register trace should be expanded for each input value. The number of steps must be a power of 2. `steps` expression can be provided only for "leaf" input registers (see [examples](#Nested-input-registers) for more info).
 * An optional `shift` expression specifies the number of steps by which an input value should be shifted in the execution trace. The expression has the form `(shift <steps>)`, where `steps` is a signed integer indicating the number of steps to shift by (see [examples](#Single-input-register) for more info).
 
-Detailed examples of how different types of input registers are transformed into register traces are available [here](#Input-register-trace-generation), but here are a few simple example of input register declarations:
+Detailed examples of how different types of input registers are transformed into register traces are available [here](#Input-register-trace-generation), but here are a few simple examples of input register declarations:
 ```
 (input public (steps 8))
 (input secret (shift -1))
-(input public binary (parent 1) (steps 8))
+(input public binary (childof 1) (steps 8))
 ```
 
 ##### Mask registers
@@ -739,11 +741,11 @@ Notice that both registers resolve to traces of the same length. This is require
 We can also specify relationships between input registers like so:
 ```
 (input public)
-(input public (parent 0) (steps 2))
+(input public (childof 0) (steps 2))
 ```
 The above example declares 2 input registers such that:
 1. The first register expects a list of values,
-2. The second register expects one or more values for each value provided for the first register. This is accomplished by a `parent` expression in which `(parent 0)` means that the parent of the register is register with index `0`.
+2. The second register expects one or more values for each value provided for the first register. This is accomplished by a `master` expression in which `(childof 0)` means that the parent of the register is register with index `0`.
 
 For example, if we provide [3, 4] as inputs for the first register, we need to provide one or more values for each value in this list. For example, it could be [[5, 6], [7, 8]]. For this set of inputs, trace columns will look like so:
 ```
@@ -760,16 +762,17 @@ register 1: [5, 0, 6, 0, 7, 0, 8, 0, 9, 0, 10, 0, 11, 0, 12, 0]
 We can also nest register relations as deep as needed. For example, the code block below has two levels of nesting and also two parallel nesting structures:
 ```
 (input public)
-(input public (parent 0))
-(input public (parent 1) (steps 2))
-(input public (parent 0))
-(input public (parent 3) (steps 4))
+(input public (childof 0))
+(input public (childof 1) (steps 2))
+(input public (childof 0))
+(input public (peerof 3))
+(input public (childof 3) (steps 4))
 ```
 This results in a tree-like structure where:
-* Register 0 is the parent of both registers 1 and 3
-* Register 1 is the parent of register 2
-* Register 3 is the parent of register 4
-* Registers 2 and 4 are the "leaves" of the dependency tree.
+* Register 0 is a parent of both registers 1 and 3
+* Register 1 is a parent of register 2
+* Register 3 is a peer of register 4 and a parent of register 5
+* Registers 2 and 5 are the "leaves" of the dependency tree.
 
 Notice also that we didn't specify the number of steps for non-leaf registers. In general, number of steps must be specified only for the leaf registers. Specifying number of steps for non-leaf registers will result in an error.
 
@@ -779,7 +782,8 @@ Register 0: [3]
 Register 1: [[5, 6, 7, 8]]
 Register 2: [[[9, 10], [11, 12], [13, 14], [15, 16]]]
 Register 3: [[17, 18]]
-Register 4: [[[19, 20], [21, 22]]]
+Register 4: [[19, 20]]
+Register 5: [[[21, 22], [23, 24]]]
 ```
 The register traces generated for this set of inputs would look like so:
 ```
@@ -787,7 +791,8 @@ register 0: [3,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]
 register 1: [5,  0,  0,  0,  6,  0,  0,  0,  7,  0,  0,  0,  8,  0,  0,  0]
 register 2: [9,  0, 10,  0, 11,  0, 12,  0, 13,  0, 14,  0, 15,  0, 16,  0]
 register 3: [17, 0,  0,  0,  0,  0,  0,  0, 18,  0,  0,  0,  0,  0,  0,  0]
-register 4: [19, 0,  0,  0, 20,  0,  0,  0, 21,  0,  0,  0, 22,  0,  0,  0]
+register 4: [19, 0,  0,  0,  0,  0,  0,  0, 20,  0,  0,  0,  0,  0,  0,  0]
+register 5: [21, 0,  0,  0, 22,  0,  0,  0, 23,  0,  0,  0, 24,  0,  0,  0]
 ```
 
 # License
