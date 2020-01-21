@@ -27,8 +27,11 @@ class InputRegister extends StaticRegister_1.StaticRegister {
     get isRoot() {
         return (this.master === undefined);
     }
+    get isPeer() {
+        return (this.master !== undefined && this.master.relation === 'peerof');
+    }
     get isLeaf() {
-        return (this.steps !== undefined);
+        return (this.steps !== undefined && !this.isPeer);
     }
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------

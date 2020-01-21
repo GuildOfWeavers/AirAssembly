@@ -40,8 +40,12 @@ export class InputRegister extends StaticRegister implements IInputRegister {
         return (this.master === undefined);
     }
 
+    get isPeer(): boolean {
+        return (this.master !== undefined && this.master.relation === 'peerof');
+    }
+
     get isLeaf(): boolean {
-        return (this.steps !== undefined);
+        return (this.steps !== undefined && !this.isPeer);
     }
 
     // PUBLIC METHODS

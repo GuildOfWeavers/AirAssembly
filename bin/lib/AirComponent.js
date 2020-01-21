@@ -59,6 +59,7 @@ class AirComponent {
             utils_1.validate(masterReg, errors.invalidInputMasterIndex(registerIdx, master.index));
             utils_1.validate(masterReg instanceof registers_1.InputRegister, errors.inputMasterNotInputReg(registerIdx, master.index));
             utils_1.validate(!masterReg.isLeaf, errors.inputMasterIsLeafReg(registerIdx, master.index));
+            utils_1.validate(!masterReg.isPeer, errors.inputMasterIsPeerReg(registerIdx, master.index));
             rank = (relation === 'peerof' ? masterReg.rank : masterReg.rank + 1);
         }
         else {
@@ -166,8 +167,8 @@ class AirComponent {
     }
     getDanglingInputRegisters() {
         const registers = new Set(this._inputRegisters);
-        const leaves = this._inputRegisters.filter(r => r.isLeaf);
-        for (let leaf of leaves) {
+        const leavesAndPeers = this._inputRegisters.filter(r => r.isLeaf || r.isPeer);
+        for (let leaf of leavesAndPeers) {
             let register = leaf;
             while (register) {
                 registers.delete(register);
@@ -196,6 +197,7 @@ const errors = {
     invalidInputMasterRel: (r, p) => `invalid master for input register ${r}: '${p}' is not a valid relation`,
     inputMasterNotInputReg: (r, s) => `invalid master for input register ${r}: register ${s} is not an input register`,
     inputMasterIsLeafReg: (r, s) => `invalid master for input register ${r}: register ${s} is a leaf register`,
+    inputMasterIsPeerReg: (r, s) => `invalid master for input register ${r}: register ${s} is a peer register`,
     danglingInputRegisters: (d) => `cycle length for input registers ${d.join(', ')} is not defined`,
     maskRegOutOfOrder: () => `mask registers cannot be preceded by cyclic registers`,
     invalidMaskSourceIndex: (r, s) => `invalid source for mask register ${r}: register ${s} is undefined`,
