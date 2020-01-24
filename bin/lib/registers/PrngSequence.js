@@ -10,7 +10,7 @@ class PrngSequence {
         if (method !== 'sha256')
             throw new Error(`prng method: '${method}' is not supported`);
         this.method = method;
-        this.seed = Buffer.from(seed.toString(16), 'hex');
+        this.seed = Buffer.from(seed.toString(16).padStart(2, '0'), 'hex');
         this.length = count;
     }
     // PUBLIC METHODS
