@@ -528,6 +528,13 @@ declare module '@guildofweavers/air-assembly' {
         generateExecutionTrace(): Matrix;
 
         /**
+         * Generates traces of static registers for the computation. The trace is returned as a Matrix
+         * object where rows correspond to the dynamic register traces, and columns correspond to
+         * computation steps.
+         */
+        generateStaticTrace(): Matrix;
+
+        /**
          * Evaluates transition constraints for a computation. The evaluations are returned as a matrix
          * object where each row represents a transition constraint evaluated over the composition domain.
          * @param tracePolys A matrix where each row represents a polynomial interpolated from a

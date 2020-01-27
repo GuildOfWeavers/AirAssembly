@@ -71,6 +71,24 @@ function initProvingContext(inputs = [], seed = []) {
         }
         return f.newMatrixFrom(traceTable);
     }
+    // STATIC TRACE GENERATOR
+    // --------------------------------------------------------------------------------------------
+    function generateStaticTrace() {
+        // initialize static trace table
+        const traceTable = new Array(kRegisters.length);
+        for (let register = 0; register < traceTable.length; register++) {
+            traceTable[register] = new Array(traceLength);
+        }
+        // copy values of static registers for each step
+        for (let step = 0; step < traceLength; step++) {
+            let position = step * compositionFactor;
+            for (let register = 0; register < kRegisters.length; register++) {
+                traceTable[register][step] = kRegisters[register](position);
+                ;
+            }
+        }
+        return f.newMatrixFrom(traceTable);
+    }
     // CONSTRAINT EVALUATOR
     // --------------------------------------------------------------------------------------------
     function evaluateTransitionConstraints(polynomials) {
@@ -175,6 +193,7 @@ function initProvingContext(inputs = [], seed = []) {
         evaluationDomain: evaluationDomain,
         compositionDomain: compositionDomain,
         generateExecutionTrace: generateExecutionTrace,
+        generateStaticTrace: generateStaticTrace,
         evaluateTransitionConstraints: evaluateTransitionConstraints,
         secretRegisterTraces: secretRegisterTraces
     };

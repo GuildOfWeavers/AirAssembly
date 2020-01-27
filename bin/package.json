@@ -1,6 +1,6 @@
 {
   "name": "@guildofweavers/air-assembly",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A low-level language for encoding Algebraic Intermediate Representation of computations",
   "main": "index.js",
   "typings": "air-assembly.d.ts",
