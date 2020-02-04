@@ -24,6 +24,8 @@ var registers_1 = require("./lib/registers");
 exports.PrngSequence = registers_1.PrngSequence;
 var errors_2 = require("./lib/errors");
 exports.AssemblyError = errors_2.AssemblyError;
+var ExpressionVisitor_1 = require("./lib/expressions/ExpressionVisitor");
+exports.ExpressionVisitor = ExpressionVisitor_1.ExpressionVisitor;
 exports.prng = {
     sha256: utils_1.sha256prng
 };

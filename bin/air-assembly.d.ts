@@ -365,6 +365,11 @@ declare module '@guildofweavers/air-assembly' {
         readonly params     : Expression[];
     }
 
+    export class ExpressionVisitor<T> {
+        constructor();
+        visit(expression: Expression, options?: any): T;
+    }
+
     // ANALYSIS
     // --------------------------------------------------------------------------------------------
     export interface ProcedureAnalysisResult {

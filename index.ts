@@ -26,6 +26,7 @@ const DEFAULT_LIMITS: StarkLimits = {
 export { AirSchema } from './lib/AirSchema';
 export { PrngSequence } from './lib/registers';
 export { AssemblyError } from './lib/errors';
+export { ExpressionVisitor } from './lib/expressions/ExpressionVisitor';
 
 export const prng = {
     sha256  : sha256prng
