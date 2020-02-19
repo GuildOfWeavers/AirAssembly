@@ -149,6 +149,9 @@ declare module '@guildofweavers/air-assembly' {
         /** Name of the computation */
         readonly name: string;
 
+        /** Base cycle length of the computation */
+        readonly cycleLength: number;
+
         /** Static registers defined for the computation */
         readonly staticRegisters: ReadonlyArray<StaticRegister>;
 
@@ -251,6 +254,7 @@ declare module '@guildofweavers/air-assembly' {
 
     export interface FunctionContext extends ExecutionContext{        
         readonly result         : Dimensions;
+        readonly handle?        : string;
     }
 
     export interface ProcedureContext extends ExecutionContext {
@@ -288,6 +292,8 @@ declare module '@guildofweavers/air-assembly' {
         readonly cycleLength: number;
 
         getValues(): bigint[];
+
+        readonly values : bigint[] | PrngSequence; // TODO: replace with something else?
     }
 
     export class PrngSequence {
