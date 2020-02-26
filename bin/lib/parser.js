@@ -210,10 +210,11 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
         this.cyclicRegister = this.RULE('cyclicRegister', (component) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Cycle);
+            const field = component ? component.field : undefined;
             const values = this.OR([
-                { ALT: () => this.SUBRULE(this.prngSequence, { ARGS: [component.field] }) },
-                { ALT: () => this.SUBRULE(this.powerSequence, { ARGS: [component.field] }) },
-                { ALT: () => this.SUBRULE(this.fieldElementSequence, { ARGS: [component.field] }) }
+                { ALT: () => this.SUBRULE(this.prngSequence, { ARGS: [field] }) },
+                { ALT: () => this.SUBRULE(this.powerSequence, { ARGS: [field] }) },
+                { ALT: () => this.SUBRULE(this.fieldElementSequence, { ARGS: [field] }) }
             ]);
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => component.addCyclicRegister(values));

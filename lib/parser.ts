@@ -251,10 +251,11 @@ class AirParser extends EmbeddedActionsParser {
     private cyclicRegister = this.RULE('cyclicRegister', (component: AirComponent) => {
         this.CONSUME(LParen);
         this.CONSUME(Cycle);
+        const field = component ? component.field : undefined;
         const values = this.OR([
-            { ALT: () => this.SUBRULE(this.prngSequence,         { ARGS: [component.field] }) },
-            { ALT: () => this.SUBRULE(this.powerSequence,        { ARGS: [component.field] }) },
-            { ALT: () => this.SUBRULE(this.fieldElementSequence, { ARGS: [component.field] }) }
+            { ALT: () => this.SUBRULE(this.prngSequence,         { ARGS: [field] }) },
+            { ALT: () => this.SUBRULE(this.powerSequence,        { ARGS: [field] }) },
+            { ALT: () => this.SUBRULE(this.fieldElementSequence, { ARGS: [field] }) }
         ]);
         this.CONSUME(RParen);
         this.ACTION(() => component.addCyclicRegister(values));

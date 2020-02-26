@@ -83,7 +83,6 @@ class AirComponent {
         this._staticRegisters.push(register);
     }
     addCyclicRegister(values) {
-        utils_1.validate(values.length <= this.cycleLength, errors.cyclicValuesTooMany(this.cycleLength));
         const register = new registers_1.CyclicRegister(values, this.field);
         this._staticRegisters.push(register);
     }
@@ -202,7 +201,6 @@ const errors = {
     maskRegOutOfOrder: () => `mask registers cannot be preceded by cyclic registers`,
     invalidMaskSourceIndex: (r, s) => `invalid source for mask register ${r}: register ${s} is undefined`,
     maskSourceNotInputReg: (r, s) => `invalid source for mask register ${r}: register ${s} is not an input register`,
-    cyclicValuesTooMany: (t) => `number of values in cyclic register must be smaller than trace cycle length (${t})`,
     initializerNotSet: () => `trace initializer hasn't been set yet`,
     initializerAlreadySet: () => `trace initializer has already been set`,
     invalidInitializerName: (n) => `trace initializer cannot be set to a ${n} procedure`,
