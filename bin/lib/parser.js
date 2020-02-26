@@ -211,13 +211,14 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Cycle);
             const values = this.OR([
-                { ALT: () => this.SUBRULE(this.prngSequence) },
-                { ALT: () => this.SUBRULE(this.fieldElementSequence) }
+                { ALT: () => this.SUBRULE(this.prngSequence, { ARGS: [component.field] }) },
+                { ALT: () => this.SUBRULE(this.powerSequence, { ARGS: [component.field] }) },
+                { ALT: () => this.SUBRULE(this.fieldElementSequence, { ARGS: [component.field] }) }
             ]);
             this.CONSUME(lexer_1.RParen);
             this.ACTION(() => component.addCyclicRegister(values));
         });
-        this.prngSequence = this.RULE('prngExpression', () => {
+        this.prngSequence = this.RULE('prngExpression', (field) => {
             this.CONSUME(lexer_1.LParen);
             this.CONSUME(lexer_1.Prng);
             const method = this.CONSUME(lexer_1.Sha256).image;
@@ -225,6 +226,14 @@ class AirParser extends chevrotain_1.EmbeddedActionsParser {
             const count = this.CONSUME(lexer_1.Literal).image;
             this.CONSUME(lexer_1.RParen);
             return this.ACTION(() => new registers_1.PrngSequence(method, BigInt(seed), Number(count)));
+        });
+        this.powerSequence = this.RULE('powerSequence', (field) => {
+            this.CONSUME(lexer_1.LParen);
+            this.CONSUME(lexer_1.Power);
+            const base = this.CONSUME1(lexer_1.Literal).image;
+            const count = this.CONSUME2(lexer_1.Literal).image;
+            this.CONSUME(lexer_1.RParen);
+            return this.ACTION(() => new registers_1.PowerSequence(BigInt(base), Number(count)));
         });
         // PROCEDURES
         // --------------------------------------------------------------------------------------------

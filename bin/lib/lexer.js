@@ -26,6 +26,7 @@ exports.PeerOf = chevrotain_1.createToken({ name: "PeerOf", pattern: /peerof/, l
 exports.Steps = chevrotain_1.createToken({ name: "Steps", pattern: /steps/, longer_alt: exports.Identifier });
 exports.Shift = chevrotain_1.createToken({ name: "Shift", pattern: /shift/, longer_alt: exports.Identifier });
 exports.Cycle = chevrotain_1.createToken({ name: "Cycle", pattern: /cycle/, longer_alt: exports.Identifier });
+exports.Power = chevrotain_1.createToken({ name: "Power", pattern: /power/, longer_alt: exports.Identifier });
 exports.Prng = chevrotain_1.createToken({ name: "Prng", pattern: /prng/, longer_alt: exports.Identifier });
 exports.Sha256 = chevrotain_1.createToken({ name: "Sha256", pattern: /sha256/, longer_alt: exports.Identifier });
 exports.Mask = chevrotain_1.createToken({ name: "Mask", pattern: /mask/, longer_alt: exports.Identifier });
@@ -82,7 +83,7 @@ exports.allTokens = [
     exports.WhiteSpace, exports.Comment,
     exports.Export, exports.Registers, exports.Constraints, exports.Init,
     exports.Module, exports.Field, exports.Prime, exports.Const, exports.Static, exports.Input, exports.Secret, exports.Public, exports.Binary, exports.ChildOf, exports.PeerOf, exports.Steps, exports.Shift,
-    exports.Cycle, exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Result, exports.Param, exports.Local,
+    exports.Cycle, exports.Power, exports.Prng, exports.Sha256, exports.Mask, exports.Inverted, exports.Function, exports.Transition, exports.Evaluation, exports.Result, exports.Param, exports.Local,
     exports.Scalar, exports.Vector, exports.Matrix,
     exports.Get, exports.Slice, exports.BinaryOp, exports.Add, exports.Sub, exports.Mul, exports.Div, exports.Exp, exports.Prod, exports.UnaryOp, exports.Neg, exports.Inv,
     exports.LoadOp, exports.LoadConst, exports.LoadTrace, exports.LoadStatic, exports.LoadParam, exports.LoadLocal, exports.StoreOp, exports.CallOp,

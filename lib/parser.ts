@@ -1,15 +1,16 @@
 // IMPORTS
 // ================================================================================================
 import { EmbeddedActionsParser } from "chevrotain";
+import { FiniteField } from "@guildofweavers/galois";
 import { AirSchema } from "./AirSchema";
 import { AirComponent } from "./AirComponent";
-import { PrngSequence } from "./registers";
+import { PrngSequence, PowerSequence } from "./registers";
 import { ExecutionContext, StoreOperation } from "./procedures";
 import {
     allTokens, LParen, RParen, Module, Field, Literal, Prime, Const, Vector, Matrix, Static, Input, Binary, 
     Scalar, Local, Get, Slice, BinaryOp, UnaryOp, LoadOp, StoreOp, Transition, Evaluation, Secret, Public,
     Result, Cycle, Steps, ChildOf, PeerOf, Mask, Inverted, Export, Identifier, Init, Shift, Minus,
-    Prng, Sha256, HexLiteral, Handle, Param, Function, CallOp, Registers, Constraints
+    Power, Prng, Sha256, HexLiteral, Handle, Param, Function, CallOp, Registers, Constraints
 } from './lexer';
 import {
     Expression, LiteralValue, BinaryOperation, UnaryOperation, MakeVector, MakeMatrix, 
@@ -251,14 +252,15 @@ class AirParser extends EmbeddedActionsParser {
         this.CONSUME(LParen);
         this.CONSUME(Cycle);
         const values = this.OR([
-            { ALT: () => this.SUBRULE(this.prngSequence)    },
-            { ALT: () => this.SUBRULE(this.fieldElementSequence) }
+            { ALT: () => this.SUBRULE(this.prngSequence,         { ARGS: [component.field] }) },
+            { ALT: () => this.SUBRULE(this.powerSequence,        { ARGS: [component.field] }) },
+            { ALT: () => this.SUBRULE(this.fieldElementSequence, { ARGS: [component.field] }) }
         ]);
         this.CONSUME(RParen);
         this.ACTION(() => component.addCyclicRegister(values));
     });
 
-    private prngSequence = this.RULE<PrngSequence>('prngExpression', () => {
+    private prngSequence = this.RULE<PrngSequence>('prngExpression', (field: FiniteField) => {
         this.CONSUME(LParen);
         this.CONSUME(Prng);
         const method = this.CONSUME(Sha256).image;
@@ -266,6 +268,15 @@ class AirParser extends EmbeddedActionsParser {
         const count = this.CONSUME(Literal).image;
         this.CONSUME(RParen);
         return this.ACTION(() => new PrngSequence(method, BigInt(seed), Number(count)));
+    });
+
+    private powerSequence = this.RULE<PowerSequence>('powerSequence', (field: FiniteField) => {
+        this.CONSUME(LParen);
+        this.CONSUME(Power);
+        const base = this.CONSUME1(Literal).image;
+        const count = this.CONSUME2(Literal).image;
+        this.CONSUME(RParen);
+        return this.ACTION(() => new PowerSequence(BigInt(base), Number(count)));
     });
 
     // PROCEDURES

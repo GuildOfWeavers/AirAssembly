@@ -10,7 +10,7 @@ class AirFunction {
         this.params = context.params.slice();
         this.locals = context.locals.slice();
         this.statements = statements.slice();
-        if (!result.isVector || !expressions_1.Dimensions.areSameDimensions(result.dimensions, context.result))
+        if (!expressions_1.Dimensions.areSameDimensions(result.dimensions, context.result))
             throw new Error(`function must resolve to a ${expressions_1.Dimensions.toString(context.result)} value`);
         this.result = result;
         this.handle = context.handle;

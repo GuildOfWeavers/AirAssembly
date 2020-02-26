@@ -1,9 +1,11 @@
 // IMPORTS
 // ================================================================================================
 import { FiniteField } from "@guildofweavers/galois";
-import { AirComponent as IComponent, ConstraintDescriptor, ProcedureName, InputRegisterMaster } from "@guildofweavers/air-assembly";
+import {
+    AirComponent as IComponent, ConstraintDescriptor, ProcedureName, InputRegisterMaster, ValueSequence
+} from "@guildofweavers/air-assembly";
 import { AirSchema } from "./AirSchema";
-import { StaticRegister, InputRegister, MaskRegister, CyclicRegister, PrngSequence } from "./registers";
+import { StaticRegister, InputRegister, MaskRegister, CyclicRegister } from "./registers";
 import { AirProcedure, ProcedureContext, StoreOperation, Constant, AirFunction } from "./procedures";
 import { Expression } from "./expressions";
 import { analyzeProcedure } from "./analysis";
@@ -121,7 +123,7 @@ export class AirComponent implements IComponent {
         this._staticRegisters.push(register);
     }
 
-    addCyclicRegister(values: bigint[] | PrngSequence): void {
+    addCyclicRegister(values: bigint[] | ValueSequence): void {
         validate(values.length <= this.cycleLength, errors.cyclicValuesTooMany(this.cycleLength));
         const register = new CyclicRegister(values, this.field);
         this._staticRegisters.push(register);

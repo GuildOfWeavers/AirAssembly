@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const StaticRegister_1 = require("./StaticRegister");
-const PrngSequence_1 = require("./PrngSequence");
 const utils_1 = require("../utils");
 // CLASS DEFINITION
 // ================================================================================================
@@ -26,17 +25,17 @@ class CyclicRegister extends StaticRegister_1.StaticRegister {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     getValues() {
-        if (this.values instanceof PrngSequence_1.PrngSequence) {
-            return this.values.getValues(this.field);
+        if (Array.isArray(this.values)) {
+            return this.values;
         }
         else {
-            return this.values;
+            return this.values.getValues(this.field);
         }
     }
     toString() {
-        const values = (this.values instanceof PrngSequence_1.PrngSequence)
-            ? this.values.toString()
-            : this.values.join(' ');
+        const values = (Array.isArray(this.values))
+            ? this.values.join(' ')
+            : this.values.toString();
         return `(cycle ${values})`;
     }
 }

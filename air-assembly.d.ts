@@ -175,7 +175,7 @@ declare module '@guildofweavers/air-assembly' {
 
         addInputRegister(scope: string, binary: boolean, master?: InputRegisterMaster, steps?: number, offset?: number): void;
         addMaskRegister(sourceIdx: number, inverted: boolean): void;
-        addCyclicRegister(values: bigint[] | PrngSequence): void;
+        addCyclicRegister(values: bigint[] | ValueSequence): void;
         
         /**
          * Creates a new procedure context from the current state of the component
@@ -293,15 +293,29 @@ declare module '@guildofweavers/air-assembly' {
 
         getValues(): bigint[];
 
-        readonly values : bigint[] | PrngSequence; // TODO: replace with something else?
+        readonly values : bigint[] | ValueSequence; // TODO: replace with something else?
     }
 
-    export class PrngSequence {
+    export interface ValueSequence {
+        readonly length : number;
+        getValues(field: FiniteField): bigint[];
+    }
+
+    export class PrngSequence implements ValueSequence {
         readonly method : 'sha256';
         readonly seed   : Buffer;
         readonly length : number;
 
         constructor(method: string, seed: bigint, count: number);
+
+        getValues(field: FiniteField): bigint[];
+    }
+
+    export class PowerSequence implements ValueSequence {
+        readonly base   : bigint;
+        readonly length : number;
+
+        constructor(base: bigint, count: number);
 
         getValues(field: FiniteField): bigint[];
     }

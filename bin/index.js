@@ -22,6 +22,7 @@ var AirSchema_1 = require("./lib/AirSchema");
 exports.AirSchema = AirSchema_1.AirSchema;
 var registers_1 = require("./lib/registers");
 exports.PrngSequence = registers_1.PrngSequence;
+exports.PowerSequence = registers_1.PowerSequence;
 var errors_2 = require("./lib/errors");
 exports.AssemblyError = errors_2.AssemblyError;
 var ExpressionVisitor_1 = require("./lib/expressions/ExpressionVisitor");

@@ -26,7 +26,7 @@ export class AirFunction implements IAirFunction {
         this.locals = context.locals.slice();
         this.statements = statements.slice();
 
-        if (!result.isVector || !Dimensions.areSameDimensions(result.dimensions, context.result))
+        if (!Dimensions.areSameDimensions(result.dimensions, context.result))
             throw new Error(`function must resolve to a ${Dimensions.toString(context.result)} value`);
         this.result = result;
         this.handle = context.handle;

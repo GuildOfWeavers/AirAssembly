@@ -10,4 +10,6 @@ var MaskRegister_1 = require("./MaskRegister");
 exports.MaskRegister = MaskRegister_1.MaskRegister;
 var PrngSequence_1 = require("./PrngSequence");
 exports.PrngSequence = PrngSequence_1.PrngSequence;
+var PowerSequence_1 = require("./PowerSequence");
+exports.PowerSequence = PowerSequence_1.PowerSequence;
 //# sourceMappingURL=index.js.map

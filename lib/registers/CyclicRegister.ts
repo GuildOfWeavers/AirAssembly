@@ -1,9 +1,8 @@
 // IMPORTS
 // ================================================================================================
-import { CyclicRegister as ICyclicRegister } from '@guildofweavers/air-assembly';
-import { FiniteField } from "@guildofweavers/galois";
-import { StaticRegister } from "./StaticRegister";
-import { PrngSequence } from "./PrngSequence";
+import { CyclicRegister as ICyclicRegister, ValueSequence } from '@guildofweavers/air-assembly';
+import { FiniteField } from '@guildofweavers/galois';
+import { StaticRegister } from './StaticRegister';
 import { validate, isPowerOf2 } from "../utils";
 
 // CLASS DEFINITION
@@ -11,11 +10,11 @@ import { validate, isPowerOf2 } from "../utils";
 export class CyclicRegister extends StaticRegister implements ICyclicRegister {
 
     readonly field  : FiniteField;
-    readonly values : bigint[] | PrngSequence;
+    readonly values : bigint[] | ValueSequence;
 
     // CONSTRUCTOR
     // --------------------------------------------------------------------------------------------
-    constructor(values: bigint[] | PrngSequence, field: FiniteField) {
+    constructor(values: bigint[] | ValueSequence, field: FiniteField) {
         super();
         validate(values.length > 1, errors.valueLengthSmallerThan2());
         validate(isPowerOf2(values.length), errors.valueLengthNotPowerOf2());
@@ -35,18 +34,19 @@ export class CyclicRegister extends StaticRegister implements ICyclicRegister {
     // PUBLIC METHODS
     // --------------------------------------------------------------------------------------------
     getValues(): bigint[] {
-        if (this.values instanceof PrngSequence) {
-            return this.values.getValues(this.field);
+        if (Array.isArray(this.values)) {
+            return this.values;
         }
         else {
-            return this.values;
+            return this.values.getValues(this.field);
         }
     }
 
     toString(): string {
-        const values = (this.values instanceof PrngSequence)
-            ? this.values.toString()
-            : this.values.join(' ');
+
+        const values = (Array.isArray(this.values))
+            ? this.values.join(' ')
+            : this.values.toString();
         return `(cycle ${values})`;
     }
 }

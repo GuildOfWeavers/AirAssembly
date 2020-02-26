@@ -29,6 +29,7 @@ export const Steps      = createToken({ name: "Steps",      pattern: /steps/,   
 export const Shift      = createToken({ name: "Shift",      pattern: /shift/,       longer_alt: Identifier });
 
 export const Cycle      = createToken({ name: "Cycle",      pattern: /cycle/,       longer_alt: Identifier });
+export const Power      = createToken({ name: "Power",      pattern: /power/,       longer_alt: Identifier });
 export const Prng       = createToken({ name: "Prng",       pattern: /prng/,        longer_alt: Identifier });
 export const Sha256     = createToken({ name: "Sha256",     pattern: /sha256/,      longer_alt: Identifier });
 
@@ -100,7 +101,7 @@ export const allTokens = [
     Export, Registers, Constraints, Init,
 
     Module, Field, Prime, Const, Static, Input, Secret, Public, Binary, ChildOf, PeerOf, Steps, Shift,
-    Cycle, Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Result, Param, Local,
+    Cycle, Power, Prng, Sha256, Mask, Inverted, Function, Transition, Evaluation, Result, Param, Local,
 
     Scalar, Vector, Matrix,
 
