@@ -1,7 +1,7 @@
 // IMPORTS
 // ================================================================================================
 import * as crypto from 'crypto';
-import { FiniteField } from "@guildofweavers/galois";
+import { FiniteField, Matrix } from "@guildofweavers/galois";
 import { AirComponent } from './AirComponent';
 
 // CONSTANTS
@@ -48,4 +48,33 @@ export function sha256prng(seed: Buffer, count: number, field: FiniteField): big
         values[i] = field.add(BigInt(`0x${value.toString('hex')}`), 0n);
     }
     return values;
+}
+
+// PRINTING
+// ================================================================================================
+export function printMatrix(trace: Matrix, firstHeader: string, colPrefix: string): void {
+
+    const steps = trace.colCount;
+    const colWidth = Math.ceil(trace.elementSize * 1.2);
+
+    // print header row
+    const columnHeaders = [firstHeader.padEnd(colWidth, ' ')];
+    columnHeaders.push(' | ');
+    for (let i = 0; i < trace.rowCount; i++) {
+        columnHeaders.push(`${colPrefix}${i}`.padEnd(colWidth, ' '));
+    }
+    const headerRow = columnHeaders.join('  ');
+    console.log(headerRow);
+    console.log('-'.repeat(headerRow.length));
+
+    // print rows
+    for (let i = 0; i < steps; i++) {
+        let dataRow = [`${i}`.padEnd(colWidth, ' ')];
+        dataRow.push(' | ');
+        for (let j = 0; j < trace.rowCount; j++) {
+            dataRow.push(`${trace.getValue(j, i)}`.padEnd(colWidth, ' '));
+        }
+        console.log(dataRow.join('  '));
+    }
+    console.log('-'.repeat(headerRow.length));
 }

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // IMPORTS
 // ================================================================================================
 const index_1 = require("../../index");
+const utils_1 = require("../../lib/utils");
 // EXAMPLE CODE
 // ================================================================================================
 const schema = index_1.compile('./examples/ec/pointmul.aa');
@@ -11,15 +12,15 @@ console.log(`degree: ${air.maxConstraintDegree}`);
 const gStart = Date.now();
 let start = Date.now();
 const pContext = air.initProvingContext([
-    [2n, 17n],
-    [23n, 18n],
-    [[1n, 0n, 1n, 0n], [0n, 1n, 0n, 0n]]
+    [19277929113566293071110308034699488026831934219452440156649784352033n],
+    [19926808758034470970197974370888749184205991990603949537637343198772n],
+    [toBits(21628546220445634706341881427918508772248629391536891476641575405363n)]
 ]);
 console.log(`Initialized proof object in ${Date.now() - start} ms`);
 start = Date.now();
 const trace = pContext.generateExecutionTrace();
 console.log(`Execution trace generated in ${Date.now() - start} ms`);
-printExecutionTrace(trace);
+utils_1.printMatrix(trace, 'step', 'r');
 start = Date.now();
 const pPolys = air.field.interpolateRoots(pContext.executionDomain, trace);
 console.log(`Trace polynomials computed in ${Date.now() - start} ms`);
@@ -29,31 +30,11 @@ console.log(`Extended execution trace in ${Date.now() - start} ms`);
 start = Date.now();
 const cEvaluations = pContext.evaluateTransitionConstraints(pPolys);
 console.log(`Constraints evaluated in ${Date.now() - start} ms`);
-printExecutionTrace(cEvaluations);
-// PRINTING
+//printMatrix(cEvaluations, 'step', 'd');
+// HELPER FUNCTIONS
 // ================================================================================================
-function printExecutionTrace(trace) {
-    const steps = trace.colCount;
-    const colWidth = Math.ceil(trace.elementSize * 1.2);
-    // print header row
-    const columnHeaders = ['step'.padEnd(colWidth, ' ')];
-    columnHeaders.push(' | ');
-    for (let i = 0; i < trace.rowCount; i++) {
-        columnHeaders.push(`r${i}`.padEnd(colWidth, ' '));
-    }
-    const headerRow = columnHeaders.join('  ');
-    console.log(headerRow);
-    console.log('-'.repeat(headerRow.length));
-    // print rows
-    for (let i = 0; i < steps; i++) {
-        let dataRow = [`${i}`.padEnd(colWidth, ' ')];
-        dataRow.push(' | ');
-        for (let j = 0; j < trace.rowCount; j++) {
-            dataRow.push(`${trace.getValue(j, i)}`.padEnd(colWidth, ' '));
-        }
-        console.log(dataRow.join('  '));
-    }
-    console.log('-'.repeat(headerRow.length));
+function toBits(value) {
+    const bits = value.toString(2).padStart(256, '0').split('');
+    return bits.reverse().map(b => BigInt(b));
 }
-exports.printExecutionTrace = printExecutionTrace;
 //# sourceMappingURL=index.js.map

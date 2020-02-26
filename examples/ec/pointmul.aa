@@ -1,6 +1,6 @@
 (module
-    (field prime 257)
-    (const $a scalar 2)
+    (field prime 26959946667150639794667015087019630673557916260026308143510066298881)
+    (const $a scalar 26959946667150639794667015087019630673557916260026308143510066298878)
 
 	(function $addPoints    # x = m^2 - xp - xq, y = m * (xp - x) - yp
         (result vector 2)
@@ -61,7 +61,7 @@
             (input secret (peerof 0) (shift -1))
             (input secret (childof 0) (steps 1))
             (mask (input 0))
-            (cycle 1 2 4 8))
+            (cycle (power 2 256)))
         (init
 			(call $initTrace (slice (load.static 0) 0 1)))
         (transition

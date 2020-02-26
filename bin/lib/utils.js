@@ -49,4 +49,30 @@ function sha256prng(seed, count, field) {
     return values;
 }
 exports.sha256prng = sha256prng;
+// PRINTING
+// ================================================================================================
+function printMatrix(trace, firstHeader, colPrefix) {
+    const steps = trace.colCount;
+    const colWidth = Math.ceil(trace.elementSize * 1.2);
+    // print header row
+    const columnHeaders = [firstHeader.padEnd(colWidth, ' ')];
+    columnHeaders.push(' | ');
+    for (let i = 0; i < trace.rowCount; i++) {
+        columnHeaders.push(`${colPrefix}${i}`.padEnd(colWidth, ' '));
+    }
+    const headerRow = columnHeaders.join('  ');
+    console.log(headerRow);
+    console.log('-'.repeat(headerRow.length));
+    // print rows
+    for (let i = 0; i < steps; i++) {
+        let dataRow = [`${i}`.padEnd(colWidth, ' ')];
+        dataRow.push(' | ');
+        for (let j = 0; j < trace.rowCount; j++) {
+            dataRow.push(`${trace.getValue(j, i)}`.padEnd(colWidth, ' '));
+        }
+        console.log(dataRow.join('  '));
+    }
+    console.log('-'.repeat(headerRow.length));
+}
+exports.printMatrix = printMatrix;
 //# sourceMappingURL=utils.js.map
