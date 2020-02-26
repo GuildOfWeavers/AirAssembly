@@ -1,5 +1,9 @@
 # Release History
 
+### v0.3.1 - February 26, 2020
+
+* Added power sequences to cyclic registers.
+
 ### v0.3 - January 19, 2020
 
 * Replaced `parent` expression in input registers with `childof` and `peerof` expressions.
